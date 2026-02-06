@@ -90,10 +90,10 @@ export default function StudentScreen() {
 
         {/* GLASS FORM */}
         <BlurView intensity={25} tint="light" style={styles.glassCard}>
-          <Text style={styles.label}>USERNAME</Text>
+          <Text style={styles.label}>EMAIL</Text>
           <View style={styles.inputWrapper}>
             <TextInput
-              placeholder="username"
+              placeholder="entrez votre email"
               placeholderTextColor="#999"
               value={email}
               onChangeText={setEmail}
@@ -106,7 +106,7 @@ export default function StudentScreen() {
           <Text style={styles.label}>PASSWORD</Text>
           <View style={styles.inputWrapper}>
             <TextInput
-              placeholder="password"
+              placeholder="entrez votre password"
               placeholderTextColor="#999"
               secureTextEntry
               value={password}

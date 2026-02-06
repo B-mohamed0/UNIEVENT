@@ -54,7 +54,7 @@ export default function Studentinscription() {
 
       if (response.ok) {
         Alert.alert("Succès", data.message);
-        navigation.navigate("StudentScreen"); // ou autre écran
+        navigation.navigate("Student"); // ou autre écran
       } else {
         Alert.alert("Erreur", data.message);
       }
@@ -156,9 +156,9 @@ export default function Studentinscription() {
 
         <TouchableOpacity
           style={styles.signupButton}
-          onPress={() => navigation.navigate("StudentScreen")}
+          onPress={() => navigation.navigate("Student")}
         >
-          <Text style={styles.signupText}>Déjà un compte ? Se connecter</Text>
+          <Text style={styles.signupText}>sign in</Text>
         </TouchableOpacity>
       </View>
     </View>
