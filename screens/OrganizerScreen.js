@@ -81,7 +81,6 @@ export default function OrganizerScreen() {
             </LinearGradient>
           </TouchableOpacity>
         </BlurView>
-
       </View>
     </View>
   );
@@ -175,6 +174,7 @@ const styles = StyleSheet.create({
     overflow: "hidden",
     borderWidth: 1,
     borderColor: "rgba(255,255,255,0.2)",
+    backgroundColor: "rgba(0, 0, 0, 0.13)",
   },
 
   label: {
@@ -185,22 +185,22 @@ const styles = StyleSheet.create({
     fontFamily: "Insignia",
   },
 
-input: {
-  height: 40,
-  paddingHorizontal: 15,
-  borderRadius: 10,
-  backgroundColor: "transparent",
-},
+  input: {
+    height: 40,
+    paddingHorizontal: 15,
+    borderRadius: 10,
+    backgroundColor: "transparent",
+  },
   inputWrapper: {
-  backgroundColor: "#FFFFFF",
-  borderRadius: 10,
-  shadowColor: "#000",
-  shadowOffset: { width: 0, height: 10 },
-  shadowOpacity: 0.3,
-  shadowRadius: 8,
-  elevation: 6,
-  marginBottom: 30,
-},
+    backgroundColor: "#FFFFFF",
+    borderRadius: 10,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 6,
+    marginBottom: 30,
+  },
 
   loginButton: {
     marginTop: 20,
@@ -225,6 +225,4 @@ input: {
     fontWeight: "500",
     fontFamily: "Insignia",
   },
-
-
 });

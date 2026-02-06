@@ -8,6 +8,30 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+app.post("/api/auth/inscription", async (req, res) => {
+  const { nom, email, cne, password } = req.body;
+
+  if (!nom || !email || !password || !cne) {
+    return res
+      .status(400)
+      .json({ message: "Tous les champs sont obligatoires" });
+  }
+  const salt = await bcrypt.genSalt(10);
+  const passwordhasher = await bcrypt.hash(password, salt);
+  await pool.query(
+    `INSERT INTO etudiant (nom, email, cne, password)
+    VALUES ($1, $2, $3, $4)`,
+    [nom, email, cne, passwordhasher],
+  );
+
+  res.json({
+    message: "Inscription réussie ✅",
+    user: { email },
+  });
+});
+
+//////////////////////////////////////////
+
 app.post("/api/auth/login", async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -20,7 +44,7 @@ app.post("/api/auth/login", async (req, res) => {
 
     const result = await pool.query(
       "SELECT password FROM etudiant WHERE email = $1",
-      [email]
+      [email],
     );
 
     if (result.rowCount === 0) {
@@ -31,9 +55,9 @@ app.post("/api/auth/login", async (req, res) => {
 
     const user = result.rows[0];
 
-    // const validPassword = await bcrypt.compare(password, user.password);
+    const validPassword = await bcrypt.compare(password, user.password);
 
-    if (!(password===user.password)) {
+    if (!validPassword) {
       return res.status(401).json({
         message: "Mot de passe incorrect",
       });

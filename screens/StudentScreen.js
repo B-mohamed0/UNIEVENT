@@ -18,7 +18,7 @@ import { useState } from "react";
 const { width, height } = Dimensions.get("window");
 
 /* 🔗 URL BACKEND */
-const API_BASE = "http://192.168.1.5:3000/api/auth";
+const API_BASE = "http://192.168.1.3:3000/api/auth";
 
 export default function StudentScreen() {
   const navigation = useNavigation();
@@ -136,7 +136,7 @@ export default function StudentScreen() {
           style={styles.signupButton}
           onPress={() => navigation.navigate("Studentinscription")}
         >
-          <Text style={styles.signupText}>sign in</Text>
+          <Text style={styles.signupText}>sign up</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -233,6 +233,7 @@ const styles = StyleSheet.create({
     overflow: "hidden",
     borderWidth: 1,
     borderColor: "rgba(255,255,255,0.2)",
+    backgroundColor: "rgba(0, 0, 0, 0.13)",
     marginTop: 230,
   },
 
