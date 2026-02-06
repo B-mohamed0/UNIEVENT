@@ -63,32 +63,26 @@ export default function StudentScreen() {
       >
         <Ionicons name="chevron-back" size={30} color="#ffffffff" />
       </TouchableOpacity>
-      {/* BACKGROUND */}
       <ImageBackground
         source={require("../assets/project/est.png")}
         style={styles.background}
         resizeMode="cover"
       />
 
-      {/* TRIANGLE BLANC */}
       <View style={styles.whiteTriangle} />
 
-      {/* TRIANGLE DÉGRADÉ */}
       <LinearGradient
         colors={["#143287", "#6279D8"]}
         style={styles.gradientTriangle}
       />
 
-      {/* CONTENU */}
       <View style={styles.content}>
-        {/* LOGO */}
         <Image
           source={require("../assets/project/boy.png")}
           style={styles.logo}
           resizeMode="contain"
         />
 
-        {/* GLASS FORM */}
         <BlurView intensity={25} tint="light" style={styles.glassCard}>
           <Text style={styles.label}>EMAIL</Text>
           <View style={styles.inputWrapper}>
@@ -131,7 +125,6 @@ export default function StudentScreen() {
           </TouchableOpacity>
         </BlurView>
 
-        {/* SIGN UP */}
         <TouchableOpacity
           style={styles.signupButton}
           onPress={() => navigation.navigate("Studentinscription")}
@@ -150,24 +143,21 @@ const styles = StyleSheet.create({
 
   backButton: {
     position: "absolute",
-    top: 50, // ajuste si besoin
+    top: 50,
     left: 20,
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: "rgba(255, 255, 255, 0.29)", // effet glass
+    backgroundColor: "rgba(255, 255, 255, 0.29)",
     justifyContent: "center",
     alignItems: "center",
-    // ombre (iOS)
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 3,
     shadowRadius: 10,
-
-    // ombre Android
-    elevation: 8,
-
     zIndex: 50,
+
+    elevation: 8,
   },
 
   background: {
@@ -264,8 +254,8 @@ const styles = StyleSheet.create({
 
   loginButton: {
     marginTop: 10,
-    width: 180, // 👈 largeur plus petite
-    alignSelf: "center", // 👈 centré horizontalement
+    width: 180,
+    alignSelf: "center",
     borderRadius: 26,
     overflow: "hidden",
     borderWidth: 1,

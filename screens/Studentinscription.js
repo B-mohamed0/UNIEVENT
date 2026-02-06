@@ -23,13 +23,11 @@ const API_BASE = "http://192.168.1.3:3000/api/auth";
 export default function Studentinscription() {
   const navigation = useNavigation();
 
-  // ✅ STATES CORRIGÉS
   const [nom, setNom] = useState("");
   const [email, setEmail] = useState("");
   const [cne, setCne] = useState("");
   const [password, setPassword] = useState("");
 
-  // ✅ INSCRIPTION
   const handleRegister = async () => {
     if (!nom || !email || !cne || !password) {
       Alert.alert("Erreur", "Tous les champs sont obligatoires");
@@ -54,7 +52,7 @@ export default function Studentinscription() {
 
       if (response.ok) {
         Alert.alert("Succès", data.message);
-        navigation.navigate("Student"); // ou autre écran
+        navigation.navigate("Student");
       } else {
         Alert.alert("Erreur", data.message);
       }
@@ -93,7 +91,6 @@ export default function Studentinscription() {
         />
 
         <BlurView intensity={25} tint="light" style={styles.glassCard}>
-          {/* NOM */}
           <Text style={styles.label}>NOM</Text>
           <View style={styles.inputWrapper}>
             <TextInput
@@ -105,7 +102,6 @@ export default function Studentinscription() {
             />
           </View>
 
-          {/* EMAIL */}
           <Text style={styles.label}>EMAIL</Text>
           <View style={styles.inputWrapper}>
             <TextInput
@@ -119,7 +115,6 @@ export default function Studentinscription() {
             />
           </View>
 
-          {/* CNE */}
           <Text style={styles.label}>CNE</Text>
           <View style={styles.inputWrapper}>
             <TextInput
@@ -131,7 +126,6 @@ export default function Studentinscription() {
             />
           </View>
 
-          {/* PASSWORD */}
           <Text style={styles.label}>PASSWORD</Text>
           <View style={styles.inputWrapper}>
             <TextInput
@@ -156,7 +150,7 @@ export default function Studentinscription() {
 
         <TouchableOpacity
           style={styles.signupButton}
-          onPress={() => navigation.navigate("Student")}
+          onPress={() => navigation.navigate("home")}
         >
           <Text style={styles.signupText}>sign in</Text>
         </TouchableOpacity>
@@ -172,24 +166,21 @@ const styles = StyleSheet.create({
 
   backButton: {
     position: "absolute",
-    top: 50, // ajuste si besoin
+    top: 50,
     left: 20,
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: "rgba(255, 255, 255, 0.29)", // effet glass
+    backgroundColor: "rgba(255, 255, 255, 0.29)",
     justifyContent: "center",
     alignItems: "center",
-    // ombre (iOS)
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 3,
     shadowRadius: 10,
-
-    // ombre Android
-    elevation: 8,
-
     zIndex: 50,
+
+    elevation: 8,
   },
 
   background: {
@@ -286,8 +277,8 @@ const styles = StyleSheet.create({
 
   loginButton: {
     marginTop: 10,
-    width: 180, // 👈 largeur plus petite
-    alignSelf: "center", // 👈 centré horizontalement
+    width: 180,
+    alignSelf: "center",
     borderRadius: 26,
     overflow: "hidden",
     borderWidth: 1,

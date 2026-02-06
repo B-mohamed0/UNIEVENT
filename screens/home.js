@@ -15,7 +15,7 @@ import { Ionicons } from "@expo/vector-icons";
 
 const { width, height } = Dimensions.get("window");
 
-export default function AdminScreen() {
+export default function home() {
   const navigation = useNavigation();
 
   return (
@@ -27,7 +27,6 @@ export default function AdminScreen() {
       >
         <Ionicons name="chevron-back" size={30} color="#ffffffff" />
       </TouchableOpacity>
-
       <ImageBackground
         source={require("../assets/project/est.png")}
         style={styles.background}
@@ -46,12 +45,11 @@ export default function AdminScreen() {
       {/* CONTENU */}
       <View style={styles.content}>
         <Image
-          source={require("../assets/project/admin.png")}
+          source={require("../assets/project/prof.png")}
           style={styles.logo}
           resizeMode="contain"
         />
 
-        {/* GLASS FORM */}
         <BlurView intensity={25} tint="light" style={styles.glassCard}>
           <Text style={styles.label}>USERNAME</Text>
           <View style={styles.inputWrapper}>
@@ -62,7 +60,7 @@ export default function AdminScreen() {
             />
           </View>
 
-          <Text style={styles.label}>PASSWORD</Text>
+          <Text style={styles.label}>USERNAME</Text>
           <View style={styles.inputWrapper}>
             <TextInput
               placeholder="user name"
@@ -79,7 +77,9 @@ export default function AdminScreen() {
               <Text style={styles.loginText}>se connecter</Text>
             </LinearGradient>
           </TouchableOpacity>
+
         </BlurView>
+
       </View>
     </View>
   );
@@ -92,7 +92,7 @@ const styles = StyleSheet.create({
 
   backButton: {
     position: "absolute",
-    top: 50,
+    top: 50, 
     left: 20,
     width: 56,
     height: 56,
@@ -141,22 +141,21 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     alignItems: "center",
-    paddingTop: 70,
+    paddingTop: 60,
   },
 
   logo: {
-    pointerEvents: "none",
-    zIndex: 100,
-    width: 500,
-    height: 300,
+    width: 400,
+    height: 250,
+    marginTop: 50,
+    marginBottom: 0,
     shadowColor: "#000",
     shadowOffset: {
       width: 0,
-      height: -9,
+      height: 9,
     },
     shadowOpacity: 1,
-    alignSelf: "center",
-    shadowRadius: 20,
+    shadowRadius: 8.65,
     elevation: 8,
   },
 
@@ -165,11 +164,10 @@ const styles = StyleSheet.create({
     height: 360,
     borderRadius: 30,
     padding: 25,
-    paddingTop: 40,
+    paddingTop: 50,
     overflow: "hidden",
     borderWidth: 1,
     borderColor: "rgba(255,255,255,0.2)",
-    backgroundColor: "rgba(0, 0, 0, 0.13)",
   },
 
   label: {
@@ -180,22 +178,22 @@ const styles = StyleSheet.create({
     fontFamily: "Insignia",
   },
 
-  input: {
-    height: 40,
-    paddingHorizontal: 15,
-    borderRadius: 10,
-    backgroundColor: "transparent",
-  },
+input: {
+  height: 40,
+  paddingHorizontal: 15,
+  borderRadius: 10,
+  backgroundColor: "transparent",
+},
   inputWrapper: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 10,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 6,
-    marginBottom: 30,
-  },
+  backgroundColor: "#FFFFFF",
+  borderRadius: 10,
+  shadowColor: "#000",
+  shadowOffset: { width: 0, height: 10 },
+  shadowOpacity: 0.3,
+  shadowRadius: 8,
+  elevation: 6,
+  marginBottom: 30,
+},
 
   loginButton: {
     marginTop: 20,
@@ -220,4 +218,8 @@ const styles = StyleSheet.create({
     fontWeight: "500",
     fontFamily: "Insignia",
   },
+
+
+
+
 });

@@ -34,9 +34,7 @@ export default function QuiSuisJeScreen() {
         />
       </View>
 
-      {/* CONTENU */}
       <View style={styles.contentLayer}>
-        {/* LOGO */}
         <View style={styles.logoContainer}>
           <Image
             source={require("../assets/project/ESTC.png")}
@@ -45,7 +43,6 @@ export default function QuiSuisJeScreen() {
           />
         </View>
 
-        {/* TEXTE */}
         <Text style={styles.subtitle}>je suis un</Text>
 
         <BlurView intensity={20} tint="light" style={styles.glassRectangle}>
@@ -99,7 +96,6 @@ const styles = StyleSheet.create({
     height: "100%",
   },
 
-  /* Triangle blanc à droite au centre */
   whiteTriangle: {
     position: "absolute",
     right: 0,
@@ -117,17 +113,13 @@ const styles = StyleSheet.create({
     borderRightColor: "#FFFFFF",
   },
 
-  /* Triangle rectangle dégradé bas droite */
   gradientTriangle: {
     position: "absolute",
     right: 0,
     bottom: -150,
     width: width * 1,
     height: height * 0.5,
-
     transform: [{ skewX: "20deg" }, { rotate: "20deg" }],
-
-    // DROP SHADOW
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.3,
@@ -164,9 +156,7 @@ const styles = StyleSheet.create({
     alignSelf: "center",
     marginTop: 0,
 
-    // OBLIGATOIRE pour le blur
     overflow: "hidden",
-    // glass border léger
     borderWidth: 1,
     borderColor: "rgba(255,255,255,0.2)",
   },
@@ -182,7 +172,6 @@ const styles = StyleSheet.create({
     width: 220,
     height: 55,
     borderRadius: 26,
-    // DROP SHADOW
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 10 },
     shadowOpacity: 0.3,

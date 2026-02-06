@@ -9,6 +9,7 @@ import TeacherScreen from "./screens/TeacherScreen";
 import OrganizerScreen from "./screens/OrganizerScreen";
 import AdminScreen from "./screens/AdminScreen";
 import Studentinscription from "./screens/Studentinscription";
+import home from "./screens/home";
 
 const Stack = createNativeStackNavigator();
 
@@ -36,6 +37,7 @@ export default function App() {
         <Stack.Screen name="Organizer" component={OrganizerScreen} />
         <Stack.Screen name="Admin" component={AdminScreen} />
         <Stack.Screen name="Studentinscription" component={Studentinscription} />
+        <Stack.Screen name="home" component={home} />
       </Stack.Navigator>
     </NavigationContainer>
   );

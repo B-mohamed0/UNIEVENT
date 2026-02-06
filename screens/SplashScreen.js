@@ -19,7 +19,7 @@ const opacityAnim = useRef(new Animated.Value(0)).current;
 const translateYAnim = useRef(new Animated.Value(10)).current;
 
 useEffect(() => {
-  // animation du texte
+
   Animated.parallel([
     Animated.timing(scaleAnim, {
       toValue: 1,
@@ -38,7 +38,6 @@ useEffect(() => {
     }),
   ]).start();
 
-  // navigation après 3s
   const timer = setTimeout(() => {
     navigation.replace("QuiSuisJe");
   }, 3000);
@@ -52,7 +51,6 @@ useEffect(() => {
       style={styles.background}
     >
       <View style={styles.logoContainer}>
-        {/* LOGO */}
         <Image
           source={require("../assets/project/logoblue.png")}
           style={styles.logo}

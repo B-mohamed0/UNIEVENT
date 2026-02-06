@@ -27,7 +27,6 @@ export default function OrganizerScreen() {
       >
         <Ionicons name="chevron-back" size={30} color="#ffffffff" />
       </TouchableOpacity>
-      {/* BACKGROUND */}
       <ImageBackground
         source={require("../assets/project/est.png")}
         style={styles.background}
@@ -43,9 +42,7 @@ export default function OrganizerScreen() {
         style={styles.gradientTriangle}
       />
 
-      {/* CONTENU */}
       <View style={styles.content}>
-        {/* LOGO */}
         <Image
           source={require("../assets/project/orga.png")}
           style={styles.logo}
@@ -93,24 +90,22 @@ const styles = StyleSheet.create({
 
   backButton: {
     position: "absolute",
-    top: 50, // ajuste si besoin
+    top: 50,
     left: 20,
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: "rgba(255, 255, 255, 0.29)", // effet glass
+    backgroundColor: "rgba(255, 255, 255, 0.29)",
     justifyContent: "center",
     alignItems: "center",
-    // ombre (iOS)
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 3,
     shadowRadius: 10,
+    zIndex: 50,
 
-    // ombre Android
     elevation: 8,
 
-    zIndex: 50,
   },
 
   background: {
@@ -204,8 +199,8 @@ const styles = StyleSheet.create({
 
   loginButton: {
     marginTop: 20,
-    width: 180, // 👈 largeur plus petite
-    alignSelf: "center", // 👈 centré horizontalement
+    width: 180, 
+    alignSelf: "center",
     borderRadius: 26,
     overflow: "hidden",
     borderWidth: 1,
