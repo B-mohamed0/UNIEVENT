@@ -1,0 +1,12 @@
+# Sécurité : On ne veut JAMAIS envoyer le mot de passe de la DB
+.env
+
+# Dossiers lourds : On ne veut pas envoyer les bibliothèques installées
+node_modules/
+
+# Fichiers système Mac
+.DS_Store
+
+# Dossiers de build (plus tard)
+dist/
+build/
