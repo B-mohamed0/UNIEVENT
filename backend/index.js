@@ -1,80 +1,65 @@
+require('dotenv').config();
 const express = require("express");
 const pool = require("./db");
 const bcrypt = require("bcrypt");
 const cors = require("cors");
 
 const app = express();
-
 app.use(cors());
 app.use(express.json());
 
+// --- ROUTE D'INSCRIPTION ---
 app.post("/api/auth/inscription", async (req, res) => {
-  const { nom, email, cne, password } = req.body;
+  try {
+    const { nom, email, cne, password, role } = req.body;
 
-  if (!nom || !email || !password || !cne) {
-    return res
-      .status(400)
-      .json({ message: "Tous les champs sont obligatoires" });
+    if (!nom || !email || !password || !role) {
+      return res.status(400).json({ message: "Champs manquants" });
+    }
+
+    const salt = await bcrypt.genSalt(10);
+    const passwordhasher = await bcrypt.hash(password, salt);
+
+    // Tentative d'insertion
+    await pool.query(
+        `INSERT INTO utilisateurs (nom, email, cne, password, role)
+         VALUES ($1, $2, $3, $4, $5)`,
+        [nom, email, cne || null, passwordhasher, role]
+    );
+
+    res.status(201).json({
+      message: `Inscription réussie en tant que ${role} ✅`,
+      user: { email, role },
+    });
+
+  } catch (error) {
+    // ON RENVOIE L'ERREUR BRUTE ICI
+    res.status(500).json({
+      error_brute: error.message,
+      detail_sql: error.detail || "Pas de détails"
+    });
   }
-  const salt = await bcrypt.genSalt(10);
-  const passwordhasher = await bcrypt.hash(password, salt);
-  await pool.query(
-    `INSERT INTO etudiant (nom, email, cne, password)
-    VALUES ($1, $2, $3, $4)`,
-    [nom, email, cne, passwordhasher],
-  );
-
-  res.json({
-    message: "Inscription réussie ✅",
-    user: { email },
-  });
 });
 
-//////////////////////////////////////////
-
+// --- ROUTE DE CONNEXION ---
 app.post("/api/auth/login", async (req, res) => {
   try {
     const { email, password } = req.body;
-
-    if (!email || !password) {
-      return res.status(400).json({
-        message: "Tous les champs sont obligatoires",
-      });
-    }
-
     const result = await pool.query(
-      "SELECT password FROM etudiant WHERE email = $1",
-      [email],
+        "SELECT id, nom, password, role FROM utilisateurs WHERE email = $1",
+        [email]
     );
 
-    if (result.rowCount === 0) {
-      return res.status(401).json({
-        message: "Email inexistant",
-      });
-    }
+    if (result.rowCount === 0) return res.status(401).json({ message: "Inexistant" });
 
-    const user = result.rows[0];
+    const validPassword = await bcrypt.compare(password, result.rows[0].password);
+    if (!validPassword) return res.status(401).json({ message: "Faux" });
 
-    const validPassword = await bcrypt.compare(password, user.password);
-
-    if (!validPassword) {
-      return res.status(401).json({
-        message: "Mot de passe incorrect",
-      });
-    }
-
-    res.json({
-      message: "Connexion réussie ✅",
-      user: { email },
-    });
+    res.json({ role: result.rows[0].role });
   } catch (error) {
-    console.error("BACKEND ERROR:", error);
-    res.status(500).json({
-      message: "Erreur serveur",
-    });
+    res.status(500).json({ error_brute: error.message });
   }
 });
 
-app.listen(3000, () => {
-  console.log("✅ Serveur lancé sur le port 3000");
-});
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log(`Serveur sur ${PORT}`));

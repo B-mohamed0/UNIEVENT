@@ -1,22 +1,23 @@
-// db.js
+require('dotenv').config(); // N'oublie pas d'installer : npm install dotenv
 const { Pool } = require("pg");
 
-// Créer un pool de connexions
 const pool = new Pool({
-  user: "pfe", // ton utilisateur postgres
-  host: "192.168.1.16", // ou l'adresse de ton serveur
-  database: "pfe", // nom de la base
-  password: "123", // mot de passe
-  port: 5432, // port PostgreSQL par défaut
+  host: process.env.DB_HOST,
+  user: process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
+  database: process.env.DB_NAME,
+  port: process.env.DB_PORT,
+  ssl: {
+    rejectUnauthorized: false // Obligatoire pour se connecter à Supabase depuis l'extérieur
+  }
 });
 
-// Tester la connexion
-pool.connect((err, client, release) => {
+pool.connect((err) => {
   if (err) {
-    return console.error("Erreur de connexion à PostgreSQL", err.stack);
+    console.error("Erreur de connexion à Supabase :", err.stack);
+  } else {
+    console.log("Succès ! Toute l'équipe est connectée à la même base de données.");
   }
-  console.log("Connecté à PostgreSQL");
-  release();
 });
 
 module.exports = pool;
