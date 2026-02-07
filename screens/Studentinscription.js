@@ -18,7 +18,7 @@ import { useState } from "react";
 const { width, height } = Dimensions.get("window");
 
 /* 🔗 URL BACKEND */
-const API_BASE = "http://192.168.1.3:3000/api/auth";
+const API_BASE = "http://192.168.1.11:3000/api/auth";
 
 export default function Studentinscription() {
   const navigation = useNavigation();
@@ -52,7 +52,7 @@ export default function Studentinscription() {
 
       if (response.ok) {
         Alert.alert("Succès", data.message);
-        navigation.navigate("Student");
+        navigation.navigate("Home",{ nom: data.user.nom , cne: data.user.cne });
       } else {
         Alert.alert("Erreur", data.message);
       }
@@ -60,6 +60,8 @@ export default function Studentinscription() {
       console.error(error);
       Alert.alert("Erreur", "Connexion impossible au serveur");
     }
+
+    
   };
 
   return (
@@ -150,7 +152,7 @@ export default function Studentinscription() {
 
         <TouchableOpacity
           style={styles.signupButton}
-          onPress={() => navigation.navigate("home")}
+          onPress={() => navigation.navigate("Student")}
         >
           <Text style={styles.signupText}>sign in</Text>
         </TouchableOpacity>

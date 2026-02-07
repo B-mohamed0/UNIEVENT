@@ -18,7 +18,7 @@ import { useState } from "react";
 const { width, height } = Dimensions.get("window");
 
 /* 🔗 URL BACKEND */
-const API_BASE = "http://192.168.1.3:3000/api/auth";
+const API_BASE = "http://192.168.1.11:3000/api/auth";
 
 export default function StudentScreen() {
   const navigation = useNavigation();
@@ -46,6 +46,7 @@ export default function StudentScreen() {
       if (response.ok) {
         Alert.alert("Succès", data.message);
         console.log("USER:", data.user);
+        navigation.navigate("Home",{ nom: data.user.nom, cne: data.user.cne });
       } else {
         Alert.alert("Erreur", data.message);
       }
