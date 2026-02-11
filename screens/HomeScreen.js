@@ -6,7 +6,7 @@ import {
 } from "react-native";
 import { useEffect, useState } from "react";
 
-const API_BASE = "http://192.168.1.11:3000";
+const API_BASE = "http://192.168.1.2:3000";
 
 export default function HomeScreen({ route, navigation }) {
   const { nom,cne } = route.params; // valeur envoyée par l'écran précédent

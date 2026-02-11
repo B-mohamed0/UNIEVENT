@@ -8,6 +8,8 @@ import {
   TouchableOpacity,
   Dimensions,
   Alert,
+  Animated,
+  Easing,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { BlurView } from "expo-blur";
@@ -18,13 +20,46 @@ import { useState } from "react";
 const { width, height } = Dimensions.get("window");
 
 /* 🔗 URL BACKEND */
-const API_BASE = "http://192.168.1.11:3000/api/auth";
+const API_BASE = "http://192.168.1.2:3000/api/auth";
 
 export default function StudentScreen() {
   const navigation = useNavigation();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [step, setStep] = useState(1); // 1 = email, 2 = password
+  const emailAnim = useState(new Animated.Value(0))[0];
+  const passwordAnim = useState(new Animated.Value(50))[0];
+  const goBackToEmail = () => {
+    setStep(1);
+
+    emailAnim.setValue(0);
+    passwordAnim.setValue(50);
+  };
+
+  const goToPassword = () => {
+    if (!email) {
+      Alert.alert("Erreur", "Veuillez entrer votre email");
+      return;
+    }
+
+    Animated.parallel([
+      Animated.timing(emailAnim, {
+        toValue: 100,
+        duration: 400,
+        useNativeDriver: true,
+        easing: Easing.out(Easing.ease),
+      }),
+      Animated.timing(passwordAnim, {
+        toValue: 0,
+        duration: 400,
+        useNativeDriver: true,
+        easing: Easing.out(Easing.exp),
+      }),
+    ]).start(() => {
+      setStep(2);
+    });
+  };
 
   const handleLogin = async () => {
     if (!email || !password) {
@@ -46,7 +81,7 @@ export default function StudentScreen() {
       if (response.ok) {
         Alert.alert("Succès", data.message);
         console.log("USER:", data.user);
-        navigation.navigate("Home",{ nom: data.user.nom, cne: data.user.cne });
+        navigation.navigate("Home", { nom: data.user.nom, cne: data.user.cne });
       } else {
         Alert.alert("Erreur", data.message);
       }
@@ -62,7 +97,7 @@ export default function StudentScreen() {
         onPress={() => navigation.goBack()}
         activeOpacity={0.2}
       >
-        <Ionicons name="chevron-back" size={30} color="#ffffffff" />
+        <Ionicons name="chevron-back" size={25} color="#ffffffff" />
       </TouchableOpacity>
       <ImageBackground
         source={require("../assets/project/est.png")}
@@ -84,46 +119,101 @@ export default function StudentScreen() {
           resizeMode="contain"
         />
 
-        <BlurView intensity={25} tint="light" style={styles.glassCard}>
-          <Text style={styles.label}>EMAIL</Text>
-          <View style={styles.inputWrapper}>
-            <TextInput
-              placeholder="entrez votre email"
-              placeholderTextColor="#999"
-              value={email}
-              onChangeText={setEmail}
-              keyboardType="email-address"
-              autoCapitalize="none"
-              style={styles.input}
-            />
-          </View>
+        <BlurView
+          intensity={25}
+          tint="light"
+          style={[styles.glassCard, step === 1 && { height: 240 }]}
+        >
+          {/* EMAIL INPUT */}
+          {step === 1 && (
+            <Animated.View
+              style={{
+                transform: [{ translateY: emailAnim }],
+                opacity: emailAnim.interpolate({
+                  inputRange: [0, 100],
+                  outputRange: [1, 0],
+                }),
+              }}
+            >
+              <Text style={styles.label}>EMAIL</Text>
+              <View style={styles.inputWrapper}>
+                <TextInput
+                  placeholder="entrez votre email"
+                  placeholderTextColor="#999"
+                  value={email}
+                  onChangeText={setEmail}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  style={styles.input}
+                  onSubmitEditing={goToPassword}
+                />
+              </View>
+            </Animated.View>
+          )}
 
-          <Text style={styles.label}>PASSWORD</Text>
-          <View style={styles.inputWrapper}>
-            <TextInput
-              placeholder="entrez votre password"
-              placeholderTextColor="#999"
-              secureTextEntry
-              value={password}
-              onChangeText={setPassword}
-              style={styles.input}
-            />
-          </View>
+          {/* PASSWORD INPUT */}
+          {step === 2 && (
+            <Animated.View
+              style={{
+                transform: [{ translateY: passwordAnim }],
+                opacity: passwordAnim.interpolate({
+                  inputRange: [0, 50],
+                  outputRange: [1, 0],
+                }),
+              }}
+            >
+              <Text style={styles.label}>PASSWORD</Text>
+              <View style={styles.inputWrapper}>
+                <TextInput
+                  placeholder="entrez votre password"
+                  placeholderTextColor="#999"
+                  secureTextEntry
+                  value={password}
+                  onChangeText={setPassword}
+                  style={styles.input}
+                />
+              </View>
+              {step === 2 && (
+                <TouchableOpacity onPress={goBackToEmail}>
+                  <Text
+                    style={{
 
-          <TouchableOpacity style={styles.loginButton} onPress={handleLogin}>
+                      marginBottom: 15,
+                      fontSize: 15,
+                      fontWeight: "bold",
+                      alignSelf: "center",
+                      color: "#ffffffff",
+                      paddingright: 10,
+                    }}
+                  >
+                    ← Modifier l'email
+                  </Text>
+                </TouchableOpacity>
+              )}
+            </Animated.View>
+          )}
+
+          <TouchableOpacity
+            style={styles.loginButton}
+            onPress={step === 1 ? goToPassword : handleLogin}
+          >
             <LinearGradient
               colors={["#183282", "rgba(74, 94, 175, 0.82)"]}
               style={styles.loginGradient}
             >
-              <Text style={styles.loginText}>se connecter</Text>
+              <Text style={styles.loginText}>
+                {step === 1 ? "Suivant" : "Se connecter"}
+              </Text>
             </LinearGradient>
           </TouchableOpacity>
 
-          <TouchableOpacity
-            onPress={() => navigation.navigate("Studentinscription")}
-          >
-            <Text style={styles.forgot}>forget password ?</Text>
-          </TouchableOpacity>
+          {step === 2 && (
+            <TouchableOpacity
+              onPress={() => navigation.navigate("Studentinscription")}
+            >
+              <Text style={styles.forgot}>forget password ?</Text>
+            </TouchableOpacity>
+          )}
         </BlurView>
 
         <TouchableOpacity
@@ -217,7 +307,7 @@ const styles = StyleSheet.create({
 
   glassCard: {
     width: 320,
-    height: 360,
+    height: 300,
     borderRadius: 30,
     padding: 25,
     paddingTop: 40,
@@ -260,7 +350,7 @@ const styles = StyleSheet.create({
     borderRadius: 26,
     overflow: "hidden",
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.2)",
+    borderColor: "rgba(255, 255, 255, 0.32)",
   },
 
   loginGradient: {
@@ -280,22 +370,28 @@ const styles = StyleSheet.create({
   forgot: {
     marginTop: 25,
     textAlign: "center",
-    color: "#FFFFFF",
+    color: "#4d7ab8ff",
     fontSize: 14,
     fontFamily: "HeyComic",
   },
 
   signupButton: {
-    marginTop: 40,
-    backgroundColor: "#E6E6E6",
+    marginTop: 70,
+    backgroundColor: "rgba(255, 255, 255, 0.26)",
     borderRadius: 30,
     paddingHorizontal: 50,
     paddingVertical: 10,
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.32)",
+    shadowColor: "#000000ff",
+    shadowOpacity: 0.5,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 10 },
   },
 
   signupText: {
     fontSize: 22,
-    color: "#000",
+    color: "#ffffffff",
     fontFamily: "ALMASBold",
   },
 });

@@ -4,6 +4,11 @@ const bcrypt = require("bcrypt");
 const cors = require("cors");
 
 const app = express();
+const helmet = require("helmet");
+const xss = require("xss-clean");
+
+app.use(helmet()); // Protection des headers
+app.use(xss());    // Nettoie les inputs contre les attaques XSS
 
 app.use(cors());
 app.use(express.json());
