@@ -10,7 +10,9 @@ import OrganizerScreen from "./screens/OrganizerScreen";
 import AdminScreen from "./screens/AdminScreen";
 import Studentinscription from "./screens/Studentinscription";
 import HomeScreen from "./screens/HomeScreen";
-
+import Verificationemail from "./screens/Verificationemail";
+import Eventsscreen from "./screens/Eventsscreen";
+import Eventinfo from "./screens/Eventinfo";
 const Stack = createNativeStackNavigator();
 
 export default function App() {
@@ -20,6 +22,10 @@ export default function App() {
     HeyComic: require("./fonts/Hey Comic.otf"),
     Insignia: require("./fonts/Insignia Regular.otf"),
     ALMASBold: require("./fonts/ALMAS-Bold.ttf"),
+    araalm: require("./fonts/AraAlmBon-Regular.otf"),
+    jokeyone: require("./fonts/JockeyOne-Regular.ttf"),
+    babyu: require("./fonts/BABYU.ttf"),
+    daretro: require("./fonts/Daretro Mandra.ttf"),
   });
 
   // attendre que la font soit chargée
@@ -38,6 +44,9 @@ export default function App() {
         <Stack.Screen name="Admin" component={AdminScreen} />
         <Stack.Screen name="Studentinscription" component={Studentinscription} />
         <Stack.Screen name="Home" component={HomeScreen} />
+        <Stack.Screen name="Eventinfo" component={Eventinfo} />
+        <Stack.Screen name="Eventsscreen" component={Eventsscreen} />
+        <Stack.Screen name="Verificationemail" component={Verificationemail} />
       </Stack.Navigator>
     </NavigationContainer>
   );

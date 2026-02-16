@@ -17,10 +17,11 @@ import { useNavigation } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 import { useState } from "react";
 
+
 const { width, height } = Dimensions.get("window");
 
 /* 🔗 URL BACKEND */
-const API_BASE = "http://192.168.1.2:3000/api/auth";
+const API_BASE = "http://192.168.1.15:3000/api/auth";
 
 export default function StudentScreen() {
   const navigation = useNavigation();
@@ -81,7 +82,7 @@ export default function StudentScreen() {
       if (response.ok) {
         Alert.alert("Succès", data.message);
         console.log("USER:", data.user);
-        navigation.navigate("Home", { nom: data.user.nom, cne: data.user.cne });
+        navigation.navigate("Home", { nom: data.user.nom, id: data.user.id });
       } else {
         Alert.alert("Erreur", data.message);
       }
@@ -114,7 +115,11 @@ export default function StudentScreen() {
 
       <View style={styles.content}>
         <Image
-          source={require("../assets/project/boy.png")}
+          source={
+            password.length > 0
+              ? require("../assets/project/boypass.png")
+              : require("../assets/project/boy.png")
+          }
           style={styles.logo}
           resizeMode="contain"
         />
@@ -177,7 +182,6 @@ export default function StudentScreen() {
                 <TouchableOpacity onPress={goBackToEmail}>
                   <Text
                     style={{
-
                       marginBottom: 15,
                       fontSize: 15,
                       fontWeight: "bold",
@@ -322,6 +326,7 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
     fontSize: 15,
     marginBottom: 6,
+    marginTop: 10,
     fontWeight: "600",
     fontFamily: "Insignia",
   },

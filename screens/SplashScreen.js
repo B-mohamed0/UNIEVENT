@@ -10,40 +10,61 @@ import {
 } from "react-native";
 import MaskedView from "@react-native-masked-view/masked-view";
 import { LinearGradient } from "expo-linear-gradient";
+import { Easing } from "react-native";
 
 const { width, height } = Dimensions.get("window");
 
 export default function SplashScreen({ navigation }) {
 const scaleAnim = useRef(new Animated.Value(0.95)).current;
 const opacityAnim = useRef(new Animated.Value(0)).current;
-const translateYAnim = useRef(new Animated.Value(10)).current;
+
 
 useEffect(() => {
 
-  Animated.parallel([
-    Animated.timing(scaleAnim, {
-      toValue: 1,
-      duration: 1200,
-      useNativeDriver: true,
-    }),
-    Animated.timing(opacityAnim, {
-      toValue: 1,
-      duration: 1200,
-      useNativeDriver: true,
-    }),
-    Animated.timing(translateYAnim, {
-      toValue: 0,
-      duration: 1200,
-      useNativeDriver: true,
-    }),
-  ]).start();
+  const loopAnimation = Animated.loop(
+    Animated.sequence([
+      // Apparition
+      Animated.parallel([
+        Animated.timing(scaleAnim, {
+          toValue: 1,
+          duration: 700,
+          easing: Easing.out(Easing.ease),
+          useNativeDriver: true,
+        }),
+        Animated.timing(opacityAnim, {
+          toValue: 1,
+          duration: 700,
+          easing: Easing.out(Easing.ease),
+          useNativeDriver: true,
+        }),
+      ]),
 
-  const timer = setTimeout(() => {
-    navigation.replace("QuiSuisJe");
-  }, 3000);
+      // Disparition
+      Animated.parallel([
+        Animated.timing(scaleAnim, {
+          toValue: 0.98,
+          duration: 300,
+          easing: Easing.in(Easing.ease),
+          useNativeDriver: true,
+        }),
+        Animated.timing(opacityAnim, {
+          toValue: 0,
+          duration: 300,
+          easing: Easing.in(Easing.ease),
+          useNativeDriver: true,
+        }),
+      ]),
+    ])
+  );
 
-  return () => clearTimeout(timer);
+  const timer = setTimeout(() => { navigation.replace("QuiSuisJe"); }, 3000);
+  loopAnimation.start();
+
+  return () => loopAnimation.stop();
+
 }, []);
+
+
 
   return (
     <ImageBackground
@@ -69,7 +90,6 @@ useEffect(() => {
     opacity: opacityAnim,
     transform: [
       { scale: scaleAnim },
-      { translateY: translateYAnim },
     ],
   }}
 >
