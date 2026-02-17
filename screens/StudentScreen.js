@@ -18,6 +18,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useState } from "react";
 
 
+
 const { width, height } = Dimensions.get("window");
 
 /* 🔗 URL BACKEND */

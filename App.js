@@ -13,6 +13,7 @@ import HomeScreen from "./screens/HomeScreen";
 import Verificationemail from "./screens/Verificationemail";
 import Eventsscreen from "./screens/Eventsscreen";
 import Eventinfo from "./screens/Eventinfo";
+import { NavbarProvider } from "./context/NavbarContext";
 const Stack = createNativeStackNavigator();
 
 export default function App() {
@@ -34,20 +35,22 @@ export default function App() {
   }
 
   return (
-    <NavigationContainer>
-      <Stack.Navigator screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="Splash" component={SplashScreen} />
-        <Stack.Screen name="QuiSuisJe" component={QuiSuisJeScreen} />
-        <Stack.Screen name="Student" component={StudentScreen} />
-        <Stack.Screen name="Teacher" component={TeacherScreen} />
-        <Stack.Screen name="Organizer" component={OrganizerScreen} />
-        <Stack.Screen name="Admin" component={AdminScreen} />
-        <Stack.Screen name="Studentinscription" component={Studentinscription} />
-        <Stack.Screen name="Home" component={HomeScreen} />
-        <Stack.Screen name="Eventinfo" component={Eventinfo} />
-        <Stack.Screen name="Eventsscreen" component={Eventsscreen} />
-        <Stack.Screen name="Verificationemail" component={Verificationemail} />
-      </Stack.Navigator>
-    </NavigationContainer>
+    <NavbarProvider>
+      <NavigationContainer>
+        <Stack.Navigator screenOptions={{ headerShown: false, animation: "fade" }}>
+          <Stack.Screen name="Splash" component={SplashScreen} />
+          <Stack.Screen name="QuiSuisJe" component={QuiSuisJeScreen} />
+          <Stack.Screen name="Student" component={StudentScreen} />
+          <Stack.Screen name="Teacher" component={TeacherScreen} />
+          <Stack.Screen name="Organizer" component={OrganizerScreen} />
+          <Stack.Screen name="Admin" component={AdminScreen} />
+          <Stack.Screen name="Studentinscription" component={Studentinscription} />
+          <Stack.Screen name="Home" component={HomeScreen} />
+          <Stack.Screen name="Eventinfo" component={Eventinfo} />
+          <Stack.Screen name="Eventsscreen" component={Eventsscreen} />
+          <Stack.Screen name="Verificationemail" component={Verificationemail} />
+        </Stack.Navigator>
+      </NavigationContainer>
+    </NavbarProvider>
   );
 }

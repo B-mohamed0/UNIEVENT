@@ -18,6 +18,7 @@ import BottomNav from "../components/navbar";
 
 
 
+
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const CARD_WIDTH = SCREEN_WIDTH - 40;
 
@@ -419,7 +420,7 @@ export default function ProfileScreen({ route, navigation }) {
           <View style={styles.actionButtonsContainer}>
             <TouchableOpacity
               style={styles.actionButtonWrapper}
-              onPress={() => navigation.navigate("EventsScreen", { id, nom })}
+              onPress={() => navigation.navigate("Eventsscreen", { id, nom })}
               activeOpacity={0.8}
             >
               <LinearGradient

@@ -4,6 +4,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { BlurView } from "expo-blur";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { LinearGradient } from "expo-linear-gradient";
+import { useNavbarContext } from "../context/NavbarContext";
 
 const BottomNav = ({ id, nom }) => {
   const navigation = useNavigation();
@@ -19,9 +20,10 @@ const BottomNav = ({ id, nom }) => {
     if (isActive("Organizer")) return 2;
     return -1; // Default or fallback
   };
+  const { lastIndex, setLastIndex } = useNavbarContext();
 
   const activeIndex = getActiveIndex();
-  const animatedValue = React.useRef(new Animated.Value(activeIndex)).current;
+  const animatedValue = React.useRef(new Animated.Value(lastIndex)).current;
 
   // Animate when active index changes
   useEffect(() => {
@@ -31,7 +33,9 @@ const BottomNav = ({ id, nom }) => {
         duration: 300,
         easing: Easing.out(Easing.ease),
         useNativeDriver: true,
-      }).start();
+      }).start(() => {
+        setLastIndex(activeIndex);
+      });
     }
   }, [activeIndex]);
 

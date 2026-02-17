@@ -12,6 +12,8 @@ import { BlurView } from "expo-blur";
 import { Ionicons } from "@expo/vector-icons";
 import BackButton from "../components/BackButton";
 import BottomNav from "../components/navbar";
+
+
 import conference from "../assets/project/conference.png";
 import estwhite from "../assets/project/estwhite.png";
 
