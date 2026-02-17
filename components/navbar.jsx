@@ -1,37 +1,59 @@
-import React, { useEffect, useState } from "react";
-import { StyleSheet, TouchableOpacity, View, Platform, Animated, Easing } from "react-native";
+import React, { useEffect, useRef } from "react";
+import {
+  StyleSheet,
+  TouchableOpacity,
+  View,
+  Animated,
+  Easing,
+  Dimensions,
+} from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { BlurView } from "expo-blur";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { LinearGradient } from "expo-linear-gradient";
+import { BlurView } from "expo-blur";
 import { useNavbarContext } from "../context/NavbarContext";
+
+const AnimatedLinearGradient = Animated.createAnimatedComponent(LinearGradient);
+
+const { width: SCREEN_WIDTH } = Dimensions.get("window");
+
+// ─── CONFIG ────────────────────────────────────────────
+const TAB_COUNT = 4;
+const BAR_WIDTH = SCREEN_WIDTH * 0.7;
+const TAB_WIDTH = BAR_WIDTH / TAB_COUNT;
+const INDICATOR_SIZE = 48;
+const INDICATOR_OFFSET = (TAB_WIDTH - INDICATOR_SIZE) / 2;
+
+const TABS = [
+  { screen: "Home", icon: "home", iconOutline: "home-outline" },
+  { screen: "Eventsscreen", icon: "calendar", iconOutline: "calendar-outline" },
+  { screen: "Organizer", icon: "bar-chart", iconOutline: "bar-chart-outline" },
+  { screen: "Student", icon: "person", iconOutline: "person-outline" },
+];
 
 const BottomNav = ({ id, nom }) => {
   const navigation = useNavigation();
   const route = useRoute();
-
-  const isActive = (screen) =>
-    route.name === screen || (screen === "Student" && route.name === "Eventinfo");
-
-  // Determine active index based on route
-  const getActiveIndex = () => {
-    if (isActive("Home")) return 0;
-    if (isActive("Student")) return 1;
-    if (isActive("Organizer")) return 2;
-    return -1; // Default or fallback
-  };
   const { lastIndex, setLastIndex } = useNavbarContext();
 
-  const activeIndex = getActiveIndex();
-  const animatedValue = React.useRef(new Animated.Value(lastIndex)).current;
+  const getActiveIndex = () => {
+    for (let i = 0; i < TABS.length; i++) {
+      if (route.name === TABS[i].screen) return i;
+    }
+    if (route.name === "Eventinfo") return 1;
+    return -1;
+  };
 
-  // Animate when active index changes
+  const activeIndex = getActiveIndex();
+
+  const animatedValue = useRef(new Animated.Value(lastIndex)).current;
+
   useEffect(() => {
     if (activeIndex !== -1) {
       Animated.timing(animatedValue, {
         toValue: activeIndex,
         duration: 300,
-        easing: Easing.out(Easing.ease),
+        easing: Easing.out(Easing.cubic),
         useNativeDriver: true,
       }).start(() => {
         setLastIndex(activeIndex);
@@ -39,121 +61,121 @@ const BottomNav = ({ id, nom }) => {
     }
   }, [activeIndex]);
 
-  // Width of container is 200 (hardcoded in styles)
-  // 3 items distributed with space-around.
-  // Center positions: ~33.33, ~100, ~166.66
-  // Gradient width: 70
-  // Left offsets: 33.33 - 35 = -1.67, 100 - 35 = 65, 166.66 - 35 = 131.66
-
-  // Interpolation mapping index to translateX
   const translateX = animatedValue.interpolate({
-    inputRange: [0, 1, 2],
-    outputRange: [-1.67, 65, 131.66],
+    inputRange: TABS.map((_, i) => i),
+    outputRange: TABS.map((_, i) => i * TAB_WIDTH + INDICATOR_OFFSET),
   });
 
-  const AnimatedLinearGradient = Animated.createAnimatedComponent(LinearGradient);
+  const handlePress = (tab) => {
+    navigation.navigate(tab.screen, { nom, id });
+  };
 
   return (
     <View style={styles.wrapper}>
-      <BlurView intensity={10} tint="light" style={styles.glassContainer}>
-        {/* Animated Active Indicator */}
+      <View style={styles.glassContainer}>
+        {/* Blur background */}
+        <BlurView intensity={10} tint="light" style={styles.blur} />
+
+        {/* Border overlay */}
+        <View style={styles.glassOverlay} />
+
+        {/* ── Sliding Indicator ── */}
         {activeIndex !== -1 && (
           <AnimatedLinearGradient
-            colors={["#7aadffff", "#2563EB", "#0e2d96ff"]}
+            colors={["#6C9FFF", "#2563EB", "#1240A8"]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={[
-              styles.activeGradient,
-              { transform: [{ translateX }] }
+              styles.indicator,
+              { transform: [{ translateX }] },
             ]}
           />
         )}
 
-        <TouchableOpacity
-          style={styles.navItem}
-          onPress={() => navigation.navigate("Home", { nom, id })}
-        >
-          <Ionicons
-            name="home"
-            size={24}
-            color={isActive("Home") ? "#fff" : "#000"}
-          />
-        </TouchableOpacity>
+        {/* ── Tabs ── */}
+        {TABS.map((tab) => {
+          const isTabActive =
+            route.name === tab.screen ||
+            (tab.screen === "Eventsscreen" && route.name === "Eventinfo");
 
-        <TouchableOpacity
-          style={styles.navItem}
-          onPress={() => navigation.navigate("Student")}
-        >
-          <Ionicons
-            name="calendar"
-            size={24}
-            color={isActive("Student") ? "#fff" : "#000"}
-          />
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.navItem}
-          onPress={() => navigation.navigate("Organizer")}
-        >
-          <Ionicons
-            name="bar-chart"
-            size={24}
-            color={isActive("Organizer") ? "#fff" : "#000"}
-          />
-        </TouchableOpacity>
-      </BlurView>
+          return (
+            <TouchableOpacity
+              key={tab.screen}
+              style={styles.tab}
+              onPress={() => handlePress(tab)}
+              activeOpacity={0.7}
+            >
+              <Ionicons
+                name={isTabActive ? tab.icon : tab.iconOutline}
+                size={24}
+                color={isTabActive ? "#ffffffff" : "#ffffffff"}
+              />
+            </TouchableOpacity>
+          );
+        })}
+      </View>
     </View>
   );
 };
 
 export default BottomNav;
 
+// ─── STYLES ──────────────────────────────────────────────
 const styles = StyleSheet.create({
   wrapper: {
     position: "absolute",
-    bottom: 25,
+    bottom: 20,
     width: "100%",
     alignItems: "center",
   },
 
   glassContainer: {
+    width: BAR_WIDTH,
+    height: 64,
+    borderRadius: 32,
+    overflow: "hidden",
     flexDirection: "row",
-    width: 200,
-    height: 60,
-    borderRadius: 30,
-    justifyContent: "space-around",
     alignItems: "center",
 
-    // Effet glass
-    backgroundColor: "rgba(255, 255, 255, 0.25)",
-    borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.6)",
-
-    // Ombre douce
+    // ombre douce
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.15,
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.25,
     shadowRadius: 20,
-    elevation: 10,
-
-    overflow: "hidden",
+    elevation: 15,
   },
 
-  navItem: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+  blur: {
+    ...StyleSheet.absoluteFillObject,
+  },
+
+  glassOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(255, 255, 255, 0.11)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.3)",
+  },
+
+  tab: {
+    width: TAB_WIDTH,
+    height: 64,
     justifyContent: "center",
     alignItems: "center",
-    zIndex: 1, // Ensure icon is above gradient
+    zIndex: 2,
   },
 
-  activeGradient: {
+  indicator: {
     position: "absolute",
-    left: 0, // Base position
-    width: 70,
-    height: 60,
-    borderRadius: 30,
-    zIndex: 0, // Behind the icons
+    left: 0,
+    width: INDICATOR_SIZE,
+    height: INDICATOR_SIZE,
+    borderRadius: INDICATOR_SIZE / 2,
+    zIndex: 1,
+
+    shadowColor: "#2563EB",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.4,
+    shadowRadius: 8,
+    elevation: 8,
   },
 });
