@@ -22,8 +22,8 @@ const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const CARD_WIDTH = SCREEN_WIDTH - 40;
 
 // ================= CONFIGURATION API =================
-const API_URL_USER = "http://192.168.1.15:3000/api/user";
-const API_URL_EVENTS = "http://192.168.1.15:3000/api/events";
+const API_URL_USER = "http://172.20.10.3:3000/api/user";
+const API_URL_EVENTS = "http://172.20.10.3:3000/api/events";
 
 export default function ProfileScreen({ route, navigation }) {
   const { nom, id } = route.params;
@@ -31,7 +31,7 @@ export default function ProfileScreen({ route, navigation }) {
   const [openEventId, setOpenEventId] = useState(null);
 
   const [userData, setUserData] = useState({
-    name: nom || "N O M   P R E N O M",
+    name: nom,
     greeting: "Bonjour",
     dateInfo: new Date().toLocaleDateString("fr-FR"),
     stats: { upcomingEvents: 0, todayEvents: 0, completedEvents: 0 },
@@ -242,6 +242,7 @@ export default function ProfileScreen({ route, navigation }) {
                   navigation.navigate("Eventinfo", {
                     eventId: event.id,
                     studentId: id,
+                    nom,
                   })
                 }
               >
@@ -382,7 +383,7 @@ export default function ProfileScreen({ route, navigation }) {
 
           <BlurView intensity={10} tint="light" style={styles.statCard}>
             <Ionicons name="checkmark-circle" size={40} color="#000" />
-            <Text style={styles.statLabel}>Événements terminés</Text>
+            <Text style={styles.statLabel}>Présences validées</Text>
             <Text style={styles.statNumber}>
               {userData.stats.completedEvents}
             </Text>
@@ -446,7 +447,7 @@ export default function ProfileScreen({ route, navigation }) {
           </View>
         </View>
       </ScrollView>
-      <BottomNav />
+      <BottomNav id={id} nom={nom} />
 
     </ImageBackground>
   );
@@ -505,8 +506,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
     overflow: "hidden",
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.48)",
-    backgroundColor: "rgba(255, 255, 255, 0.3)",
+    borderColor: "rgba(144, 144, 144, 0.2)",
+    backgroundColor: "rgba(255, 255, 255, 0.2)",
   },
 
   statLabel: {

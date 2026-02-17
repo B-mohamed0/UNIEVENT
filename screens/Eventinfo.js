@@ -16,13 +16,13 @@ import conference from "../assets/project/conference.png";
 import estwhite from "../assets/project/estwhite.png";
 
 const EventInfo = ({ route }) => {
-  const { eventId, studentId } = route.params;
+  const { eventId, studentId, nom } = route.params;
 
   const [event, setEvent] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch(`http://192.168.1.15:3000/api/events/detail/${eventId}/${studentId}`)
+    fetch(`http://172.20.10.3:3000/api/events/detail/${eventId}/${studentId}`)
       .then((res) => res.json())
       .then((data) => {
         setEvent(data);
@@ -127,7 +127,7 @@ const EventInfo = ({ route }) => {
             <View style={styles.row}>
               <Ionicons name="time-outline" size={25} />
               <Text style={styles.infoText}>
-                {event.heure_debut} - {event.heure_fin}
+                {event.heure_debut?.slice(0, 5)} - {event.heure_fin?.slice(0, 5)}
               </Text>
             </View>
 
@@ -141,9 +141,10 @@ const EventInfo = ({ route }) => {
           <BlurView intensity={20} tint="light" style={styles.card}>
             <Text style={styles.sectionTitle}>Organisation</Text>
             <View style={styles.inforga}>
-            <Text>Organisateur : {event.organisateur_nom}</Text>
-            <Text>Animateur : {event.nom_animateur}</Text>
-            <Text>Catégorie : {event.categorie}</Text>
+              <Text><Text style={{ fontWeight: 'bold' }}>Organisateur :</Text> {event.organisateur_nom}</Text>
+              <Text><Text style={{ fontWeight: 'bold' }}>Animateur :</Text> {event.nom_animateur}</Text>
+              <Text><Text style={{ fontWeight: 'bold' }}>Catégorie :</Text> {event.categorie}</Text>
+
             </View>
           </BlurView>
 
@@ -152,7 +153,7 @@ const EventInfo = ({ route }) => {
       </ImageBackground>
 
       {/* NAVBAR FIXE */}
-      <BottomNav />
+      <BottomNav id={studentId} nom={nom} />
     </View>
   );
 };
@@ -191,7 +192,7 @@ const styles = StyleSheet.create({
     marginTop: 10,
     width: 130,
     borderRadius: 25,
-    overflow: "hidden", 
+    overflow: "hidden",
   },
 
   glassButton: {

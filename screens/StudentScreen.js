@@ -21,7 +21,7 @@ import { useState } from "react";
 const { width, height } = Dimensions.get("window");
 
 /* 🔗 URL BACKEND */
-const API_BASE = "http://192.168.1.15:3000/api/auth";
+const API_BASE = "http://172.20.10.3:3000/api/auth";
 
 export default function StudentScreen() {
   const navigation = useNavigation();
