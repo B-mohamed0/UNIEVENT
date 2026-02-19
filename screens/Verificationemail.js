@@ -37,7 +37,7 @@ export default function Verificationemail() {
   const handleVerify = () => {
     const finalCode = code.join("");
 
-    if (finalCode.length !== 4) {
+    if (finalCode.length !== 6) {
       Alert.alert("Erreur", "Entrez le code complet");
       return;
     }

@@ -2,46 +2,116 @@ const express = require("express");
 const pool = require("./db");
 const bcrypt = require("bcrypt");
 const cors = require("cors");
+const helmet = require("helmet");
+const nodemailer = require("nodemailer");
 
 const app = express();
-const helmet = require("helmet");
 
-
-app.use(helmet()); // Protection des headers
-  // Nettoie les inputs contre les attaques XSS
-
+// --- CONFIGURATION SÉCURITÉ ET MIDDLEWARES ---
+app.use(helmet());
 app.use(cors());
 app.use(express.json());
 
+// --- STOCKAGE TEMPORAIRE DES CODES OTP ---
+const otpStore = new Map();
+
+// --- CONFIGURATION DE NODEMAILER ---
+const transporter = nodemailer.createTransport({
+  service: "gmail",
+  auth: {
+    user: "aminezakhir8@gmail.com",
+    pass: "kudv hsmq mtfw tfpt",
+  },
+});
+
+// ==========================================
+// 1. ROUTE : ENVOYER LE CODE (OTP)
+// ==========================================
+app.post("/api/auth/send-otp", async (req, res) => {
+  const { email } = req.body;
+
+  if (!email) {
+    return res.status(400).json({ message: "L'email est requis" });
+  }
+
+  const code = Math.floor(100000 + Math.random() * 900000).toString();
+
+  otpStore.set(email, {
+    code,
+    expires: Date.now() + 300000,
+  });
+
+  try {
+    await transporter.sendMail({
+      from: '"Service EST" <aminezakhir8@gmail.com>',
+      to: email,
+      subject: "Votre code de vérification",
+      html: `
+        <div style="font-family: Arial, sans-serif; text-align: center;">
+          <h2>Code de vérification</h2>
+          <p>Utilisez le code suivant pour votre inscription :</p>
+          <h1 style="color: #143287;">${code}</h1>
+          <p>Ce code expirera dans 5 minutes.</p>
+        </div>
+      `,
+    });
+
+    console.log(`Code OTP envoyé à ${email}`);
+    res.json({ message: "Code envoyé par mail" });
+  } catch (error) {
+    console.error("Erreur Nodemailer:", error);
+    res.status(500).json({ message: "Erreur lors de l'envoi du mail" });
+  }
+});
+
+// ==========================================
+// 2. ROUTE : VÉRIFIER LE CODE (OTP)
+// ==========================================
+app.post("/api/auth/verify-otp", (req, res) => {
+  const { email, otp } = req.body;
+
+  if (!otp || otp.length !== 6) {
+    return res.status(400).json({ message: "Code invalide" });
+  }
+  const data = otpStore.get(email);
+
+  if (data && data.code === otp && Date.now() < data.expires) {
+    otpStore.delete(email);
+    return res.json({ message: "Vérification réussie" });
+  }
+
+  res.status(400).json({ message: "Code invalide ou expiré" });
+});
+
+// ==========================================
+// 3. ROUTE : INSCRIPTION FINALE
+// ==========================================
 app.post("/api/auth/inscription", async (req, res) => {
   const { nom, email, cne, password } = req.body;
 
   if (!nom || !email || !password || !cne) {
-    return res
-      .status(400)
-      .json({ message: "Tous les champs sont obligatoires" });
+    return res.status(400).json({ message: "Tous les champs sont obligatoires" });
   }
-  const salt = await bcrypt.genSalt(10);
-  const passwordhasher = await bcrypt.hash(password, salt);
-  await pool.query(
-    `INSERT INTO etudiant (nom, email, id, password)
-    VALUES ($1, $2, $3, $4)`,
-    [nom, email, cne, passwordhasher],
-  );
-  const id= await pool.query(
-    `select id from etudiant where email=$1`,
-  
-    [ email],
-  );
 
-  res.json({
-    message: "Inscription réussie ✅",
-    user: { nom, id },
-  });
+  try {
+    const salt = await bcrypt.genSalt(10);
+    const passwordhasher = await bcrypt.hash(password, salt);
+
+    await pool.query(
+      `INSERT INTO etudiant (nom, email, id, password) VALUES ($1, $2, $3, $4)`,
+      [nom, email, cne, passwordhasher]
+    );
+
+    res.json({ message: "Inscription réussie ✅", user: { nom, cne } });
+  } catch (error) {
+    console.error("ERREUR SQL DÉTAILLÉE :", error.message);
+    res.status(500).json({ message: "Erreur lors de l'enregistrement", dev_detail: error.message });
+  }
 });
 
-//////////////////////////////////////////
-
+// ==========================================
+// 4. ROUTE : CONNEXION (LOGIN)
+// ==========================================
 app.post("/api/auth/login", async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -190,8 +260,8 @@ app.get("/api/events/upcoming/:studentId", async (req, res) => {
     const events = result.rows.map(event => {
       // Déterminer le statut pour l'affichage
       let eventStatus = "À VENIR";
-      if (event.status === "MAINTENANT" || 
-          (event.date === today && event.heure_debut <= currentTime && event.heure_fin >= currentTime)) {
+      if (event.status === "MAINTENANT" ||
+        (event.date === today && event.heure_debut <= currentTime && event.heure_fin >= currentTime)) {
         eventStatus = "EN COURS";
       }
 
@@ -203,7 +273,7 @@ app.get("/api/events/upcoming/:studentId", async (req, res) => {
     });
 
     console.log(`✅ ${events.length} événements non expirés trouvés`);
-    
+
     res.json({
       events: events,
       count: events.length,
@@ -289,8 +359,8 @@ app.get("/api/events/active/:studentId", async (req, res) => {
 
     // Déterminer le statut pour l'affichage (EN COURS ou À VENIR)
     let eventStatus = "À VENIR";
-    if (event.status === "MAINTENANT" || 
-        (event.date === today && event.heure_debut <= currentTime && event.heure_fin >= currentTime)) {
+    if (event.status === "MAINTENANT" ||
+      (event.date === today && event.heure_debut <= currentTime && event.heure_fin >= currentTime)) {
       eventStatus = "EN COURS";
     }
 
@@ -303,7 +373,7 @@ app.get("/api/events/active/:studentId", async (req, res) => {
     console.log(`✅ Événement trouvé: ${event.nom_evenement} (${eventStatus})`);
     console.log(`📝 Statut événement: ${event.status}`);
     console.log(`👤 Statut participation: ${event.participation_status || 'Non inscrit'}`);
-    
+
     res.json({
       event: eventData,
       message: `Événement ${eventStatus.toLowerCase()} trouvé`,
@@ -451,7 +521,7 @@ app.post("/api/events/register", async (req, res) => {
     );
 
     console.log(`✅ Étudiant ${studentId} inscrit à l'événement ${eventId}`);
-    
+
     res.json({
       message: "Inscription réussie ✅",
       status: "EN_COURS",
@@ -483,7 +553,7 @@ app.delete("/api/events/unregister/:participationId", async (req, res) => {
     }
 
     console.log(`✅ Participation ${participationId} supprimée`);
-    
+
     res.json({
       message: "Désinscription réussie ✅",
     });

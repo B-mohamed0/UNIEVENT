@@ -291,18 +291,18 @@ export default function ProfileScreen({ route, navigation }) {
   const renderCarousel = () => {
     if (loadingEvents) {
       return (
-        <View style={styles.loadingCard}>
+        <BlurView intensity={20} tint="light" style={styles.loadingCard}>
           <Text style={styles.loadingText}>Chargement...</Text>
-        </View>
+        </BlurView>
       );
     }
 
     if (upcomingEvents.length === 0) {
       return (
-        <View style={styles.noEventCard}>
-          <Ionicons name="calendar-outline" size={40} color="#999" />
+        <BlurView intensity={10} tint="light" style={styles.noEventCard}>
+          <Ionicons name="calendar-outline" size={40} color="#0050acff" />
           <Text style={styles.noEventText}>Aucun événement à venir</Text>
-        </View>
+        </BlurView>
       );
     }
 
@@ -704,29 +704,36 @@ const styles = StyleSheet.create({
   },
 
   loadingCard: {
-    backgroundColor: "#F5F5F5",
     borderRadius: 20,
     padding: 40,
     marginHorizontal: 20,
     marginVertical: 15,
     alignItems: "center",
+    backgroundColor: "rgba(255, 255, 255, 0.2)",
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.3)",
+    overflow: "hidden",
   },
   loadingText: {
-    color: "#666",
+    color: "#FFF",
     fontSize: 14,
   },
   noEventCard: {
-    backgroundColor: "#F5F5F5",
     borderRadius: 20,
     padding: 40,
     marginHorizontal: 20,
     marginVertical: 15,
     alignItems: "center",
+    backgroundColor: "rgba(255, 255, 255, 0.2)",
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.3)",
+    overflow: "hidden",
   },
   noEventText: {
-    color: "#666",
+    color: "#0050acff",
     fontSize: 14,
     marginTop: 10,
+    fontWeight: "600",
   },
 
   // ================= STYLES ORIGINAUX =================
