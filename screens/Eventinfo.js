@@ -24,7 +24,7 @@ const EventInfo = ({ route }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch(`http://172.20.10.3:3000/api/events/detail/${eventId}/${studentId}`)
+    fetch(`http://localhost:3000/api/events/detail/${eventId}/${studentId}`)
       .then((res) => res.json())
       .then((data) => {
         setEvent(data);
@@ -215,11 +215,11 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontFamily: "Insignia",
   },
-
+  
   statusContainer: {
     flexDirection: "row",
     alignItems: "center",
-    marginRight: 20,
+    marginLeft: -100,
     marginBottom: 8,
   },
 

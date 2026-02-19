@@ -23,8 +23,8 @@ const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const CARD_WIDTH = SCREEN_WIDTH - 40;
 
 // ================= CONFIGURATION API =================
-const API_URL_USER = "http://172.20.10.3:3000/api/user";
-const API_URL_EVENTS = "http://172.20.10.3:3000/api/events";
+const API_URL_USER = "http://localhost:3000/api/user";
+const API_URL_EVENTS = "http://localhost:3000/api/events";
 
 export default function ProfileScreen({ route, navigation }) {
   const { nom, id } = route.params;
