@@ -30,6 +30,31 @@ export default function OrganizerStats({ route, navigation }) {
         cardBorder: isDarkMode ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.05)",
     };
 
+    const [stats, setStats] = useState({
+        totalEvenement: 0,
+        totalParticipants: 0,
+        bestTauxPresence: "0%"
+    });
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchStats = async () => {
+            try {
+                const response = await fetch(`http://192.168.1.3:3000/api/organizer/stats/${id}`);
+                const data = await response.json();
+                if (response.ok) {
+                    setStats(data);
+                }
+            } catch (error) {
+                console.error("Erreur lors de la récupération des stats:", error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchStats();
+    }, [id]);
+
     return (
         <OrganizerBackground>
             <StatusBar barStyle={isDarkMode ? "light-content" : "dark-content"} translucent backgroundColor="transparent" />
@@ -72,17 +97,17 @@ export default function OrganizerStats({ route, navigation }) {
                 <View style={styles.statsGrid}>
                     <BlurView intensity={30} tint={themeColors.blurTint} style={[styles.gridItem, { borderColor: themeColors.cardBorder }]}>
                         <Text style={[styles.gridLabel, { color: themeColors.subText }]}>Total Événements</Text>
-                        <Text style={[styles.gridValue, { color: themeColors.text }]}>32</Text>
+                        <Text style={[styles.gridValue, { color: themeColors.text }]}>{stats.totalEvenement}</Text>
                     </BlurView>
 
                     <BlurView intensity={30} tint={themeColors.blurTint} style={[styles.gridItem, { borderColor: themeColors.cardBorder }]}>
                         <Text style={[styles.gridLabel, { color: themeColors.subText }]}>Participants Uniques</Text>
-                        <Text style={[styles.gridValue, { color: themeColors.text }]}>780</Text>
+                        <Text style={[styles.gridValue, { color: themeColors.text }]}>{stats.totalParticipants}</Text>
                     </BlurView>
 
                     <BlurView intensity={30} tint={themeColors.blurTint} style={[styles.gridItem, { borderColor: themeColors.cardBorder }]}>
                         <Text style={[styles.gridLabel, { color: themeColors.subText }]}>Meilleur Taux Présence</Text>
-                        <Text style={[styles.gridValue, { color: themeColors.text }]}>92%</Text>
+                        <Text style={[styles.gridValue, { color: themeColors.text }]}>{stats.bestTauxPresence}</Text>
                     </BlurView>
                 </View>
             </ScrollView>

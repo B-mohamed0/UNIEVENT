@@ -16,6 +16,21 @@ import BottomNav from "../components/navbar";
 
 import conference from "../assets/project/conference.png";
 import estwhite from "../assets/project/estwhite.png";
+import { LinearGradient } from "expo-linear-gradient";
+
+const THEME_GRADIENTS = {
+  "Dusk": ["#FF512F", "#DD2476"],
+  "Ocean": ["#2193b0", "#6dd5ed"],
+  "Emerald": ["#11998e", "#38ef7d"],
+  "Purple Heat": ["#833ab4", "#fd1d1d", "#fcb045"],
+  "Midnight": ["#232526", "#414345"],
+  "Royal Blue": ["#1e3c72", "#2a5298"],
+  "Sunset": ["#ee0979", "#ff6a00"],
+  "Lavender": ["#DA22FF", "#9733EE"],
+  "Azure": ["#00c6ff", "#0072ff"],
+  "Golden Hour": ["#F2994A", "#F2C94C"],
+  "default": ["#000000ff", "#434343ff"]
+};
 
 const EventInfo = ({ route }) => {
   const { eventId, studentId, nom } = route.params;
@@ -24,7 +39,7 @@ const EventInfo = ({ route }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch(`http://localhost:3000/api/events/detail/${eventId}/${studentId}`)
+    fetch(`http://192.168.1.3:3000/api/events/detail/${eventId}/${studentId}`)
       .then((res) => res.json())
       .then((data) => {
         setEvent(data);
@@ -59,7 +74,12 @@ const EventInfo = ({ route }) => {
   return (
     <View style={styles.container}>
       {/* HEADER FIXE */}
-      <ImageBackground source={conference} style={styles.header}>
+      <LinearGradient
+        colors={THEME_GRADIENTS[event.theme_color] || THEME_GRADIENTS.default}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.header}
+      >
         <BackButton />
 
         <View style={styles.headerContent}>
@@ -92,7 +112,7 @@ const EventInfo = ({ route }) => {
             </Text>
           </View>
         </View>
-      </ImageBackground>
+      </LinearGradient>
 
       {/* BACKGROUND ESTWH FIXE */}
       <ImageBackground

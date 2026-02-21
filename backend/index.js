@@ -24,7 +24,7 @@ const formatEventStatus = (dbStatus, date, startTime, endTime) => {
   // Nettoyage de la date (YYYY-MM-DD)
   const eventDate = new Date(date).toISOString().split("T")[0];
 
-  if (dbStatus === "EXPIRER" || (eventDate < today) || (eventDate === today && endTime && currentTime > endTime)) {
+  if (dbStatus === "EXPIRE" || (eventDate < today) || (eventDate === today && endTime && currentTime > endTime)) {
     return "TERMINE";
   }
 
@@ -192,50 +192,91 @@ app.post("/api/auth/login", async (req, res) => {
  * GET /api/organizer/stats/:id
  * Retourne les stats du dashboard organisateur
  */
+// Route consolidée pour les statistiques d'un organisateur
 app.get("/api/organizer/stats/:id", async (req, res) => {
   try {
-    const { id } = req.params;
-    const now = new Date();
-    const today = now.toISOString().split("T")[0];
-    const currentTime = now.toTimeString().split(" ")[0].substring(0, 5);
+    const id = req.params.id;
+    console.log(`📊 Récupération des stats consolidées pour l'organisateur ID: ${id}`);
 
-    // 1. Événements actifs (EN COURS)
-    const active = await pool.query(
-      `SELECT COUNT(*) FROM evenement 
-       WHERE idorganisateur = $1 
-       AND status = 'MAINTENANT'`,
+    // 1️⃣ Total des événements
+    const totalEventsQuery = await pool.query(
+      'SELECT COUNT(*) FROM evenement WHERE idorganisateur = $1',
       [id]
     );
 
-    // 2. Total Inscriptions
-    const registrations = await pool.query(
-      `SELECT COUNT(*) FROM participation p
-       JOIN evenement e ON p.idevenement = e.id
+    // 2️⃣ Événements actifs (non expirés)
+    const activeEventsQuery = await pool.query(
+      "SELECT COUNT(*) FROM evenement WHERE idorganisateur = $1 AND status != 'EXPIRE' AND status != 'EXPIRER'",
+      [id]
+    );
+
+    // 3️⃣ Total des inscriptions (participations totales)
+    const totalRegistrationsQuery = await pool.query(
+      `SELECT COUNT(*) 
+       FROM participation p
+       INNER JOIN evenement e ON e.id = p.idevenement
        WHERE e.idorganisateur = $1`,
       [id]
     );
 
-    // 3. Total Présences validées
-    const attendances = await pool.query(
-      `SELECT COUNT(*) FROM participation p
-       JOIN evenement e ON p.idevenement = e.id
+    // 4️⃣ Présences validées (PRESENT)
+    const validatedAttendancesQuery = await pool.query(
+      `SELECT COUNT(*) 
+       FROM participation p
+       INNER JOIN evenement e ON e.id = p.idevenement
        WHERE e.idorganisateur = $1 AND p.status = 'PRESENT'`,
       [id]
     );
 
-    // 4. Taux global de participation
-    const regCount = parseInt(registrations.rows[0].count);
-    const attCount = parseInt(attendances.rows[0].count);
-    const overallRate = regCount > 0 ? Math.round((attCount / regCount) * 100) : 0;
+    // 5️⃣ Taux de présence Moyen (Global)
+    const avgAttendanceQuery = await pool.query(
+      `SELECT 
+         CASE 
+           WHEN SUM(e.capacite_max) > 0 THEN 
+             (COUNT(CASE WHEN p.status = 'PRESENT' OR p.status = 'EN_COURS' THEN 1 END)::float / SUM(e.capacite_max)) * 100
+           ELSE 0 
+         END as avg_rate
+       FROM evenement e
+       LEFT JOIN participation p ON e.id = p.idevenement
+       WHERE e.idorganisateur = $1`,
+      [id]
+    );
 
-    res.json({
-      activeEvents: parseInt(active.rows[0].count),
-      totalRegistrations: regCount,
-      totalAttendances: attCount,
-      avgAttendance: overallRate
-    });
+    // 6️⃣ Meilleur taux de présence sur un seul événement
+    const bestRateQuery = await pool.query(
+      `SELECT MAX(rate) AS best_rate
+       FROM (
+           SELECT 
+             CASE 
+               WHEN e.capacite_max > 0 THEN
+                 (COUNT(CASE WHEN p.status = 'PRESENT' OR p.status = 'EN_COURS' THEN 1 END)::float 
+                  / e.capacite_max) * 100
+               ELSE 0
+             END AS rate
+           FROM evenement e
+           LEFT JOIN participation p ON e.id = p.idevenement
+           WHERE e.idorganisateur = $1
+           GROUP BY e.id, e.capacite_max
+       ) sub`,
+      [id]
+    );
+
+    const data = {
+      // Pour le Dashboard
+      activeEvents: parseInt(activeEventsQuery.rows[0].count),
+      totalRegistrations: parseInt(totalRegistrationsQuery.rows[0].count),
+      totalAttendances: parseInt(validatedAttendancesQuery.rows[0].count),
+      avgAttendance: parseFloat(avgAttendanceQuery.rows[0].avg_rate || 0).toFixed(1),
+
+      // Pour la page Stats détaillée
+      totalEvenement: parseInt(totalEventsQuery.rows[0].count),
+      totalParticipants: parseInt(totalRegistrationsQuery.rows[0].count), // Alias pour cohérence
+      bestTauxPresence: parseFloat(bestRateQuery.rows[0].best_rate || 0).toFixed(2) + "%"
+    };
+
+    res.json(data);
   } catch (error) {
-    console.error("Error fetching organizer stats:", error);
+    console.error("❌ Erreur stats organisateur:", error);
     res.status(500).json({ error: "Erreur serveur" });
   }
 });
@@ -396,10 +437,11 @@ app.get("/api/events/upcoming/:studentId", async (req, res) => {
         e.heure_fin,
         e.categorie,
         e.idorganisateur,
+        e.theme_color,
         p.status as participation_status
       FROM evenement e
       LEFT JOIN participation p ON e.id = p.idevenement AND p.idetudiant = $1
-      WHERE e.status != 'EXPIRER'
+      WHERE e.status != 'EXPIRE'
         AND (
           e.date > $2
           OR 
@@ -408,6 +450,11 @@ app.get("/api/events/upcoming/:studentId", async (req, res) => {
       ORDER BY e.date ASC, e.heure_debut ASC`,
       [studentId, today, currentTime]
     );
+
+    console.log(`📊 Résultat de la requête : ${result.rowCount} événements trouvés`);
+    if (result.rowCount > 0) {
+      console.log(`📝 Premier événement : ${result.rows[0].nom_evenement} (Statut: ${result.rows[0].status}, Date: ${result.rows[0].date})`);
+    }
 
     if (result.rowCount === 0) {
       console.log("❌ Aucun événement non expiré");
@@ -487,10 +534,11 @@ app.get("/api/events/active/:studentId", async (req, res) => {
         e.heure_fin,
         e.categorie,
         e.idorganisateur,
+        e.theme_color,
         p.status as participation_status
       FROM evenement e
       LEFT JOIN participation p ON e.id = p.idevenement AND p.idetudiant = $1
-      WHERE e.status != 'EXPIRER'
+      WHERE e.status != 'EXPIRE'
         AND (
           -- Événements futurs (date future)
           e.date > $2
@@ -563,9 +611,10 @@ app.get("/api/events", async (req, res) => {
         heure_debut as time,
         heure_fin,
         categorie,
-        idorganisateur
+        idorganisateur,
+        theme_color
       FROM evenement
-      WHERE status != 'EXPIRER'
+      WHERE status != 'EXPIRE'
       ORDER BY date DESC, heure_debut DESC`
     );
 
@@ -624,6 +673,7 @@ app.get("/api/events/detail/:eventId/:studentId", async (req, res) => {
         e.heure_fin,
         e.categorie,
         e.idorganisateur,
+        e.theme_color,
         o.nom as organisateur_nom,
         p.status as participation_status,
         p.id as participation_id
@@ -734,15 +784,15 @@ app.post("/api/events", async (req, res) => {
     const {
       nom_evenement, nom_animateur, description, lieu,
       date, date_fin, heure_debut, heure_fin,
-      categorie, capacite_max, idorganisateur
+      categorie, capacite_max, idorganisateur, theme_color
     } = req.body;
 
     const result = await pool.query(
       `INSERT INTO evenement 
-       (nom_evenement, nom_animateur, description, lieu, date, date_fin, heure_debut, heure_fin, categorie, capacite_max, idorganisateur, status)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, 'BIENTOT')
+       (nom_evenement, nom_animateur, description, lieu, date, date_fin, heure_debut, heure_fin, categorie, capacite_max, idorganisateur, status, theme_color)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, 'BIENTOT', $12)
        RETURNING *`,
-      [nom_evenement, nom_animateur, description, lieu, date, date_fin, heure_debut, heure_fin, categorie, capacite_max, idorganisateur]
+      [nom_evenement, nom_animateur, description, lieu, date, date_fin, heure_debut, heure_fin, categorie, capacite_max, idorganisateur, theme_color || 'Dusk']
     );
 
     res.status(201).json(result.rows[0]);
@@ -762,17 +812,17 @@ app.put("/api/events/:id", async (req, res) => {
     const {
       nom_evenement, nom_animateur, description, lieu,
       date, date_fin, heure_debut, heure_fin,
-      categorie, capacite_max
+      categorie, capacite_max, theme_color
     } = req.body;
 
     const result = await pool.query(
       `UPDATE evenement 
        SET nom_evenement=$1, nom_animateur=$2, description=$3, lieu=$4, 
            date=$5, date_fin=$6, heure_debut=$7, heure_fin=$8, 
-           categorie=$9, capacite_max=$10
-       WHERE id=$11
+           categorie=$9, capacite_max=$10, theme_color=$11
+       WHERE id=$12
        RETURNING *`,
-      [nom_evenement, nom_animateur, description, lieu, date, date_fin, heure_debut, heure_fin, categorie, capacite_max, id]
+      [nom_evenement, nom_animateur, description, lieu, date, date_fin, heure_debut, heure_fin, categorie, capacite_max, theme_color, id]
     );
 
     if (result.rowCount === 0) return res.status(404).json({ error: "Événement non trouvé" });
@@ -803,6 +853,27 @@ app.delete("/api/events/:id", async (req, res) => {
     res.status(500).json({ error: "Erreur serveur" });
   }
 });
+
+
+// Route supprimée car consolidée plus haut
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 app.listen(3000, () => {
   console.log("✅ Serveur lancé sur le port 3000");

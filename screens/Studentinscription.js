@@ -12,7 +12,7 @@ import { Ionicons } from "@expo/vector-icons";
 const { width, height } = Dimensions.get("window");
 
 // 🔗 URL BACKEND (Assurez-vous que l'IP est correcte)
-const API_BASE = "http://localhost:3000/api/auth";
+const API_BASE = "http://192.168.1.3:3000/api/auth";
 
 export default function Studentinscription() {
   const navigation = useNavigation();

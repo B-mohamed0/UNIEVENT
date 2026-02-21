@@ -22,9 +22,23 @@ import BottomNav from "../components/navbar";
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const CARD_WIDTH = SCREEN_WIDTH - 40;
 
+const THEME_GRADIENTS = {
+  "Dusk": ["#FF512F", "#DD2476"],
+  "Ocean": ["#2193b0", "#6dd5ed"],
+  "Emerald": ["#11998e", "#38ef7d"],
+  "Purple Heat": ["#833ab4", "#fd1d1d", "#fcb045"],
+  "Midnight": ["#232526", "#414345"],
+  "Royal Blue": ["#1e3c72", "#2a5298"],
+  "Sunset": ["#ee0979", "#ff6a00"],
+  "Lavender": ["#DA22FF", "#9733EE"],
+  "Azure": ["#00c6ff", "#0072ff"],
+  "Golden Hour": ["#F2994A", "#F2C94C"],
+  "default": ["#000000ff", "#434343ff"]
+};
+
 // ================= CONFIGURATION API =================
-const API_URL_USER = "http://localhost:3000/api/user";
-const API_URL_EVENTS = "http://localhost:3000/api/events";
+const API_URL_USER = "http://192.168.1.3:3000/api/user";
+const API_URL_EVENTS = "http://192.168.1.3:3000/api/events";
 
 export default function ProfileScreen({ route, navigation }) {
   const { nom, id } = route.params;
@@ -223,8 +237,11 @@ export default function ProfileScreen({ route, navigation }) {
 
     return (
       <View key={`${event.id}-${index}`} style={styles.carouselCard}>
-        <View
-          style={[styles.activeEventCard, { backgroundColor: "#000000ff" }]}
+        <LinearGradient
+          colors={THEME_GRADIENTS[event.theme_color] || THEME_GRADIENTS.default}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.activeEventCard}
         >
           <View style={styles.eventContainer}>
             <View style={styles.eventContent}>
@@ -283,7 +300,7 @@ export default function ProfileScreen({ route, navigation }) {
               </Text>
             </View>
           )}
-        </View>
+        </LinearGradient>
       </View>
     );
   };
@@ -397,23 +414,27 @@ export default function ProfileScreen({ route, navigation }) {
           {events.map((event) => (
             <TouchableOpacity
               key={event.id}
-              style={[
-                styles.eventCard,
-                { backgroundColor: event.color || "#000000ff" },
-              ]}
+              activeOpacity={0.9}
               onPress={() =>
                 setOpenEventId(openEventId === event.id ? null : event.id)
               }
             >
-              <View style={styles.eventHeader}>
-                <View style={styles.eventTextContainer}>
-                  <Text style={styles.eventTitle}>{event.title}</Text>
-                  <Text style={styles.animatorText}>{event.animator}</Text>
-                  {openEventId === event.id && (
-                    <Text style={styles.timeText}>{event.time}</Text>
-                  )}
+              <LinearGradient
+                colors={THEME_GRADIENTS[event.theme_color] || THEME_GRADIENTS.default}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.eventCard}
+              >
+                <View style={styles.eventHeader}>
+                  <View style={styles.eventTextContainer}>
+                    <Text style={styles.eventTitle}>{event.title}</Text>
+                    <Text style={styles.animatorText}>{event.animator}</Text>
+                    {openEventId === event.id && (
+                      <Text style={styles.timeText}>{event.time}</Text>
+                    )}
+                  </View>
                 </View>
-              </View>
+              </LinearGradient>
             </TouchableOpacity>
           ))}
 

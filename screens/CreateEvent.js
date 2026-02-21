@@ -47,11 +47,24 @@ export default function CreateEvent({ route, navigation }) {
     categorie: editEvent?.categorie || "Conférence",
     capaciteMax: editEvent?.capacite_max?.toString() || "100",
     animator: editEvent?.nom_animateur || nom,
+    theme_color: editEvent?.theme_color || "Dusk",
   });
 
   const [showDatePicker, setShowDatePicker] = useState(null); // 'debut', 'fin', 'hDebut', 'hFin'
 
   const categories = ["Conférence", "Atelier", "Soirée"];
+  const themeOptions = [
+    { name: "Dusk", colors: ["#FF512F", "#DD2476"] },
+    { name: "Ocean", colors: ["#2193b0", "#6dd5ed"] },
+    { name: "Emerald", colors: ["#11998e", "#38ef7d"] },
+    { name: "Purple Heat", colors: ["#833ab4", "#fd1d1d", "#fcb045"] },
+    { name: "Midnight", colors: ["#232526", "#414345"] },
+    { name: "Royal Blue", colors: ["#1e3c72", "#2a5298"] },
+    { name: "Sunset", colors: ["#ee0979", "#ff6a00"] },
+    { name: "Lavender", colors: ["#DA22FF", "#9733EE"] },
+    { name: "Azure", colors: ["#00c6ff", "#0072ff"] },
+    { name: "Golden Hour", colors: ["#F2994A", "#F2C94C"] },
+  ];
 
   const API_URL = "http://192.168.1.3:3000/api/events";
 
@@ -80,6 +93,7 @@ export default function CreateEvent({ route, navigation }) {
         categorie: form.categorie,
         capacite_max: parseInt(form.capaciteMax) || 0,
         idorganisateur: parseInt(id),
+        theme_color: form.theme_color,
       };
 
       const url = editEvent ? `http://192.168.1.3:3000/api/events/${editEvent.id}` : API_URL;
@@ -233,6 +247,29 @@ export default function CreateEvent({ route, navigation }) {
                 onChangeText={(text) => setForm({ ...form, capaciteMax: text })}
               />
             </View>
+          </View>
+          <View style={styles.inputGroup}>
+            <Text style={[styles.label, { color: themeColors.text }]}>Thème de la Carte</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.themeContainer}>
+              {themeOptions.map((theme) => (
+                <TouchableOpacity
+                  key={theme.name}
+                  style={[
+                    styles.themePreview,
+                    form.theme_color === theme.name && { borderColor: "#005AC1", borderWidth: 3 }
+                  ]}
+                  onPress={() => setForm({ ...form, theme_color: theme.name })}
+                >
+                  <LinearGradient
+                    colors={theme.colors}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={styles.themeGradient}
+                  />
+                  <Text style={[styles.themeLabel, { color: themeColors.text }]}>{theme.name}</Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
           </View>
 
           <TouchableOpacity style={styles.publishBtn} onPress={handleCreate}>
@@ -395,5 +432,26 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "700",
     fontFamily: "Insignia",
+  },
+  themeContainer: {
+    paddingVertical: 10,
+    gap: 15,
+  },
+  themePreview: {
+    width: 100,
+    alignItems: 'center',
+    gap: 8,
+    borderRadius: 15,
+    padding: 5,
+  },
+  themeGradient: {
+    width: 80,
+    height: 60,
+    borderRadius: 10,
+  },
+  themeLabel: {
+    fontSize: 12,
+    fontFamily: "Insignia",
+    textAlign: 'center',
   },
 });
