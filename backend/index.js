@@ -15,6 +15,26 @@ app.use(express.json());
 // --- STOCKAGE TEMPORAIRE DES CODES OTP ---
 const otpStore = new Map();
 
+// --- HELPER : FORMATTER LE STATUT DE L'ÉVÉNEMENT ---
+const formatEventStatus = (dbStatus, date, startTime, endTime) => {
+  const now = new Date();
+  const today = now.toISOString().split("T")[0];
+  const currentTime = now.toTimeString().split(" ")[0].substring(0, 5);
+
+  // Nettoyage de la date (YYYY-MM-DD)
+  const eventDate = new Date(date).toISOString().split("T")[0];
+
+  if (dbStatus === "EXPIRER" || (eventDate < today) || (eventDate === today && endTime && currentTime > endTime)) {
+    return "TERMINE";
+  }
+
+  if (dbStatus === "MAINTENANT" || (eventDate === today && startTime && currentTime >= startTime && (!endTime || currentTime <= endTime))) {
+    return "EN COURS";
+  }
+
+  return "À VENIR";
+};
+
 // --- CONFIGURATION DE NODEMAILER ---
 const transporter = nodemailer.createTransport({
   service: "gmail",
@@ -113,8 +133,9 @@ app.post("/api/auth/inscription", async (req, res) => {
 // 4. ROUTE : CONNEXION (LOGIN)
 // ==========================================
 app.post("/api/auth/login", async (req, res) => {
+  console.log("LOGIN ATTEMPT:", req.body);
   try {
-    const { email, password } = req.body;
+    const { email, password, role } = req.body;
 
     if (!email || !password) {
       return res.status(400).json({
@@ -122,10 +143,19 @@ app.post("/api/auth/login", async (req, res) => {
       });
     }
 
-    const result = await pool.query(
-      "SELECT nom, id, password FROM etudiant WHERE email = $1",
-      [email],
+    // Tenter de trouver dans etudiant
+    let result = await pool.query(
+      "SELECT nom, id, password, 'STUDENT' as role FROM etudiant WHERE email = $1",
+      [email]
     );
+
+    // Si non trouvé et on n'a pas spécifié de rôle ou on a spécifié ORGANIZER, on cherche dans organisateur
+    if (result.rowCount === 0) {
+      result = await pool.query(
+        "SELECT nom, id, password, 'ORGANIZER' as role FROM organisateur WHERE email = $1",
+        [email]
+      );
+    }
 
     if (result.rowCount === 0) {
       return res.status(401).json({
@@ -134,7 +164,6 @@ app.post("/api/auth/login", async (req, res) => {
     }
 
     const user = result.rows[0];
-
     const validPassword = await bcrypt.compare(password, user.password);
 
     if (!validPassword) {
@@ -145,13 +174,121 @@ app.post("/api/auth/login", async (req, res) => {
 
     res.json({
       message: "Connexion réussie ✅",
-      user: { nom: user.nom, id: user.id },
+      user: { nom: user.nom, id: user.id, role: user.role },
     });
   } catch (error) {
     console.error("BACKEND ERROR:", error);
     res.status(500).json({
       message: "Erreur serveur",
     });
+  }
+});
+
+// ==========================================
+// 🆕 ROUTES ORGANISATEUR
+// ==========================================
+
+/**
+ * GET /api/organizer/stats/:id
+ * Retourne les stats du dashboard organisateur
+ */
+app.get("/api/organizer/stats/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const today = new Date().toISOString().split("T")[0];
+
+    // 1. Événements à venir
+    const upcoming = await pool.query(
+      "SELECT COUNT(*) FROM evenement WHERE idorganisateur = $1 AND date > $2",
+      [id, today]
+    );
+
+    // 2. Événements aujourd'hui
+    const todayEvents = await pool.query(
+      "SELECT COUNT(*) FROM evenement WHERE idorganisateur = $1 AND date = $2",
+      [id, today]
+    );
+
+    // 3. Taux de présence moyen (simulé ou calculé si on a les données)
+    // Pour l'exemple, on prend la moyenne des taux de présence des événements passés
+    const avgAttendance = await pool.query(
+      `SELECT COALESCE(AVG(attendance_rate), 0) as avg_rate 
+       FROM (
+         SELECT (COUNT(CASE WHEN p.status = 'PRESENT' THEN 1 END)::float / NULLIF(COUNT(p.id), 0) * 100) as attendance_rate
+         FROM evenement e
+         LEFT JOIN participation p ON e.id = p.idevenement
+         WHERE e.idorganisateur = $1 AND e.date < $2
+         GROUP BY e.id
+       ) sub`,
+      [id, today]
+    );
+
+    res.json({
+      upcomingEvents: parseInt(upcoming.rows[0].count),
+      todayEvents: parseInt(todayEvents.rows[0].count),
+      avgAttendance: Math.round(parseFloat(avgAttendance.rows[0].avg_rate || 0))
+    });
+  } catch (error) {
+    console.error("Error fetching organizer stats:", error);
+    res.status(500).json({ error: "Erreur serveur" });
+  }
+});
+
+/**
+ * GET /api/organizer/events/:id
+ * Retourne la liste des événements créés par l'organisateur
+ */
+app.get("/api/organizer/events/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const result = await pool.query(
+      `SELECT e.*, 
+        (SELECT COUNT(*) FROM participation p WHERE p.idevenement = e.id) as inscrits,
+        (SELECT COUNT(*) FROM participation p WHERE p.idevenement = e.id AND p.status = 'PRESENT') as presents
+      FROM evenement e 
+      WHERE e.idorganisateur = $1 
+      ORDER BY e.date DESC`,
+      [id]
+    );
+
+    const events = result.rows.map(event => ({
+      ...event,
+      event_status: formatEventStatus(event.status, event.date, event.heure_debut, event.heure_fin)
+    }));
+
+    res.json(events);
+  } catch (error) {
+    console.error("Error fetching organizer events:", error);
+    res.status(500).json({ error: "Erreur serveur" });
+  }
+});
+
+/**
+ * GET /api/organizer/manage/:eventId
+ * Détails complets et liste des participants pour un événement
+ */
+app.get("/api/organizer/manage/:eventId", async (req, res) => {
+  try {
+    const { eventId } = req.params;
+
+    const eventResult = await pool.query("SELECT * FROM evenement WHERE id = $1", [eventId]);
+    if (eventResult.rowCount === 0) return res.status(404).json({ error: "Événement non trouvé" });
+
+    const participantsResult = await pool.query(
+      `SELECT p.id, p.status, p.idetudiant, et.nom, et.email
+       FROM participation p
+       JOIN etudiant et ON p.idetudiant = et.id
+       WHERE p.idevenement = $1`,
+      [eventId]
+    );
+
+    res.json({
+      event: eventResult.rows[0],
+      participants: participantsResult.rows
+    });
+  } catch (error) {
+    console.error("Error managing event:", error);
+    res.status(500).json({ error: "Erreur serveur" });
   }
 });
 app.get("/api/events/:id", async (req, res) => {
@@ -258,12 +395,7 @@ app.get("/api/events/upcoming/:studentId", async (req, res) => {
 
     // Formater chaque événement avec son statut
     const events = result.rows.map(event => {
-      // Déterminer le statut pour l'affichage
-      let eventStatus = "À VENIR";
-      if (event.status === "MAINTENANT" ||
-        (event.date === today && event.heure_debut <= currentTime && event.heure_fin >= currentTime)) {
-        eventStatus = "EN COURS";
-      }
+      const eventStatus = formatEventStatus(event.status, event.date, event.heure_debut, event.heure_fin);
 
       return {
         ...event,
@@ -357,17 +489,10 @@ app.get("/api/events/active/:studentId", async (req, res) => {
       "default": "#5B7FBD"
     };
 
-    // Déterminer le statut pour l'affichage (EN COURS ou À VENIR)
-    let eventStatus = "À VENIR";
-    if (event.status === "MAINTENANT" ||
-      (event.date === today && event.heure_debut <= currentTime && event.heure_fin >= currentTime)) {
-      eventStatus = "EN COURS";
-    }
-
     const eventData = {
       ...event,
       color: categoryColors[event.categorie] || categoryColors.default,
-      event_status: eventStatus, // Statut pour l'affichage
+      event_status: formatEventStatus(event.status, event.date, event.heure_debut, event.heure_fin),
     };
 
     console.log(`✅ Événement trouvé: ${event.nom_evenement} (${eventStatus})`);
@@ -430,6 +555,7 @@ app.get("/api/events", async (req, res) => {
         ...event,
         color: categoryColors[event.categorie] || "#000000ff",
         date: { day, month, year },
+        event_status: formatEventStatus(event.status, event.date, event.heure_debut, event.heure_fin),
       };
     });
 
@@ -478,8 +604,11 @@ app.get("/api/events/detail/:eventId/:studentId", async (req, res) => {
       return res.status(404).json({ error: "Événement non trouvé" });
     }
 
+    const event = result.rows[0];
+    event.event_status = formatEventStatus(event.status, event.date, event.heure_debut, event.heure_fin);
+
     console.log(`✅ Détails événement ${eventId} récupérés`);
-    res.json(result.rows[0]);
+    res.json(event);
   } catch (error) {
     console.error("❌ Erreur API /events/detail:", error);
     res.status(500).json({ error: "Erreur serveur" });
@@ -563,9 +692,83 @@ app.delete("/api/events/unregister/:participationId", async (req, res) => {
   }
 });
 
-// ============================================
-// 🚀 LANCEMENT DU SERVEUR
-// ============================================
+// ==========================================
+// 🆕 ROUTE : CRÉER UN ÉVÉNEMENT
+// ==========================================
+app.post("/api/events", async (req, res) => {
+  try {
+    const {
+      nom_evenement, nom_animateur, description, lieu,
+      date, date_fin, heure_debut, heure_fin,
+      categorie, capacite_max, idorganisateur
+    } = req.body;
+
+    const result = await pool.query(
+      `INSERT INTO evenement 
+       (nom_evenement, nom_animateur, description, lieu, date, date_fin, heure_debut, heure_fin, categorie, capacite_max, idorganisateur, status)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, 'BIENTOT')
+       RETURNING *`,
+      [nom_evenement, nom_animateur, description, lieu, date, date_fin, heure_debut, heure_fin, categorie, capacite_max, idorganisateur]
+    );
+
+    res.status(201).json(result.rows[0]);
+  } catch (error) {
+    console.error("Error creating event:", error);
+    res.status(500).json({ error: "Erreur serveur" });
+  }
+});
+
+/**
+ * 🆕 PUT /api/events/:id
+ * Met à jour un événement
+ */
+app.put("/api/events/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const {
+      nom_evenement, nom_animateur, description, lieu,
+      date, date_fin, heure_debut, heure_fin,
+      categorie, capacite_max
+    } = req.body;
+
+    const result = await pool.query(
+      `UPDATE evenement 
+       SET nom_evenement=$1, nom_animateur=$2, description=$3, lieu=$4, 
+           date=$5, date_fin=$6, heure_debut=$7, heure_fin=$8, 
+           categorie=$9, capacite_max=$10
+       WHERE id=$11
+       RETURNING *`,
+      [nom_evenement, nom_animateur, description, lieu, date, date_fin, heure_debut, heure_fin, categorie, capacite_max, id]
+    );
+
+    if (result.rowCount === 0) return res.status(404).json({ error: "Événement non trouvé" });
+    res.json(result.rows[0]);
+  } catch (error) {
+    console.error("Error updating event:", error);
+    res.status(500).json({ error: "Erreur serveur" });
+  }
+});
+
+/**
+ * 🆕 DELETE /api/events/:id
+ * Supprime un événement
+ */
+app.delete("/api/events/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // On pourrait vouloir supprimer d'abord les participations liées
+    await pool.query("DELETE FROM participation WHERE idevenement = $1", [id]);
+
+    const result = await pool.query("DELETE FROM evenement WHERE id = $1 RETURNING id", [id]);
+
+    if (result.rowCount === 0) return res.status(404).json({ error: "Événement non trouvé" });
+    res.json({ message: "Événement supprimé avec succès", id: result.rows[0].id });
+  } catch (error) {
+    console.error("Error deleting event:", error);
+    res.status(500).json({ error: "Erreur serveur" });
+  }
+});
 
 app.listen(3000, () => {
   console.log("✅ Serveur lancé sur le port 3000");

@@ -13,6 +13,11 @@ import HomeScreen from "./screens/HomeScreen";
 import Verificationemail from "./screens/Verificationemail";
 import Eventsscreen from "./screens/Eventsscreen";
 import Eventinfo from "./screens/Eventinfo";
+import OrganizerDashboard from "./screens/OrganizerDashboard";
+import OrganizerEvents from "./screens/OrganizerEvents";
+import CreateEvent from "./screens/CreateEvent";
+import ManageEvent from "./screens/ManageEvent";
+import OrganizerStats from "./screens/OrganizerStats";
 import { NavbarProvider } from "./context/NavbarContext";
 const Stack = createNativeStackNavigator();
 
@@ -49,6 +54,11 @@ export default function App() {
           <Stack.Screen name="Eventinfo" component={Eventinfo} />
           <Stack.Screen name="Eventsscreen" component={Eventsscreen} />
           <Stack.Screen name="Verificationemail" component={Verificationemail} />
+          <Stack.Screen name="OrganizerDashboard" component={OrganizerDashboard} />
+          <Stack.Screen name="OrganizerEvents" component={OrganizerEvents} />
+          <Stack.Screen name="CreateEvent" component={CreateEvent} />
+          <Stack.Screen name="ManageEvent" component={ManageEvent} />
+          <Stack.Screen name="OrganizerStats" component={OrganizerStats} />
         </Stack.Navigator>
       </NavigationContainer>
     </NavbarProvider>

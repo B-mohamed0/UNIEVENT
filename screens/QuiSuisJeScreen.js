@@ -50,6 +50,7 @@ export default function QuiSuisJeScreen() {
             {[
               { label: "étudiant", route: "Student" },
               { label: "professeur", route: "Teacher" },
+              { label: "organisateur", route: "Organizer" },
             ].map((item) => (
               <TouchableOpacity
                 key={item.label}
@@ -149,7 +150,7 @@ const styles = StyleSheet.create({
 
   glassRectangle: {
     width: 310,
-    height: 260,
+    height: 340,
     borderRadius: 30,
     alignSelf: "center",
     marginTop: 20,

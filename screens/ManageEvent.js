@@ -1,0 +1,276 @@
+import React, { useState, useEffect } from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  Dimensions,
+  ImageBackground,
+  StatusBar,
+  ScrollView,
+  FlatList,
+} from "react-native";
+import { BlurView } from "expo-blur";
+import { Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
+
+const { width } = Dimensions.get("window");
+
+export default function ManageEvent({ route, navigation }) {
+  const { event, organizerId, nom } = route.params;
+  const [data, setData] = useState({ event: event, participants: [] });
+  const [loading, setLoading] = useState(true);
+
+  const API_URL = "http://192.168.1.3:3000/api/organizer";
+
+  useEffect(() => {
+    fetchEventDetails();
+  }, []);
+
+  const fetchEventDetails = async () => {
+    try {
+      const response = await fetch(`${API_URL}/manage/${event.id}`);
+      const resData = await response.json();
+      setData(resData);
+      setLoading(false);
+    } catch (error) {
+      console.error("Error fetching event details:", error);
+      setLoading(false);
+    }
+  };
+
+  const rendersStatCard = (label, value, subLabel) => (
+    <BlurView intensity={30} tint="dark" style={styles.statCard}>
+      <Text style={styles.statLabel}>{label}</Text>
+      <Text style={styles.statValue}>{value}</Text>
+      {subLabel && <Text style={styles.statSubLabel}>{subLabel}</Text>}
+    </BlurView>
+  );
+
+  const renderParticipant = ({ item }) => (
+    <BlurView intensity={20} tint="dark" style={styles.participantRow}>
+      <View style={styles.participantInfo}>
+        <View style={styles.avatar}>
+          <Ionicons name="person" size={20} color="#FFF" />
+        </View>
+        <Text style={styles.participantName}>{item.nom}</Text>
+      </View>
+      <View style={[styles.presenceBadge, { backgroundColor: item.status === 'PRESENT' ? '#00A86B' : '#C41E3A' }]}>
+        <Text style={styles.presenceText}>{item.status === 'PRESENT' ? 'Présent' : 'Absent'}</Text>
+      </View>
+    </BlurView>
+  );
+
+  const presenceCount = data.participants.filter(p => p.status === 'PRESENT').length;
+  const totalInscrit = data.participants.length;
+  const presenceRate = totalInscrit > 0 ? Math.round((presenceCount / totalInscrit) * 100) : 0;
+
+  return (
+    <ImageBackground
+      source={require("../assets/project/estwh.png")}
+      style={styles.container}
+      resizeMode="cover"
+    >
+      <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
+
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+          <Ionicons name="chevron-back" size={28} color="#FFF" />
+        </TouchableOpacity>
+        <View style={styles.titleContainer}>
+          <Text style={styles.headerTitle}>{event.nom_evenement}</Text>
+          <Text style={styles.headerSubTitle}>Aujourd'hui, {new Date(event.date).toLocaleDateString()}</Text>
+        </View>
+        <TouchableOpacity style={styles.profileBtn}>
+          <Ionicons name="settings-outline" size={24} color="#FFF" />
+        </TouchableOpacity>
+      </View>
+
+      <ScrollView contentContainerStyle={styles.scrollContent}>
+        <View style={styles.statsRow}>
+          {rendersStatCard("Inscrit", totalInscrit)}
+          {rendersStatCard("Presents", presenceCount)}
+          {rendersStatCard("Taux présent", `${presenceRate}%`)}
+        </View>
+
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Participants</Text>
+          <TouchableOpacity>
+            <Text style={styles.seeAllText}>Voir-tous</Text>
+          </TouchableOpacity>
+        </View>
+
+        <FlatList
+          data={data.participants}
+          renderItem={renderParticipant}
+          keyExtractor={(item) => item.id.toString()}
+          scrollEnabled={false}
+          ListEmptyComponent={
+            !loading && <Text style={styles.emptyText}>Aucun participant pour le moment.</Text>
+          }
+        />
+
+        <View style={styles.actionButtons}>
+          <TouchableOpacity style={styles.actionBtn}>
+            <BlurView intensity={30} tint="dark" style={styles.actionBtnInner}>
+              <Text style={styles.actionBtnText}>Exporter liste CSV</Text>
+              <Ionicons name="chevron-forward" size={18} color="#FFF" />
+            </BlurView>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.actionBtn}>
+            <BlurView intensity={30} tint="dark" style={styles.actionBtnInner}>
+              <Text style={styles.actionBtnText}>Envoyer rappel</Text>
+              <Ionicons name="chevron-forward" size={18} color="#FFF" />
+            </BlurView>
+          </TouchableOpacity>
+        </View>
+      </ScrollView>
+    </ImageBackground>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: "#0A0A1A",
+  },
+  header: {
+    paddingTop: 60,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 20,
+    paddingBottom: 20,
+  },
+  backButton: {
+    padding: 5,
+  },
+  titleContainer: {
+    alignItems: "center",
+  },
+  headerTitle: {
+    color: "#FFF",
+    fontSize: 20,
+    fontWeight: "700",
+    fontFamily: "jokeyone",
+  },
+  headerSubTitle: {
+    color: "rgba(255,255,255,0.6)",
+    fontSize: 12,
+    fontFamily: "Insignia",
+  },
+  profileBtn: {
+    padding: 5,
+  },
+  scrollContent: {
+    paddingHorizontal: 20,
+    paddingBottom: 100,
+  },
+  statsRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginVertical: 20,
+    gap: 10,
+  },
+  statCard: {
+    flex: 1,
+    borderRadius: 15,
+    padding: 15,
+    alignItems: "center",
+    overflow: "hidden",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.1)",
+  },
+  statLabel: {
+    color: "rgba(255,255,255,0.6)",
+    fontSize: 12,
+    fontFamily: "Insignia",
+    marginBottom: 5,
+  },
+  statValue: {
+    color: "#FFF",
+    fontSize: 24,
+    fontWeight: "700",
+    fontFamily: "jokeyone",
+  },
+  sectionHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginVertical: 15,
+  },
+  sectionTitle: {
+    color: "#FFF",
+    fontSize: 18,
+    fontFamily: "Insignia",
+  },
+  seeAllText: {
+    color: "#2E5BFF",
+    fontSize: 14,
+    fontFamily: "Insignia",
+  },
+  participantRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    padding: 12,
+    borderRadius: 12,
+    marginBottom: 10,
+    overflow: "hidden",
+  },
+  participantInfo: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  avatar: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: "rgba(255,255,255,0.1)",
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 12,
+  },
+  participantName: {
+    color: "#FFF",
+    fontSize: 16,
+    fontFamily: "Insignia",
+  },
+  presenceBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  presenceText: {
+    color: "#FFF",
+    fontSize: 12,
+    fontWeight: "600",
+    fontFamily: "Insignia",
+  },
+  actionButtons: {
+    marginTop: 20,
+    gap: 10,
+  },
+  actionBtn: {
+    borderRadius: 12,
+    overflow: "hidden",
+  },
+  actionBtnInner: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    padding: 15,
+  },
+  actionBtnText: {
+    color: "#FFF",
+    fontSize: 16,
+    fontFamily: "Insignia",
+  },
+  emptyText: {
+    color: "rgba(255,255,255,0.4)",
+    textAlign: "center",
+    marginVertical: 20,
+    fontFamily: "Insignia",
+  },
+});

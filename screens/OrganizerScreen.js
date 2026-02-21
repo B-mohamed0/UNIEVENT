@@ -1,3 +1,4 @@
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -17,6 +18,33 @@ const { width, height } = Dimensions.get("window");
 
 export default function OrganizerScreen() {
   const navigation = useNavigation();
+
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+
+  const handleLogin = async () => {
+    try {
+      const response = await fetch("http://192.168.1.3:3000/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password, role: "ORGANIZER" }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        navigation.navigate("OrganizerDashboard", {
+          id: data.user.id,
+          nom: data.user.nom
+        });
+      } else {
+        alert(data.message || "Erreur de connexion");
+      }
+    } catch (error) {
+      console.error("Login error:", error);
+      alert("Erreur serveur : " + error.message);
+    }
+  };
 
   return (
     <View style={styles.container}>
@@ -51,25 +79,32 @@ export default function OrganizerScreen() {
 
         {/* GLASS FORM */}
         <BlurView intensity={25} tint="light" style={styles.glassCard}>
-          <Text style={styles.label}>USERNAME</Text>
+          <Text style={styles.label}>EMAIL</Text>
           <View style={styles.inputWrapper}>
             <TextInput
-              placeholder="username"
+              placeholder="votre email"
               placeholderTextColor="#999"
               style={styles.input}
+              value={email}
+              onChangeText={setEmail}
+              keyboardType="email-address"
+              autoCapitalize="none"
             />
           </View>
 
           <Text style={styles.label}>PASSWORD</Text>
           <View style={styles.inputWrapper}>
             <TextInput
-              placeholder="user name"
+              placeholder="votre mot de passe"
               placeholderTextColor="#999"
               style={styles.input}
+              secureTextEntry
+              value={password}
+              onChangeText={setPassword}
             />
           </View>
 
-          <TouchableOpacity style={styles.loginButton}>
+          <TouchableOpacity style={styles.loginButton} onPress={handleLogin}>
             <LinearGradient
               colors={["#183282", "rgba(74, 94, 175, 0.82)"]}
               style={styles.loginGradient}
@@ -199,7 +234,7 @@ const styles = StyleSheet.create({
 
   loginButton: {
     marginTop: 20,
-    width: 180, 
+    width: 180,
     alignSelf: "center",
     borderRadius: 26,
     overflow: "hidden",

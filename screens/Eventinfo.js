@@ -79,20 +79,16 @@ const EventInfo = ({ route }) => {
                 styles.statusDot,
                 {
                   backgroundColor:
-                    event.status === "à venir"
-                      ? "#F4F900"
-                      : event.status === "en cours"
-                        ? "#00F908"
-                        : "#36f900ff",
+                    event.event_status === "EN COURS"
+                      ? "#00F908"
+                      : event.event_status === "À VENIR"
+                        ? "#f9dc00ff"
+                        : "#FF0000",
                 },
               ]}
             />
             <Text style={styles.statusText}>
-              {event.status === "terminé"
-                ? "Terminé"
-                : event.status === "en cours"
-                  ? "En cours"
-                  : "À venir"}
+              {event.event_status}
             </Text>
           </View>
         </View>
@@ -215,7 +211,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontFamily: "Insignia",
   },
-  
+
   statusContainer: {
     flexDirection: "row",
     alignItems: "center",

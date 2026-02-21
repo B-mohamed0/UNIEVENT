@@ -23,8 +23,8 @@ const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const CARD_WIDTH = SCREEN_WIDTH - 40;
 
 // ================= CONFIGURATION API =================
-const API_URL_USER = "http://172.20.10.3:3000/api/user";
-const API_URL_EVENTS = "http://172.20.10.3:3000/api/events";
+const API_URL_USER = "http://192.168.1.3:3000/api/user";
+const API_URL_EVENTS = "http://192.168.1.3:3000/api/events";
 
 export default function ProfileScreen({ route, navigation }) {
   const { nom, id } = route.params;
@@ -257,31 +257,25 @@ export default function ProfileScreen({ route, navigation }) {
               <Text style={styles.dateYear}>{year}</Text>
             </View>
           </View>
-          {/* Indicateur de statut d'inscription */}
-          {event.participation_status && (
-            <View style={styles.statusIndicator}>
-              <View
-                style={[
-                  styles.statusDot,
-                  {
-                    backgroundColor:
-                      event.participation_status === "PRESENT"
-                        ? "#4CAF50"
-                        : event.participation_status === "INSCRIT"
-                          ? "#FFC107"
-                          : "#F44336",
-                  },
-                ]}
-              />
-              <Text style={styles.statusText}>
-                {event.participation_status === "PRESENT"
-                  ? "Présent"
-                  : event.participation_status === "INSCRIT"
-                    ? "Inscrit"
-                    : "Absent"}
-              </Text>
-            </View>
-          )}
+          {/* Indicateur de statut de l'événement */}
+          <View style={styles.eventStatusBadge}>
+            <View
+              style={[
+                styles.statusDot,
+                {
+                  backgroundColor:
+                    event.event_status === "EN COURS"
+                      ? "#00F908"
+                      : event.event_status === "À VENIR"
+                        ? "#F4F900"
+                        : "#FF0000",
+                },
+              ]}
+            />
+            <Text style={styles.statusText}>
+              {event.event_status}
+            </Text>
+          </View>
         </View>
       </View>
     );
@@ -338,16 +332,26 @@ export default function ProfileScreen({ route, navigation }) {
 
       {/* HEADER FIXE */}
       <View style={styles.header}>
-        <TouchableOpacity style={styles.iconButtonBlue}>
-          <Ionicons name="notifications" size={20} color="#ffffffff" />
+        <TouchableOpacity
+          style={styles.iconButtonGlass}
+          onPress={() => console.log("Notifs")}
+        >
+          <BlurView intensity={20} tint="light" style={styles.iconBlur}>
+            <Ionicons name="notifications" size={20} color="#ffffffff" />
+          </BlurView>
         </TouchableOpacity>
 
         <View style={styles.userInfo}>
           <Text style={styles.dateText}>{userData.dateInfo}</Text>
         </View>
 
-        <TouchableOpacity style={styles.iconButtonBlue}>
-          <Ionicons name="person" size={20} color="#ffffffff" />
+        <TouchableOpacity
+          style={styles.iconButtonGlass}
+          onPress={() => console.log("Profile")}
+        >
+          <BlurView intensity={20} tint="light" style={styles.iconBlur}>
+            <Ionicons name="person" size={20} color="#ffffffff" />
+          </BlurView>
         </TouchableOpacity>
       </View>
 
@@ -464,12 +468,18 @@ const styles = StyleSheet.create({
     paddingBottom: 20,
     marginTop: 50,
   },
-  iconButtonBlue: {
+  iconButtonGlass: {
     marginTop: 10,
     width: 50,
     height: 50,
-    borderRadius: 50,
-    backgroundColor: "#05378d7b",
+    borderRadius: 25,
+    overflow: "hidden",
+    backgroundColor: "rgba(0, 74, 143, 0.46)",
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.13)",
+  },
+  iconBlur: {
+    flex: 1,
     justifyContent: "center",
     alignItems: "center",
   },
@@ -579,13 +589,17 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     transition: "width 0.3s",
   },
+  eventStatusBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 10,
+  },
 
   // ================= STYLES CARTE ÉVÉNEMENT =================
   activeEventCard: {
     borderRadius: 30,
     paddingTop: 18,
     paddingRight: 20,
-    paddingBottom: 10,
     paddingLeft: 20,
   },
   liveBadge: {
@@ -639,7 +653,7 @@ const styles = StyleSheet.create({
   },
   eventTitle: {
     color: "#FFF",
-    fontSize: 30,
+    fontSize: 24,
     fontWeight: "700",
     marginBottom: 5,
     textTransform: "uppercase",
