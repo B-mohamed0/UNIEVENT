@@ -195,41 +195,75 @@ app.post("/api/auth/login", async (req, res) => {
 app.get("/api/organizer/stats/:id", async (req, res) => {
   try {
     const { id } = req.params;
-    const today = new Date().toISOString().split("T")[0];
+    const now = new Date();
+    const today = now.toISOString().split("T")[0];
+    const currentTime = now.toTimeString().split(" ")[0].substring(0, 5);
 
-    // 1. Événements à venir
-    const upcoming = await pool.query(
-      "SELECT COUNT(*) FROM evenement WHERE idorganisateur = $1 AND date > $2",
-      [id, today]
+    // 1. Événements actifs (EN COURS)
+    const active = await pool.query(
+      `SELECT COUNT(*) FROM evenement 
+       WHERE idorganisateur = $1 
+       AND status = 'MAINTENANT'`,
+      [id]
     );
 
-    // 2. Événements aujourd'hui
-    const todayEvents = await pool.query(
-      "SELECT COUNT(*) FROM evenement WHERE idorganisateur = $1 AND date = $2",
-      [id, today]
+    // 2. Total Inscriptions
+    const registrations = await pool.query(
+      `SELECT COUNT(*) FROM participation p
+       JOIN evenement e ON p.idevenement = e.id
+       WHERE e.idorganisateur = $1`,
+      [id]
     );
 
-    // 3. Taux de présence moyen (simulé ou calculé si on a les données)
-    // Pour l'exemple, on prend la moyenne des taux de présence des événements passés
-    const avgAttendance = await pool.query(
-      `SELECT COALESCE(AVG(attendance_rate), 0) as avg_rate 
-       FROM (
-         SELECT (COUNT(CASE WHEN p.status = 'PRESENT' THEN 1 END)::float / NULLIF(COUNT(p.id), 0) * 100) as attendance_rate
-         FROM evenement e
-         LEFT JOIN participation p ON e.id = p.idevenement
-         WHERE e.idorganisateur = $1 AND e.date < $2
-         GROUP BY e.id
-       ) sub`,
-      [id, today]
+    // 3. Total Présences validées
+    const attendances = await pool.query(
+      `SELECT COUNT(*) FROM participation p
+       JOIN evenement e ON p.idevenement = e.id
+       WHERE e.idorganisateur = $1 AND p.status = 'PRESENT'`,
+      [id]
     );
+
+    // 4. Taux global de participation
+    const regCount = parseInt(registrations.rows[0].count);
+    const attCount = parseInt(attendances.rows[0].count);
+    const overallRate = regCount > 0 ? Math.round((attCount / regCount) * 100) : 0;
 
     res.json({
-      upcomingEvents: parseInt(upcoming.rows[0].count),
-      todayEvents: parseInt(todayEvents.rows[0].count),
-      avgAttendance: Math.round(parseFloat(avgAttendance.rows[0].avg_rate || 0))
+      activeEvents: parseInt(active.rows[0].count),
+      totalRegistrations: regCount,
+      totalAttendances: attCount,
+      avgAttendance: overallRate
     });
   } catch (error) {
     console.error("Error fetching organizer stats:", error);
+    res.status(500).json({ error: "Erreur serveur" });
+  }
+});
+
+/**
+ * GET /api/organizer/events-week/:id
+ * Retourne les événements de la semaine pour l'organisateur
+ */
+app.get("/api/organizer/events-week/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const startOfWeek = new Date();
+    startOfWeek.setHours(0, 0, 0, 0);
+    const endOfWeek = new Date();
+    endOfWeek.setDate(endOfWeek.getDate() + 7);
+    endOfWeek.setHours(23, 59, 59, 999);
+
+    const result = await pool.query(
+      `SELECT * FROM evenement 
+       WHERE idorganisateur = $1 
+       AND date >= $2 AND date <= $3 
+       ORDER BY date ASC`,
+      [id, startOfWeek, endOfWeek]
+    );
+
+    res.json(result.rows);
+  } catch (error) {
+    console.error("Error fetching events of the week:", error);
     res.status(500).json({ error: "Erreur serveur" });
   }
 });

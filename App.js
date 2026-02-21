@@ -19,6 +19,8 @@ import CreateEvent from "./screens/CreateEvent";
 import ManageEvent from "./screens/ManageEvent";
 import OrganizerStats from "./screens/OrganizerStats";
 import { NavbarProvider } from "./context/NavbarContext";
+import { ThemeProvider } from "./context/ThemeContext";
+
 const Stack = createNativeStackNavigator();
 
 export default function App() {
@@ -40,27 +42,29 @@ export default function App() {
   }
 
   return (
-    <NavbarProvider>
-      <NavigationContainer>
-        <Stack.Navigator screenOptions={{ headerShown: false, animation: "fade" }}>
-          <Stack.Screen name="Splash" component={SplashScreen} />
-          <Stack.Screen name="QuiSuisJe" component={QuiSuisJeScreen} />
-          <Stack.Screen name="Student" component={StudentScreen} />
-          <Stack.Screen name="Teacher" component={TeacherScreen} />
-          <Stack.Screen name="Organizer" component={OrganizerScreen} />
-          <Stack.Screen name="Admin" component={AdminScreen} />
-          <Stack.Screen name="Studentinscription" component={Studentinscription} />
-          <Stack.Screen name="Home" component={HomeScreen} />
-          <Stack.Screen name="Eventinfo" component={Eventinfo} />
-          <Stack.Screen name="Eventsscreen" component={Eventsscreen} />
-          <Stack.Screen name="Verificationemail" component={Verificationemail} />
-          <Stack.Screen name="OrganizerDashboard" component={OrganizerDashboard} />
-          <Stack.Screen name="OrganizerEvents" component={OrganizerEvents} />
-          <Stack.Screen name="CreateEvent" component={CreateEvent} />
-          <Stack.Screen name="ManageEvent" component={ManageEvent} />
-          <Stack.Screen name="OrganizerStats" component={OrganizerStats} />
-        </Stack.Navigator>
-      </NavigationContainer>
-    </NavbarProvider>
+    <ThemeProvider>
+      <NavbarProvider>
+        <NavigationContainer>
+          <Stack.Navigator screenOptions={{ headerShown: false, animation: "fade" }}>
+            <Stack.Screen name="Splash" component={SplashScreen} />
+            <Stack.Screen name="QuiSuisJe" component={QuiSuisJeScreen} />
+            <Stack.Screen name="Student" component={StudentScreen} />
+            <Stack.Screen name="Teacher" component={TeacherScreen} />
+            <Stack.Screen name="Organizer" component={OrganizerScreen} />
+            <Stack.Screen name="Admin" component={AdminScreen} />
+            <Stack.Screen name="Studentinscription" component={Studentinscription} />
+            <Stack.Screen name="Home" component={HomeScreen} />
+            <Stack.Screen name="Eventinfo" component={Eventinfo} />
+            <Stack.Screen name="Eventsscreen" component={Eventsscreen} />
+            <Stack.Screen name="Verificationemail" component={Verificationemail} />
+            <Stack.Screen name="OrganizerDashboard" component={OrganizerDashboard} />
+            <Stack.Screen name="OrganizerEvents" component={OrganizerEvents} />
+            <Stack.Screen name="CreateEvent" component={CreateEvent} />
+            <Stack.Screen name="ManageEvent" component={ManageEvent} />
+            <Stack.Screen name="OrganizerStats" component={OrganizerStats} />
+          </Stack.Navigator>
+        </NavigationContainer>
+      </NavbarProvider>
+    </ThemeProvider>
   );
 }

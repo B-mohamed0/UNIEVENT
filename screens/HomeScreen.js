@@ -216,7 +216,7 @@ export default function ProfileScreen({ route, navigation }) {
     return { day, month, year };
   };
 
-  // ================= 🆕 RENDU D'UNE CARTE ÉVÉNEMENT =================
+  // ================= 🆕 RENDU D'UNE CARTE ÉVÉNEMENT ================
   const renderEventCard = (event, index) => {
     const { day, month, year } = formatDate(event.date);
 

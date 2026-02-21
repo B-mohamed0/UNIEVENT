@@ -15,11 +15,26 @@ import { BlurView } from "expo-blur";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import DateTimePicker from "@react-native-community/datetimepicker";
+import OrganizerNavbar from "../components/OrganizerNavbar";
+import { useThemeContext } from "../context/ThemeContext";
+import OrganizerBackground from "../components/OrganizerBackground";
+import ThemeToggle from "../components/ThemeToggle";
 
 const { width } = Dimensions.get("window");
 
 export default function CreateEvent({ route, navigation }) {
   const { id, nom, editEvent } = route.params;
+  const { isDarkMode } = useThemeContext();
+
+  const themeColors = {
+    text: isDarkMode ? "#FFF" : "#0A0A1A",
+    subText: isDarkMode ? "rgba(255,255,255,0.7)" : "rgba(10, 10, 26, 0.7)",
+    headerTitle: isDarkMode ? "#FFF" : "#143287",
+    blurTint: isDarkMode ? "dark" : "light",
+    cardBorder: isDarkMode ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.05)",
+    inputBg: isDarkMode ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.03)",
+    placeholder: isDarkMode ? "rgba(255,255,255,0.4)" : "rgba(0,0,0,0.4)",
+  };
 
   const [form, setForm] = useState({
     title: editEvent?.nom_evenement || "",
@@ -107,45 +122,38 @@ export default function CreateEvent({ route, navigation }) {
   };
 
   return (
-    <ImageBackground
-      source={require("../assets/project/estwh.png")}
-      style={styles.container}
-      resizeMode="cover"
-    >
-      <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
+    <OrganizerBackground>
+      <StatusBar barStyle={isDarkMode ? "light-content" : "dark-content"} translucent backgroundColor="transparent" />
 
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <Ionicons name="chevron-back" size={28} color="#FFF" />
+          <Ionicons name="chevron-back" size={28} color={themeColors.text} />
         </TouchableOpacity>
         <View style={styles.titleContainer}>
-          <View style={styles.logoCircle}>
-            <Ionicons name={editEvent ? "create" : "add"} size={16} color="#FFF" />
-          </View>
-          <Text style={styles.headerTitle}>{editEvent ? "Modifier" : "Créer"} Événement</Text>
+          <Text style={[styles.headerTitle, { color: themeColors.headerTitle }]}>{editEvent ? "Modifier" : "Créer"} Événement</Text>
         </View>
-        <View style={{ width: 40 }} />
+        <ThemeToggle color={themeColors.text} />
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        <BlurView intensity={30} tint="dark" style={styles.formCard}>
+        <BlurView intensity={30} tint={themeColors.blurTint} style={[styles.formCard, { borderColor: themeColors.cardBorder }]}>
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Titre de l'événement</Text>
+            <Text style={[styles.label, { color: themeColors.text }]}>Titre de l'événement</Text>
             <TextInput
-              style={styles.input}
+              style={[styles.input, { color: themeColors.text, borderBottomColor: themeColors.placeholder }]}
               placeholder="Titre..."
-              placeholderTextColor="rgba(255,255,255,0.4)"
+              placeholderTextColor={themeColors.placeholder}
               value={form.title}
               onChangeText={(text) => setForm({ ...form, title: text })}
             />
           </View>
 
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Description</Text>
+            <Text style={[styles.label, { color: themeColors.text }]}>Description</Text>
             <TextInput
-              style={[styles.input, { height: 80 }]}
+              style={[styles.input, { height: 80, color: themeColors.text, borderBottomColor: themeColors.placeholder }]}
               placeholder="Décrivez votre événement..."
-              placeholderTextColor="rgba(255,255,255,0.4)"
+              placeholderTextColor={themeColors.placeholder}
               multiline
               value={form.description}
               onChangeText={(text) => setForm({ ...form, description: text })}
@@ -154,72 +162,72 @@ export default function CreateEvent({ route, navigation }) {
 
           <View style={styles.row}>
             <View style={[styles.inputGroup, { flex: 1, marginRight: 10 }]}>
-              <Text style={styles.label}>Date de début</Text>
-              <TouchableOpacity style={styles.datePickerBtn} onPress={() => setShowDatePicker('debut')}>
-                <Ionicons name="calendar-outline" size={20} color="#FFF" />
-                <Text style={styles.dateText}>{form.dateDebut.toLocaleDateString()}</Text>
+              <Text style={[styles.label, { color: themeColors.text }]}>Date de début</Text>
+              <TouchableOpacity style={[styles.datePickerBtn, { backgroundColor: themeColors.inputBg }]} onPress={() => setShowDatePicker('debut')}>
+                <Ionicons name="calendar-outline" size={20} color={themeColors.text} />
+                <Text style={[styles.dateText, { color: themeColors.text }]}>{form.dateDebut.toLocaleDateString()}</Text>
               </TouchableOpacity>
             </View>
             <View style={[styles.inputGroup, { flex: 1 }]}>
-              <Text style={styles.label}>Date de fin</Text>
-              <TouchableOpacity style={styles.datePickerBtn} onPress={() => setShowDatePicker('fin')}>
-                <Ionicons name="calendar-outline" size={20} color="#FFF" />
-                <Text style={styles.dateText}>{form.dateFin.toLocaleDateString()}</Text>
+              <Text style={[styles.label, { color: themeColors.text }]}>Date de fin</Text>
+              <TouchableOpacity style={[styles.datePickerBtn, { backgroundColor: themeColors.inputBg }]} onPress={() => setShowDatePicker('fin')}>
+                <Ionicons name="calendar-outline" size={20} color={themeColors.text} />
+                <Text style={[styles.dateText, { color: themeColors.text }]}>{form.dateFin.toLocaleDateString()}</Text>
               </TouchableOpacity>
             </View>
           </View>
 
           <View style={styles.row}>
             <View style={[styles.inputGroup, { flex: 1, marginRight: 10 }]}>
-              <Text style={styles.label}>Heure</Text>
-              <TouchableOpacity style={styles.datePickerBtn} onPress={() => setShowDatePicker('hDebut')}>
-                <Ionicons name="time-outline" size={20} color="#FFF" />
-                <Text style={styles.dateText}>{formatTime(form.heureDebut)}</Text>
+              <Text style={[styles.label, { color: themeColors.text }]}>Heure</Text>
+              <TouchableOpacity style={[styles.datePickerBtn, { backgroundColor: themeColors.inputBg }]} onPress={() => setShowDatePicker('hDebut')}>
+                <Ionicons name="time-outline" size={20} color={themeColors.text} />
+                <Text style={[styles.dateText, { color: themeColors.text }]}>{formatTime(form.heureDebut)}</Text>
               </TouchableOpacity>
             </View>
             <View style={[styles.inputGroup, { flex: 1, justifyContent: 'flex-end' }]}>
-              <TouchableOpacity style={styles.datePickerBtn} onPress={() => setShowDatePicker('hFin')}>
-                <Ionicons name="time-outline" size={20} color="#FFF" />
-                <Text style={styles.dateText}>{formatTime(form.heureFin)}</Text>
+              <TouchableOpacity style={[styles.datePickerBtn, { backgroundColor: themeColors.inputBg }]} onPress={() => setShowDatePicker('hFin')}>
+                <Ionicons name="time-outline" size={20} color={themeColors.text} />
+                <Text style={[styles.dateText, { color: themeColors.text }]}>{formatTime(form.heureFin)}</Text>
               </TouchableOpacity>
             </View>
           </View>
 
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Lieu</Text>
-            <View style={styles.inputWithIcon}>
+            <Text style={[styles.label, { color: themeColors.text }]}>Lieu</Text>
+            <View style={[styles.inputWithIcon, { borderBottomColor: themeColors.placeholder }]}>
               <TextInput
-                style={[styles.input, { flex: 1, borderBottomWidth: 0, paddingLeft: 0 }]}
+                style={[styles.input, { flex: 1, borderBottomWidth: 0, paddingLeft: 0, color: themeColors.text }]}
                 placeholder="Site, Salle..."
-                placeholderTextColor="rgba(255,255,255,0.4)"
+                placeholderTextColor={themeColors.placeholder}
                 value={form.lieu}
                 onChangeText={(text) => setForm({ ...form, lieu: text })}
               />
-              <Ionicons name="location-outline" size={20} color="#FFF" />
+              <Ionicons name="location-outline" size={20} color={themeColors.text} />
             </View>
           </View>
 
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Catégories</Text>
+            <Text style={[styles.label, { color: themeColors.text }]}>Catégories</Text>
             <View style={styles.categoryTabs}>
               {categories.map((cat) => (
                 <TouchableOpacity
                   key={cat}
-                  style={[styles.catTab, form.categorie === cat && styles.catTabActive]}
+                  style={[styles.catTab, { backgroundColor: themeColors.inputBg }, form.categorie === cat && styles.catTabActive]}
                   onPress={() => setForm({ ...form, categorie: cat })}
                 >
-                  <Text style={[styles.catTabText, form.categorie === cat && styles.catTabTextActive]}>{cat}</Text>
+                  <Text style={[styles.catTabText, { color: themeColors.text }, form.categorie === cat && styles.catTabTextActive]}>{cat}</Text>
                 </TouchableOpacity>
               ))}
             </View>
           </View>
 
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Capacité max</Text>
-            <View style={styles.capacityRow}>
-              <Ionicons name="people-outline" size={20} color="#FFF" />
+            <Text style={[styles.label, { color: themeColors.text }]}>Capacité max</Text>
+            <View style={[styles.capacityRow, { backgroundColor: themeColors.inputBg }]}>
+              <Ionicons name="people-outline" size={20} color={themeColors.text} />
               <TextInput
-                style={[styles.input, { flex: 1, textAlign: 'center' }]}
+                style={[styles.input, { flex: 1, textAlign: 'center', borderBottomWidth: 0, color: themeColors.text }]}
                 keyboardType="numeric"
                 value={form.capaciteMax}
                 onChangeText={(text) => setForm({ ...form, capaciteMax: text })}
@@ -253,7 +261,8 @@ export default function CreateEvent({ route, navigation }) {
           onChange={onDateChange}
         />
       )}
-    </ImageBackground>
+      <OrganizerNavbar id={id} nom={nom} />
+    </OrganizerBackground>
   );
 }
 

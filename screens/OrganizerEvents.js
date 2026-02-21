@@ -7,19 +7,30 @@ import {
   Dimensions,
   ImageBackground,
   StatusBar,
-  ScrollView,
   FlatList,
 } from "react-native";
 import { BlurView } from "expo-blur";
 import { Ionicons } from "@expo/vector-icons";
-import { LinearGradient } from "expo-linear-gradient";
+import OrganizerNavbar from "../components/OrganizerNavbar";
+import { useThemeContext } from "../context/ThemeContext";
+import OrganizerBackground from "../components/OrganizerBackground";
+import ThemeToggle from "../components/ThemeToggle";
 
 const { width } = Dimensions.get("window");
 
 export default function OrganizerEvents({ route, navigation }) {
   const { id, nom } = route.params;
+  const { isDarkMode } = useThemeContext();
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  const themeColors = {
+    text: isDarkMode ? "#FFF" : "#0A0A1A",
+    subText: isDarkMode ? "rgba(255,255,255,0.7)" : "rgba(10, 10, 26, 0.7)",
+    headerTitle: isDarkMode ? "#FFF" : "#143287",
+    cardBorder: isDarkMode ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.05)",
+    blurTint: isDarkMode ? "dark" : "light",
+  };
 
   const API_URL = "http://192.168.1.3:3000/api/organizer";
 
@@ -67,20 +78,17 @@ export default function OrganizerEvents({ route, navigation }) {
         style={styles.eventCard}
         onPress={() => navigation.navigate("ManageEvent", { event: item, organizerId: id, nom })}
       >
-        <BlurView intensity={30} tint="dark" style={styles.cardInner}>
+        <BlurView intensity={30} tint={themeColors.blurTint} style={styles.cardInner}>
           <View style={styles.cardHeader}>
             <View style={styles.titleRow}>
-              <View style={styles.logoBox}>
-                <Ionicons name="calendar" size={18} color="#FFF" />
+              <View style={[styles.logoBox, { backgroundColor: isDarkMode ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.05)" }]}>
+                <Ionicons name="calendar" size={18} color={themeColors.text} />
               </View>
-              <Text style={styles.eventTitle}>{item.nom_evenement}</Text>
+              <Text style={[styles.eventTitle, { color: themeColors.text }]}>{item.nom_evenement}</Text>
             </View>
-            <TouchableOpacity style={styles.backBtnHeader} onPress={() => navigation.goBack()}>
-              <Ionicons name="chevron-back" size={24} color="#FFF" />
-            </TouchableOpacity>
           </View>
 
-          <Text style={styles.eventInfoText}>
+          <Text style={[styles.eventInfoText, { color: themeColors.subText }]}>
             {new Date(item.date).toLocaleDateString("fr-FR", { day: 'numeric', month: 'long', year: 'numeric' })}, {item.heure_debut?.slice(0, 5)}, {item.lieu}
           </Text>
 
@@ -90,13 +98,13 @@ export default function OrganizerEvents({ route, navigation }) {
             </View>
             <View style={styles.actionIcons}>
               <TouchableOpacity style={styles.iconBtn} onPress={() => navigation.navigate("CreateEvent", { id, nom, editEvent: item })}>
-                <Ionicons name="create-outline" size={20} color="#FFF" />
+                <Ionicons name="create-outline" size={20} color={themeColors.text} />
               </TouchableOpacity>
               <TouchableOpacity style={styles.iconBtn} onPress={() => handleDelete(item.id)}>
-                <Ionicons name="trash-outline" size={20} color="#FFF" />
+                <Ionicons name="trash-outline" size={20} color={themeColors.text} />
               </TouchableOpacity>
               <TouchableOpacity style={styles.iconBtn} onPress={() => navigation.navigate("OrganizerStats", { id, nom })}>
-                <Ionicons name="stats-chart" size={20} color="#FFF" />
+                <Ionicons name="stats-chart" size={20} color={themeColors.text} />
               </TouchableOpacity>
             </View>
           </View>
@@ -106,24 +114,17 @@ export default function OrganizerEvents({ route, navigation }) {
   };
 
   return (
-    <ImageBackground
-      source={require("../assets/project/estwh.png")}
-      style={styles.container}
-      resizeMode="cover"
-    >
-      <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
+    <OrganizerBackground>
+      <StatusBar barStyle={isDarkMode ? "light-content" : "dark-content"} translucent backgroundColor="transparent" />
 
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <Ionicons name="chevron-back" size={28} color="#FFF" />
+          <Ionicons name="chevron-back" size={28} color={themeColors.text} />
         </TouchableOpacity>
         <View style={styles.titleContainer}>
-          <View style={styles.logoCircle}>
-            <Ionicons name="apps" size={16} color="#FFF" />
-          </View>
-          <Text style={styles.headerTitle}>Mes Événements</Text>
+          <Text style={[styles.headerTitle, { color: themeColors.headerTitle }]}>Mes Événements</Text>
         </View>
-        <View style={{ width: 40 }} />
+        <ThemeToggle color={themeColors.text} />
       </View>
 
       <FlatList
@@ -135,7 +136,8 @@ export default function OrganizerEvents({ route, navigation }) {
           !loading && <Text style={styles.emptyText}>Aucun événement créé pour le moment.</Text>
         }
       />
-    </ImageBackground>
+      <OrganizerNavbar id={id} nom={nom} />
+    </OrganizerBackground>
   );
 }
 

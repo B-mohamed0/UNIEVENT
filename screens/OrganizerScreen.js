@@ -180,10 +180,9 @@ const styles = StyleSheet.create({
 
   logo: {
     pointerEvents: "none",
-    zIndex: 100,
-    width: 500,
+    width: 300,
     height: 300,
-    marginTop: 0,
+    marginTop: -40,
     shadowColor: "#000",
     shadowOffset: {
       width: 0,
@@ -197,14 +196,15 @@ const styles = StyleSheet.create({
 
   glassCard: {
     width: 320,
-    height: 360,
+    minHeight: 250,
     borderRadius: 30,
     padding: 25,
-    paddingTop: 40,
+    paddingTop: 27,
     overflow: "hidden",
     borderWidth: 1,
     borderColor: "rgba(255,255,255,0.2)",
     backgroundColor: "rgba(0, 0, 0, 0.13)",
+    marginTop: -20,
   },
 
   label: {
@@ -229,11 +229,11 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 6,
-    marginBottom: 30,
+    marginBottom: 20,
   },
 
   loginButton: {
-    marginTop: 20,
+    marginTop: 10,
     width: 180,
     alignSelf: "center",
     borderRadius: 26,

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   View,
   Text,
@@ -8,106 +8,148 @@ import {
   ImageBackground,
   StatusBar,
   ScrollView,
+  FlatList,
+  Animated,
 } from "react-native";
 import { BlurView } from "expo-blur";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
-import BottomNav from "../components/navbar";
+import OrganizerNavbar from "../components/OrganizerNavbar";
+import { useThemeContext } from "../context/ThemeContext";
+import OrganizerBackground from "../components/OrganizerBackground";
+import ThemeToggle from "../components/ThemeToggle";
 
 const { width } = Dimensions.get("window");
 
 export default function OrganizerDashboard({ route, navigation }) {
   const { id, nom } = route.params;
   const [stats, setStats] = useState({
-    upcomingEvents: 0,
-    todayEvents: "0/0",
-    avgAttendance: "0%",
+    activeEvents: 0,
+    totalRegistrations: 0,
+    totalAttendances: 0,
+    avgAttendance: 0,
   });
+  const { isDarkMode } = useThemeContext();
+  const [weekEvents, setWeekEvents] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  const fadeAnim = useRef(new Animated.Value(isDarkMode ? 1 : 0)).current;
+
+  useEffect(() => {
+    Animated.timing(fadeAnim, {
+      toValue: isDarkMode ? 1 : 0,
+      duration: 500,
+      useNativeDriver: true,
+    }).start();
+  }, [isDarkMode]);
+
+  const themeColors = {
+    text: isDarkMode ? "#FFF" : "#0A0A1A",
+    subText: isDarkMode ? "rgba(255, 255, 255, 0.6)" : "rgba(10, 10, 26, 0.6)",
+    cardBg: isDarkMode ? "rgba(255, 255, 255, 0.05)" : "rgba(0, 0, 0, 0.03)",
+    blurTint: isDarkMode ? "light" : "dark",
+    headerTitle: isDarkMode ? "#FFF" : "#143287",
+  };
 
   const API_URL = "http://192.168.1.3:3000/api/organizer"; // Ajuster l'IP si besoin
 
   useEffect(() => {
     fetchStats();
+    fetchWeekEvents();
   }, []);
 
   const fetchStats = async () => {
     try {
       const response = await fetch(`${API_URL}/stats/${id}`);
       const data = await response.json();
-      setStats({
-        upcomingEvents: data.upcomingEvents || 0,
-        todayEvents: data.todayEvents || 0, // Idéalement "X/Y"
-        avgAttendance: `${data.avgAttendance || 0}%`,
-      });
+      setStats(data);
     } catch (error) {
       console.error("Error fetching stats:", error);
     }
   };
 
+  const fetchWeekEvents = async () => {
+    try {
+      const response = await fetch(`${API_URL}/events-week/${id}`);
+      const data = await response.json();
+      setWeekEvents(data);
+      setLoading(false);
+    } catch (error) {
+      console.error("Error fetching week events:", error);
+      setLoading(false);
+    }
+  };
+
   return (
-    <ImageBackground
-      source={require("../assets/project/estwh.png")}
-      style={styles.container}
-      resizeMode="cover"
-    >
-      <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
+    <OrganizerBackground>
+      <StatusBar barStyle={isDarkMode ? "light-content" : "dark-content"} translucent backgroundColor="transparent" />
 
       <View style={styles.header}>
         <View style={styles.headerTop}>
-          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-            <Ionicons name="chevron-back" size={28} color="#FFF" />
-          </TouchableOpacity>
-          <View style={styles.titleContainer}>
-            <View style={styles.logoCircle}>
-              <Ionicons name="flash" size={16} color="#FFF" />
+          <View style={styles.headerLeft}>
+            <View style={styles.titleContainer}>
+              <Text style={[styles.headerTitle, { color: themeColors.headerTitle }]}>Bonjour</Text>
+              <Text style={[styles.headerSubTitle, { color: themeColors.text }]}>{nom}</Text>
             </View>
-            <Text style={styles.headerTitle}>Espace Organisateur</Text>
           </View>
-          <View style={{ width: 40 }} />
+          <View style={styles.headerRight}>
+            <TouchableOpacity style={[styles.profileButton, { borderColor: isDarkMode ? "rgba(255,255,255,0.2)" : "rgba(0,0,0,0.1)" }]}>
+              <View style={[styles.avatarPlaceholder, { backgroundColor: isDarkMode ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.05)" }]}>
+                <Ionicons name="person" size={18} color={themeColors.text} />
+              </View>
+            </TouchableOpacity>
+            <ThemeToggle color={themeColors.text} />
+            <TouchableOpacity style={[styles.notificationButton, { backgroundColor: isDarkMode ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.03)", borderColor: isDarkMode ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.05)" }]}>
+              <View style={styles.notificationCircle}>
+                <Ionicons name="notifications-outline" size={22} color={themeColors.text} />
+                <View style={styles.notificationBadge} />
+              </View>
+            </TouchableOpacity>
+          </View>
         </View>
       </View>
 
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        {/* Statistics Cards */}
-        <View style={styles.statsList}>
-          <BlurView intensity={30} tint="dark" style={styles.statLine}>
-            <Text style={styles.statLabel}>Événements à venir</Text>
-            <Text style={styles.statValue}>{stats.upcomingEvents}</Text>
-          </BlurView>
-
-          <BlurView intensity={30} tint="dark" style={styles.statLine}>
-            <Text style={styles.statLabel}>Aujourd'hui</Text>
-            <Text style={styles.statValue}>{stats.todayEvents}</Text>
-          </BlurView>
-
-          <BlurView intensity={30} tint="dark" style={styles.statLine}>
-            <Text style={styles.statLabel}>Taux moyen</Text>
-            <Text style={styles.statValue}>{stats.avgAttendance}</Text>
-          </BlurView>
-
-          <TouchableOpacity
-            style={styles.navItem}
-            onPress={() => navigation.navigate("OrganizerEvents", { id, nom })}
-          >
-            <BlurView intensity={30} tint="dark" style={styles.navItemInner}>
-              <Text style={styles.navText}>Mes Événements</Text>
-              <Ionicons name="chevron-forward" size={20} color="#FFF" />
+      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        {/* Statistics 2x2 Grid */}
+        <View style={styles.statsGrid}>
+          <View style={styles.statsRow}>
+            <BlurView intensity={20} tint={themeColors.blurTint} style={styles.statCard}>
+              <LinearGradient colors={isDarkMode ? ["rgba(255,255,255,0.1)", "rgba(255,255,255,0.05)"] : ["rgba(0,0,0,0.05)", "rgba(0,0,0,0.02)"]} style={styles.cardGradient}>
+                <Ionicons name="flash-outline" size={24} color={themeColors.text} />
+                <Text style={[styles.statValue, { color: themeColors.text }]}>{stats.activeEvents}</Text>
+                <Text style={[styles.statLabel, { color: themeColors.subText }]}>Événements actifs</Text>
+              </LinearGradient>
             </BlurView>
-          </TouchableOpacity>
 
-
-
-          <TouchableOpacity
-            style={styles.navItem}
-            onPress={() => navigation.navigate("OrganizerStats", { id, nom })}
-          >
-            <BlurView intensity={30} tint="dark" style={styles.navItemInner}>
-              <Text style={styles.navText}>Statistiques Globales</Text>
-              <Ionicons name="chevron-forward" size={20} color="#FFF" />
+            <BlurView intensity={20} tint={themeColors.blurTint} style={styles.statCard}>
+              <LinearGradient colors={isDarkMode ? ["rgba(255,255,255,0.1)", "rgba(255,255,255,0.05)"] : ["rgba(0,0,0,0.05)", "rgba(0,0,0,0.02)"]} style={styles.cardGradient}>
+                <Ionicons name="people-outline" size={24} color={themeColors.text} />
+                <Text style={[styles.statValue, { color: themeColors.text }]}>{stats.totalRegistrations}</Text>
+                <Text style={[styles.statLabel, { color: themeColors.subText }]}>Total Inscriptions</Text>
+              </LinearGradient>
             </BlurView>
-          </TouchableOpacity>
+          </View>
+
+          <View style={styles.statsRow}>
+            <BlurView intensity={20} tint={themeColors.blurTint} style={styles.statCard}>
+              <LinearGradient colors={isDarkMode ? ["rgba(255,255,255,0.1)", "rgba(255,255,255,0.05)"] : ["rgba(0,0,0,0.05)", "rgba(0,0,0,0.02)"]} style={styles.cardGradient}>
+                <Ionicons name="checkmark-circle-outline" size={24} color={themeColors.text} />
+                <Text style={[styles.statValue, { color: themeColors.text }]}>{stats.totalAttendances}</Text>
+                <Text style={[styles.statLabel, { color: themeColors.subText }]}>Présences validées</Text>
+              </LinearGradient>
+            </BlurView>
+
+            <BlurView intensity={20} tint={themeColors.blurTint} style={styles.statCard}>
+              <LinearGradient colors={isDarkMode ? ["rgba(255,255,255,0.1)", "rgba(255,255,255,0.05)"] : ["rgba(0,0,0,0.05)", "rgba(0,0,0,0.02)"]} style={styles.cardGradient}>
+                <Ionicons name="trending-up-outline" size={24} color={themeColors.text} />
+                <Text style={[styles.statValue, { color: themeColors.text }]}>{stats.avgAttendance}%</Text>
+                <Text style={[styles.statLabel, { color: themeColors.subText }]}>Taux global</Text>
+              </LinearGradient>
+            </BlurView>
+          </View>
         </View>
 
+        {/* Create Event Button */}
         <TouchableOpacity
           style={styles.createButtonContainer}
           onPress={() => navigation.navigate("CreateEvent", { id, nom })}
@@ -118,14 +160,40 @@ export default function OrganizerDashboard({ route, navigation }) {
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 0 }}
           >
-            <Ionicons name="add" size={24} color="#FFF" />
-            <Text style={styles.createButtonText}>Créer événement</Text>
+            <Ionicons name="add-circle" size={24} color="#FFF" />
+            <Text style={styles.createButtonText}>Créer un nouvel événement</Text>
           </LinearGradient>
         </TouchableOpacity>
+
+        {/* Recent Events (This Week) */}
+        <View style={styles.recentSection}>
+          <Text style={[styles.sectionTitle, { color: themeColors.text }]}>Événements de la semaine</Text>
+          {weekEvents.length > 0 ? (
+            weekEvents.map((event) => (
+              <TouchableOpacity
+                key={event.id}
+                style={[styles.recentEventCard, { borderColor: isDarkMode ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.05)" }]}
+                onPress={() => navigation.navigate("ManageEvent", { event, organizerId: id, nom })}
+              >
+                <BlurView intensity={10} tint={themeColors.blurTint} style={styles.recentEventInner}>
+                  <View style={styles.eventInfo}>
+                    <Text style={[styles.eventTitle, { color: themeColors.text }]}>{event.nom_evenement}</Text>
+                    <Text style={[styles.eventDate, { color: themeColors.subText }]}>
+                      {new Date(event.date).toLocaleDateString("fr-FR", { day: 'numeric', month: 'short' })} • {event.heure_debut?.slice(0, 5)}
+                    </Text>
+                  </View>
+                  <Ionicons name="chevron-forward" size={20} color={isDarkMode ? "rgba(255,255,255,0.5)" : "rgba(0,0,0,0.3)"} />
+                </BlurView>
+              </TouchableOpacity>
+            ))
+          ) : (
+            !loading && <Text style={[styles.emptyText, { color: themeColors.subText }]}>Aucun événement prévu cette semaine.</Text>
+          )}
+        </View>
       </ScrollView>
 
-      <BottomNav id={id} nom={nom} />
-    </ImageBackground>
+      <OrganizerNavbar id={id} nom={nom} isDarkMode={isDarkMode} />
+    </OrganizerBackground>
   );
 }
 
@@ -144,12 +212,60 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
   },
-  backButton: {
-    padding: 5,
-  },
-  titleContainer: {
+  headerRight: {
     flexDirection: "row",
     alignItems: "center",
+    gap: 8,
+  },
+  themeToggle: {
+    padding: 8,
+    borderRadius: 12,
+    backgroundColor: "rgba(255,255,255,0.1)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.1)",
+  },
+  headerLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  profileButton: {
+    padding: 2,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.3)",
+  },
+  avatarPlaceholder: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  titleContainer: {
+    flexDirection: "column",
+    justifyContent: "center",
+  },
+  notificationButton: {
+    padding: 8,
+    borderRadius: 12,
+    backgroundColor: "rgba(255,255,255,0.1)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.1)",
+  },
+  notificationCircle: {
+    position: "relative",
+  },
+  notificationBadge: {
+    position: "absolute",
+    top: 0,
+    right: 0,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: "#FF3B30",
+    borderWidth: 1,
+    borderColor: "#071c53ff",
   },
   logoCircle: {
     width: 24,
@@ -166,76 +282,114 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     fontFamily: "Insignia",
   },
+  headerSubTitle: {
+    color: "#FFF",
+    fontSize: 24,
+    fontWeight: "700",
+    fontFamily: "Insignia",
+    marginTop: -4,
+  },
   scrollContent: {
     paddingHorizontal: 20,
-    paddingBottom: 120,
+    paddingBottom: 150,
   },
-  statsList: {
-    marginTop: 20,
+  statsGrid: {
+    marginTop: 10,
     gap: 15,
   },
-  statLine: {
+  statsRow: {
     flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingVertical: 18,
-    paddingHorizontal: 20,
-    borderRadius: 15,
+    gap: 15,
+  },
+  statCard: {
+    flex: 1,
+    borderRadius: 24,
     overflow: "hidden",
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.1)",
+    borderColor: "rgba(255,255,255,0.15)",
+  },
+  cardGradient: {
+    padding: 20,
+    alignItems: "flex-start",
+    gap: 12,
   },
   statLabel: {
-    color: "rgba(255,255,255,0.7)",
-    fontSize: 16,
+    color: "rgba(255, 255, 255, 0.6)",
+    fontSize: 12,
     fontFamily: "Insignia",
+    lineHeight: 16,
   },
   statValue: {
     color: "#FFF",
-    fontSize: 22,
+    fontSize: 28,
     fontWeight: "700",
     fontFamily: "jokeyone",
   },
-  navItem: {
-    marginTop: 5,
-  },
-  navItemInner: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingVertical: 18,
-    paddingHorizontal: 20,
-    borderRadius: 15,
-    overflow: "hidden",
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.1)",
-  },
-  navText: {
-    color: "#FFF",
-    fontSize: 16,
-    fontFamily: "Insignia",
-  },
   createButtonContainer: {
-    marginTop: 40,
-    borderRadius: 25,
+    marginTop: 30,
+    borderRadius: 20,
     overflow: "hidden",
     elevation: 8,
-    shadowColor: "#005AC1",
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
-    shadowRadius: 10,
+    shadowRadius: 8,
   },
   createButton: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: 15,
-    gap: 10,
+    paddingVertical: 18,
+    gap: 12,
   },
   createButtonText: {
     color: "#FFF",
-    fontSize: 18,
+    fontSize: 16,
+    fontWeight: "700",
+    fontFamily: "Insignia",
+  },
+  recentSection: {
+    marginTop: 40,
+  },
+  sectionTitle: {
+    color: "#FFF",
+    fontSize: 20,
+    fontWeight: "700",
+    fontFamily: "jokeyone",
+    marginBottom: 20,
+  },
+  recentEventCard: {
+    marginBottom: 12,
+    borderRadius: 18,
+    overflow: "hidden",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.1)",
+  },
+  recentEventInner: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    padding: 18,
+  },
+  eventInfo: {
+    flex: 1,
+    gap: 4,
+  },
+  eventTitle: {
+    color: "#FFF",
+    fontSize: 16,
     fontWeight: "600",
+    fontFamily: "Insignia",
+  },
+  eventDate: {
+    color: "rgba(255,255,255,0.5)",
+    fontSize: 13,
+    fontFamily: "Insignia",
+  },
+  emptyText: {
+    color: "rgba(255,255,255,0.4)",
+    textAlign: "center",
+    marginTop: 20,
     fontFamily: "Insignia",
   },
 });

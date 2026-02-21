@@ -13,13 +13,25 @@ import {
 import { BlurView } from "expo-blur";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
+import { useThemeContext } from "../context/ThemeContext";
+import OrganizerBackground from "../components/OrganizerBackground";
+import ThemeToggle from "../components/ThemeToggle";
 
 const { width } = Dimensions.get("window");
 
 export default function ManageEvent({ route, navigation }) {
   const { event, organizerId, nom } = route.params;
+  const { isDarkMode } = useThemeContext();
   const [data, setData] = useState({ event: event, participants: [] });
   const [loading, setLoading] = useState(true);
+
+  const themeColors = {
+    text: isDarkMode ? "#FFF" : "#0A0A1A",
+    subText: isDarkMode ? "rgba(255,255,255,0.6)" : "rgba(10, 10, 26, 0.6)",
+    headerTitle: isDarkMode ? "#FFF" : "#143287",
+    blurTint: isDarkMode ? "dark" : "light",
+    cardBorder: isDarkMode ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.05)",
+  };
 
   const API_URL = "http://192.168.1.3:3000/api/organizer";
 
@@ -40,20 +52,20 @@ export default function ManageEvent({ route, navigation }) {
   };
 
   const rendersStatCard = (label, value, subLabel) => (
-    <BlurView intensity={30} tint="dark" style={styles.statCard}>
-      <Text style={styles.statLabel}>{label}</Text>
-      <Text style={styles.statValue}>{value}</Text>
-      {subLabel && <Text style={styles.statSubLabel}>{subLabel}</Text>}
+    <BlurView intensity={30} tint={themeColors.blurTint} style={[styles.statCard, { borderColor: themeColors.cardBorder }]}>
+      <Text style={[styles.statLabel, { color: themeColors.subText }]}>{label}</Text>
+      <Text style={[styles.statValue, { color: themeColors.text }]}>{value}</Text>
+      {subLabel && <Text style={[styles.statSubLabel, { color: themeColors.subText }]}>{subLabel}</Text>}
     </BlurView>
   );
 
   const renderParticipant = ({ item }) => (
-    <BlurView intensity={20} tint="dark" style={styles.participantRow}>
+    <BlurView intensity={20} tint={themeColors.blurTint} style={[styles.participantRow, { borderColor: themeColors.cardBorder }]}>
       <View style={styles.participantInfo}>
-        <View style={styles.avatar}>
-          <Ionicons name="person" size={20} color="#FFF" />
+        <View style={[styles.avatar, { backgroundColor: isDarkMode ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.05)" }]}>
+          <Ionicons name="person" size={20} color={themeColors.text} />
         </View>
-        <Text style={styles.participantName}>{item.nom}</Text>
+        <Text style={[styles.participantName, { color: themeColors.text }]}>{item.nom}</Text>
       </View>
       <View style={[styles.presenceBadge, { backgroundColor: item.status === 'PRESENT' ? '#00A86B' : '#C41E3A' }]}>
         <Text style={styles.presenceText}>{item.status === 'PRESENT' ? 'Présent' : 'Absent'}</Text>
@@ -66,24 +78,18 @@ export default function ManageEvent({ route, navigation }) {
   const presenceRate = totalInscrit > 0 ? Math.round((presenceCount / totalInscrit) * 100) : 0;
 
   return (
-    <ImageBackground
-      source={require("../assets/project/estwh.png")}
-      style={styles.container}
-      resizeMode="cover"
-    >
-      <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
+    <OrganizerBackground>
+      <StatusBar barStyle={isDarkMode ? "light-content" : "dark-content"} translucent backgroundColor="transparent" />
 
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <Ionicons name="chevron-back" size={28} color="#FFF" />
+          <Ionicons name="chevron-back" size={28} color={themeColors.text} />
         </TouchableOpacity>
         <View style={styles.titleContainer}>
-          <Text style={styles.headerTitle}>{event.nom_evenement}</Text>
-          <Text style={styles.headerSubTitle}>Aujourd'hui, {new Date(event.date).toLocaleDateString()}</Text>
+          <Text style={[styles.headerTitle, { color: themeColors.headerTitle }]}>{event.nom_evenement}</Text>
+          <Text style={[styles.headerSubTitle, { color: themeColors.subText }]}>Aujourd'hui, {new Date(event.date).toLocaleDateString()}</Text>
         </View>
-        <TouchableOpacity style={styles.profileBtn}>
-          <Ionicons name="settings-outline" size={24} color="#FFF" />
-        </TouchableOpacity>
+        <ThemeToggle color={themeColors.text} />
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
@@ -94,7 +100,7 @@ export default function ManageEvent({ route, navigation }) {
         </View>
 
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Participants</Text>
+          <Text style={[styles.sectionTitle, { color: themeColors.text }]}>Participants</Text>
           <TouchableOpacity>
             <Text style={styles.seeAllText}>Voir-tous</Text>
           </TouchableOpacity>
@@ -112,21 +118,21 @@ export default function ManageEvent({ route, navigation }) {
 
         <View style={styles.actionButtons}>
           <TouchableOpacity style={styles.actionBtn}>
-            <BlurView intensity={30} tint="dark" style={styles.actionBtnInner}>
-              <Text style={styles.actionBtnText}>Exporter liste CSV</Text>
-              <Ionicons name="chevron-forward" size={18} color="#FFF" />
+            <BlurView intensity={30} tint={themeColors.blurTint} style={[styles.actionBtnInner, { borderColor: themeColors.cardBorder }]}>
+              <Text style={[styles.actionBtnText, { color: themeColors.text }]}>Exporter liste CSV</Text>
+              <Ionicons name="chevron-forward" size={18} color={themeColors.text} />
             </BlurView>
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.actionBtn}>
-            <BlurView intensity={30} tint="dark" style={styles.actionBtnInner}>
-              <Text style={styles.actionBtnText}>Envoyer rappel</Text>
-              <Ionicons name="chevron-forward" size={18} color="#FFF" />
+            <BlurView intensity={30} tint={themeColors.blurTint} style={[styles.actionBtnInner, { borderColor: themeColors.cardBorder }]}>
+              <Text style={[styles.actionBtnText, { color: themeColors.text }]}>Envoyer rappel</Text>
+              <Ionicons name="chevron-forward" size={18} color={themeColors.text} />
             </BlurView>
           </TouchableOpacity>
         </View>
       </ScrollView>
-    </ImageBackground>
+    </OrganizerBackground>
   );
 }
 

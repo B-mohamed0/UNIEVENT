@@ -11,77 +11,83 @@ import {
 } from "react-native";
 import { BlurView } from "expo-blur";
 import { Ionicons } from "@expo/vector-icons";
-import { LinearGradient } from "expo-linear-gradient";
+import OrganizerNavbar from "../components/OrganizerNavbar";
+import { useThemeContext } from "../context/ThemeContext";
+import OrganizerBackground from "../components/OrganizerBackground";
+import ThemeToggle from "../components/ThemeToggle";
 
 const { width } = Dimensions.get("window");
 
 export default function OrganizerStats({ route, navigation }) {
     const { id, nom } = route.params;
+    const { isDarkMode } = useThemeContext();
+
+    const themeColors = {
+        text: isDarkMode ? "#FFF" : "#0A0A1A",
+        subText: isDarkMode ? "rgba(255,255,255,0.7)" : "rgba(10, 10, 26, 0.7)",
+        headerTitle: isDarkMode ? "#FFF" : "#143287",
+        blurTint: isDarkMode ? "dark" : "light",
+        cardBorder: isDarkMode ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.05)",
+    };
 
     return (
-        <ImageBackground
-            source={require("../assets/project/estwh.png")}
-            style={styles.container}
-            resizeMode="cover"
-        >
-            <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
+        <OrganizerBackground>
+            <StatusBar barStyle={isDarkMode ? "light-content" : "dark-content"} translucent backgroundColor="transparent" />
 
             <View style={styles.header}>
                 <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-                    <Ionicons name="chevron-back" size={28} color="#FFF" />
+                    <Ionicons name="chevron-back" size={28} color={themeColors.text} />
                 </TouchableOpacity>
                 <View style={styles.titleContainer}>
-                    <View style={styles.logoCircle}>
-                        <Ionicons name="stats-chart" size={16} color="#FFF" />
-                    </View>
-                    <Text style={styles.headerTitle}>Statistiques Globales</Text>
+                    <Text style={[styles.headerTitle, { color: themeColors.headerTitle }]}>Statistiques Globales</Text>
                 </View>
-                <View style={{ width: 40 }} />
+                <ThemeToggle color={themeColors.text} />
             </View>
 
             <ScrollView contentContainerStyle={styles.scrollContent}>
                 <View style={styles.filterRow}>
-                    <TouchableOpacity style={styles.filterBtn}>
-                        <Ionicons name="checkmark" size={16} color="#FFF" />
-                        <Text style={styles.filterText}>Avril</Text>
+                    <TouchableOpacity style={[styles.filterBtn, { backgroundColor: isDarkMode ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.05)", borderColor: themeColors.cardBorder }]}>
+                        <Ionicons name="checkmark" size={16} color={themeColors.text} />
+                        <Text style={[styles.filterText, { color: themeColors.text }]}>Avril</Text>
                     </TouchableOpacity>
-                    <TouchableOpacity style={styles.filterBtn}>
-                        <Text style={styles.filterText}>Toutes Catégories</Text>
-                        <Ionicons name="chevron-down" size={16} color="#FFF" />
+                    <TouchableOpacity style={[styles.filterBtn, { backgroundColor: isDarkMode ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.05)", borderColor: themeColors.cardBorder }]}>
+                        <Text style={[styles.filterText, { color: themeColors.text }]}>Toutes Catégories</Text>
+                        <Ionicons name="chevron-down" size={16} color={themeColors.text} />
                     </TouchableOpacity>
                 </View>
 
-                <BlurView intensity={30} tint="dark" style={styles.chartCard}>
-                    <Text style={styles.chartTitle}>Participants par mois</Text>
-                    <View style={styles.chartPlaceholder}>
+                <BlurView intensity={30} tint={themeColors.blurTint} style={[styles.chartCard, { borderColor: themeColors.cardBorder }]}>
+                    <Text style={[styles.chartTitle, { color: themeColors.text }]}>Participants par mois</Text>
+                    <View style={[styles.chartPlaceholder, { borderBottomColor: isDarkMode ? "rgba(255,255,255,0.2)" : "rgba(0,0,0,0.1)" }]}>
                         {/* Simuler un graphique simple avec des barres */}
                         {[40, 60, 45, 80, 55, 90, 70, 40, 60, 75, 50, 65].map((h, i) => (
                             <View key={i} style={[styles.chartBar, { height: h }]} />
                         ))}
                     </View>
                     <View style={styles.chartLabels}>
-                        {['10', '20', '30'].map(l => <Text key={l} style={styles.chartLabelText}>{l}</Text>)}
+                        {['10', '20', '30'].map(l => <Text key={l} style={[styles.chartLabelText, { color: themeColors.subText }]}>{l}</Text>)}
                     </View>
                 </BlurView>
 
                 <View style={styles.statsGrid}>
-                    <BlurView intensity={30} tint="dark" style={styles.gridItem}>
-                        <Text style={styles.gridLabel}>Total Événements</Text>
-                        <Text style={styles.gridValue}>32</Text>
+                    <BlurView intensity={30} tint={themeColors.blurTint} style={[styles.gridItem, { borderColor: themeColors.cardBorder }]}>
+                        <Text style={[styles.gridLabel, { color: themeColors.subText }]}>Total Événements</Text>
+                        <Text style={[styles.gridValue, { color: themeColors.text }]}>32</Text>
                     </BlurView>
 
-                    <BlurView intensity={30} tint="dark" style={styles.gridItem}>
-                        <Text style={styles.gridLabel}>Participants Uniques</Text>
-                        <Text style={styles.gridValue}>780</Text>
+                    <BlurView intensity={30} tint={themeColors.blurTint} style={[styles.gridItem, { borderColor: themeColors.cardBorder }]}>
+                        <Text style={[styles.gridLabel, { color: themeColors.subText }]}>Participants Uniques</Text>
+                        <Text style={[styles.gridValue, { color: themeColors.text }]}>780</Text>
                     </BlurView>
 
-                    <BlurView intensity={30} tint="dark" style={styles.gridItem}>
-                        <Text style={styles.gridLabel}>Meilleur Taux Présence</Text>
-                        <Text style={styles.gridValue}>92%</Text>
+                    <BlurView intensity={30} tint={themeColors.blurTint} style={[styles.gridItem, { borderColor: themeColors.cardBorder }]}>
+                        <Text style={[styles.gridLabel, { color: themeColors.subText }]}>Meilleur Taux Présence</Text>
+                        <Text style={[styles.gridValue, { color: themeColors.text }]}>92%</Text>
                     </BlurView>
                 </View>
             </ScrollView>
-        </ImageBackground>
+            <OrganizerNavbar id={id} nom={nom} />
+        </OrganizerBackground>
     );
 }
 
