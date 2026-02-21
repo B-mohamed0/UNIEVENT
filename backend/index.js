@@ -858,9 +858,94 @@ app.delete("/api/events/:id", async (req, res) => {
 // Route supprimée car consolidée plus haut
 
 
+app.get('/api/events/stats/:eventId', async (req, res) => {
+  try {
+    const { eventId } = req.params;
+
+    // 1️⃣ Total inscrits
+    const totalInscrit = await pool.query(
+      'SELECT COUNT(*) FROM participation WHERE idevenement = $1',
+      [eventId]
+    );
+
+    // 2️⃣ Total présents
+    const totalPresent = await pool.query(
+      `SELECT COUNT(*) 
+       FROM participation 
+       WHERE idevenement = $1 
+       AND status = 'PRESENT'`,
+      [eventId]
+    );
+
+    const nbInscrit = parseInt(totalInscrit.rows[0].count);
+    const nbPresent = parseInt(totalPresent.rows[0].count);
+
+    // 3️⃣ Taux de présence par rapport aux inscrits
+    const tauxPresence = nbInscrit > 0
+      ? ((nbPresent / nbInscrit) * 100).toFixed(2)
+      : 0;
+
+    res.json({
+      totalInscrit: nbInscrit,
+      totalPresent: nbPresent,
+      tauxPresence: tauxPresence + "%"
+    });
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Erreur serveur" });
+  }
+});
 
 
 
+
+
+
+
+
+
+app.post("/api/events/:eventId/inscription", async (req, res) => {
+  try {
+    const { eventId } = req.params;
+    const { studentId, nom, filiere, annee } = req.body;
+
+    // Validation
+    const filieres = ["GI", "GM", "GP", "GE", "MDO"];
+    const annees = ["1ere", "2eme", "3eme"];
+
+    if (!nom || !filiere || !annee || !studentId || !eventId)
+      return res.status(400).json({ message: "Champs manquants" });
+    if (!filieres.includes(filiere)) return res.status(400).json({ message: "Filière invalide" });
+    if (!annees.includes(annee)) return res.status(400).json({ message: "Année invalide" });
+
+    // Vérifier si déjà inscrit
+    const existing = await pool.query(
+      "SELECT id FROM participation WHERE idetudiant = $1 AND idevenement = $2",
+      [studentId, eventId]
+    );
+
+    if (existing.rowCount > 0) {
+      return res.status(400).json({ message: "Vous êtes déjà inscrit à cet événement" });
+    }
+
+    // Création de la participation
+    const result = await pool.query(
+      `INSERT INTO participation (idetudiant, nom, filiere, annee, idevenement, status)
+       VALUES ($1, $2, $3, $4, $5, 'INSCRIT')
+       RETURNING id, idevenement, status`,
+      [studentId, nom, filiere, annee, eventId]
+    );
+
+    res.status(201).json({
+      message: "Inscription réussie",
+      participation: result.rows[0],
+    });
+  } catch (err) {
+    console.error("❌ ERROR DURING INSCRIPTION:", err);
+    res.status(500).json({ message: "Erreur serveur", error: err.message });
+  }
+});
 
 
 

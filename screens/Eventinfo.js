@@ -12,6 +12,7 @@ import { BlurView } from "expo-blur";
 import { Ionicons } from "@expo/vector-icons";
 import BackButton from "../components/BackButton";
 import BottomNav from "../components/navbar";
+import { useFocusEffect } from "@react-navigation/native";
 
 
 import conference from "../assets/project/conference.png";
@@ -32,21 +33,23 @@ const THEME_GRADIENTS = {
   "default": ["#000000ff", "#434343ff"]
 };
 
-const EventInfo = ({ route }) => {
+const EventInfo = ({ route, navigation }) => {
   const { eventId, studentId, nom } = route.params;
 
   const [event, setEvent] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    fetch(`http://192.168.1.3:3000/api/events/detail/${eventId}/${studentId}`)
-      .then((res) => res.json())
-      .then((data) => {
-        setEvent(data);
-        setLoading(false);
-      })
-      .catch(() => setLoading(false));
-  }, []);
+  useFocusEffect(
+    React.useCallback(() => {
+      fetch(`http://192.168.1.3:3000/api/events/detail/${eventId}/${studentId}`)
+        .then((res) => res.json())
+        .then((data) => {
+          setEvent(data);
+          setLoading(false);
+        })
+        .catch(() => setLoading(false));
+    }, [eventId, studentId])
+  );
 
   if (loading) {
     return (
@@ -73,13 +76,15 @@ const EventInfo = ({ route }) => {
 
   return (
     <View style={styles.container}>
-      {/* HEADER FIXE */}
-      <LinearGradient
-        colors={THEME_GRADIENTS[event.theme_color] || THEME_GRADIENTS.default}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
+      <ImageBackground
+        source={conference}
         style={styles.header}
+        imageStyle={{ borderBottomLeftRadius: 0, borderBottomRightRadius: 0 }}
       >
+        <LinearGradient
+          colors={["rgba(0,0,0,0.6)", "rgba(0,0,0,0.2)"]}
+          style={StyleSheet.absoluteFill}
+        />
         <BackButton />
 
         <View style={styles.headerContent}>
@@ -87,9 +92,25 @@ const EventInfo = ({ route }) => {
             <Text style={styles.title}>{event.nom_evenement}</Text>
 
             <BlurView intensity={8} tint="light" style={styles.glassWrapper}>
-              <TouchableOpacity style={styles.glassButton}>
-                <Text style={styles.glassText}>S’inscrire</Text>
-              </TouchableOpacity>
+              {event.participation_status ? (
+                <View style={[styles.glassButton, { borderColor: "#00F908" }]}>
+                  <Ionicons name="checkmark-circle" size={24} color="#00F908" />
+                </View>
+              ) : (
+                <TouchableOpacity
+                  style={styles.glassButton}
+                  onPress={() =>
+                    navigation.navigate("inscription", {
+                      eventId: eventId,
+                      studentId: studentId,
+                      nom: nom,
+                      eventName: event.nom_evenement
+                    })
+                  }
+                >
+                  <Text style={styles.glassText}>S’inscrire</Text>
+                </TouchableOpacity>
+              )}
             </BlurView>
           </View>
 
@@ -112,7 +133,7 @@ const EventInfo = ({ route }) => {
             </Text>
           </View>
         </View>
-      </LinearGradient>
+      </ImageBackground>
 
       {/* BACKGROUND ESTWH FIXE */}
       <ImageBackground
@@ -195,12 +216,12 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "flex-end",
     margin: 20,
-    marginBottom: 50,
+    marginBottom: 60,
   },
 
   title: {
     color: "white",
-    fontSize: 40,
+    fontSize: 30,
     fontWeight: "bold",
     marginBottom: 20,
     fontFamily: "Insignia",

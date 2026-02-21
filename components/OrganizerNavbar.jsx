@@ -100,8 +100,8 @@ const OrganizerNavbar = ({ id, nom }) => {
                             styles.glassOverlay,
                             {
                                 backgroundColor: isDarkMode
-                                    ? "rgba(255, 255, 255, 0.12)"
-                                    : "rgba(0, 0, 0, 0.05)",
+                                    ? "rgba(255, 255, 255, 0.05)"
+                                    : "rgba(255, 255, 255, 0.1)",
                             },
                         ]}
                     />
@@ -141,8 +141,8 @@ const OrganizerNavbar = ({ id, nom }) => {
                                         isTabActive
                                             ? "#FFF"
                                             : isDarkMode
-                                            ? "rgba(255,255,255,0.5)"
-                                            : "rgba(0,0,0,0.5)"
+                                            ? "rgba(255, 255, 255, 1)"
+                                            : "rgba(0, 0, 0, 1)"
                                     }
                                 />
                             </TouchableOpacity>

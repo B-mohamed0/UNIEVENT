@@ -17,9 +17,11 @@ import OrganizerDashboard from "./screens/OrganizerDashboard";
 import OrganizerEvents from "./screens/OrganizerEvents";
 import CreateEvent from "./screens/CreateEvent";
 import ManageEvent from "./screens/ManageEvent";
+import OrganizerEventDetails from "./screens/OrganizerEventDetails";
 import OrganizerStats from "./screens/OrganizerStats";
 import { NavbarProvider } from "./context/NavbarContext";
 import { ThemeProvider } from "./context/ThemeContext";
+import inscription from "./screens/inscription";
 
 const Stack = createNativeStackNavigator();
 
@@ -60,8 +62,10 @@ export default function App() {
             <Stack.Screen name="OrganizerDashboard" component={OrganizerDashboard} />
             <Stack.Screen name="OrganizerEvents" component={OrganizerEvents} />
             <Stack.Screen name="CreateEvent" component={CreateEvent} />
-            <Stack.Screen name="ManageEvent" component={ManageEvent} />
+            <Stack.Screen name="ManageEvent" component={ManageEvent} options={{ headerShown: false }} />
+            <Stack.Screen name="OrganizerEventDetails" component={OrganizerEventDetails} options={{ headerShown: false }} />
             <Stack.Screen name="OrganizerStats" component={OrganizerStats} />
+            <Stack.Screen name="inscription" component={inscription} />
           </Stack.Navigator>
         </NavigationContainer>
       </NavbarProvider>

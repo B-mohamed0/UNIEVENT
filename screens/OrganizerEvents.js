@@ -8,6 +8,7 @@ import {
   ImageBackground,
   StatusBar,
   FlatList,
+  Alert,
 } from "react-native";
 import { BlurView } from "expo-blur";
 import { Ionicons } from "@expo/vector-icons";
@@ -51,65 +52,78 @@ export default function OrganizerEvents({ route, navigation }) {
   };
 
   const handleDelete = async (eventId) => {
-    if (!confirm("Voulez-vous vraiment supprimer cet événement ?")) return;
+    Alert.alert(
+      "Confirmation",
+      "Voulez-vous vraiment supprimer cet événement ?",
+      [
+        { text: "Annuler", style: "cancel" },
+        {
+          text: "Supprimer",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              const response = await fetch(`http://192.168.1.3:3000/api/events/${eventId}`, {
+                method: "DELETE",
+              });
 
-    try {
-      const response = await fetch(`http://192.168.1.3:3000/api/events/${eventId}`, {
-        method: "DELETE",
-      });
-
-      if (response.ok) {
-        setEvents(events.filter(e => e.id !== eventId));
-        alert("Événement supprimé !");
-      } else {
-        alert("Erreur lors de la suppression.");
-      }
-    } catch (error) {
-      console.error("Delete error:", error);
-      alert("Erreur serveur.");
-    }
+              if (response.ok) {
+                setEvents(events.filter(e => e.id !== eventId));
+                Alert.alert("Succès", "Événement supprimé !");
+              } else {
+                Alert.alert("Erreur", "Erreur lors de la suppression.");
+              }
+            } catch (error) {
+              console.error("Delete error:", error);
+              Alert.alert("Erreur", "Erreur serveur.");
+            }
+          }
+        }
+      ]
+    );
   };
 
   const renderEvent = ({ item }) => {
     const statusColor = item.event_status === "EN COURS" ? "#00F908" : (item.event_status === "À VENIR" ? "#F4F900" : "#FF0000");
 
     return (
-      <TouchableOpacity
-        style={styles.eventCard}
-        onPress={() => navigation.navigate("ManageEvent", { event: item, organizerId: id, nom })}
-      >
-        <BlurView intensity={30} tint={themeColors.blurTint} style={styles.cardInner}>
-          <View style={styles.cardHeader}>
-            <View style={styles.titleRow}>
-              <View style={[styles.logoBox, { backgroundColor: isDarkMode ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.05)" }]}>
-                <Ionicons name="calendar" size={18} color={themeColors.text} />
+      <View style={styles.eventCard}>
+        <TouchableOpacity
+          activeOpacity={0.7}
+          onPress={() => navigation.navigate("OrganizerEventDetails", { event: item, organizerId: id, nom })}
+        >
+          <BlurView intensity={30} tint={themeColors.blurTint} style={styles.cardInner}>
+            <View style={styles.cardHeader}>
+              <View style={styles.titleRow}>
+                <View style={[styles.logoBox, { backgroundColor: isDarkMode ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.05)" }]}>
+                  <Ionicons name="calendar" size={18} color={themeColors.text} />
+                </View>
+                <Text style={[styles.eventTitle, { color: themeColors.text }]}>{item.nom_evenement}</Text>
               </View>
-              <Text style={[styles.eventTitle, { color: themeColors.text }]}>{item.nom_evenement}</Text>
             </View>
-          </View>
 
-          <Text style={[styles.eventInfoText, { color: themeColors.subText }]}>
-            {new Date(item.date).toLocaleDateString("fr-FR", { day: 'numeric', month: 'long', year: 'numeric' })}, {item.heure_debut?.slice(0, 5)}, {item.lieu}
-          </Text>
+            <Text style={[styles.eventInfoText, { color: themeColors.subText }]}>
+              {new Date(item.date).toLocaleDateString("fr-FR", { day: 'numeric', month: 'long', year: 'numeric' })}, {item.heure_debut?.slice(0, 5)}, {item.lieu}
+            </Text>
 
-          <View style={styles.cardFooter}>
-            <View style={[styles.statusBadge, { borderColor: statusColor }]}>
-              <Text style={[styles.statusText, { color: statusColor }]}>{item.event_status}</Text>
+            <View style={styles.cardFooter}>
+              <View style={[styles.statusBadge, { borderColor: statusColor }]}>
+                <Text style={[styles.statusText, { color: statusColor }]}>{item.event_status}</Text>
+              </View>
+              <View style={styles.actionIcons}>
+                <TouchableOpacity style={styles.iconBtn} onPress={() => navigation.navigate("CreateEvent", { id, nom, editEvent: item })}>
+                  <Ionicons name="create-outline" size={20} color={themeColors.text} />
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.iconBtn} onPress={() => handleDelete(item.id)}>
+                  <Ionicons name="trash-outline" size={20} color={themeColors.text} />
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.iconBtn} onPress={() => navigation.navigate("ManageEvent", { event: item, organizerId: id, nom })}>
+                  <Ionicons name="stats-chart" size={20} color={themeColors.text} />
+                </TouchableOpacity>
+              </View>
             </View>
-            <View style={styles.actionIcons}>
-              <TouchableOpacity style={styles.iconBtn} onPress={() => navigation.navigate("CreateEvent", { id, nom, editEvent: item })}>
-                <Ionicons name="create-outline" size={20} color={themeColors.text} />
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.iconBtn} onPress={() => handleDelete(item.id)}>
-                <Ionicons name="trash-outline" size={20} color={themeColors.text} />
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.iconBtn} onPress={() => navigation.navigate("OrganizerStats", { id, nom })}>
-                <Ionicons name="stats-chart" size={20} color={themeColors.text} />
-              </TouchableOpacity>
-            </View>
-          </View>
-        </BlurView>
-      </TouchableOpacity>
+          </BlurView>
+        </TouchableOpacity>
+      </View>
     );
   };
 

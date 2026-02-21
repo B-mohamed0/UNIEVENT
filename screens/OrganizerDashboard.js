@@ -114,7 +114,7 @@ export default function OrganizerDashboard({ route, navigation }) {
         <View style={styles.statsGrid}>
           <View style={styles.statsRow}>
             <BlurView intensity={20} tint={themeColors.blurTint} style={styles.statCard}>
-              <LinearGradient colors={isDarkMode ? ["rgba(255,255,255,0.1)", "rgba(255,255,255,0.05)"] : ["rgba(0,0,0,0.05)", "rgba(0,0,0,0.02)"]} style={styles.cardGradient}>
+              <LinearGradient colors={isDarkMode ? ["rgba(255, 255, 255, 0)", "rgba(255,255,255,0.05)"] : ["rgba(0, 0, 0, 0)", "rgba(0,0,0,0.02)"]} style={styles.cardGradient}>
                 <Ionicons name="flash-outline" size={24} color={themeColors.text} />
                 <Text style={[styles.statValue, { color: themeColors.text }]}>{stats.activeEvents}</Text>
                 <Text style={[styles.statLabel, { color: themeColors.subText }]}>Événements actifs</Text>
@@ -173,7 +173,7 @@ export default function OrganizerDashboard({ route, navigation }) {
               <TouchableOpacity
                 key={event.id}
                 style={[styles.recentEventCard, { borderColor: isDarkMode ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.05)" }]}
-                onPress={() => navigation.navigate("ManageEvent", { event, organizerId: id, nom })}
+                onPress={() => navigation.navigate("OrganizerEventDetails", { event, organizerId: id, nom })}
               >
                 <BlurView intensity={10} tint={themeColors.blurTint} style={styles.recentEventInner}>
                   <View style={styles.eventInfo}>

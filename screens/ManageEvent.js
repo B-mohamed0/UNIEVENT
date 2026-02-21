@@ -23,6 +23,11 @@ export default function ManageEvent({ route, navigation }) {
   const { event, organizerId, nom } = route.params;
   const { isDarkMode } = useThemeContext();
   const [data, setData] = useState({ event: event, participants: [] });
+  const [stats, setStats] = useState({
+    totalInscrit: 0,
+    totalPresent: 0,
+    tauxPresence: "0%"
+  });
   const [loading, setLoading] = useState(true);
 
   const themeColors = {
@@ -34,9 +39,11 @@ export default function ManageEvent({ route, navigation }) {
   };
 
   const API_URL = "http://192.168.1.3:3000/api/organizer";
+  const STATS_URL = "http://192.168.1.3:3000/api/events/stats";
 
   useEffect(() => {
     fetchEventDetails();
+    fetchEventStats();
   }, []);
 
   const fetchEventDetails = async () => {
@@ -44,10 +51,22 @@ export default function ManageEvent({ route, navigation }) {
       const response = await fetch(`${API_URL}/manage/${event.id}`);
       const resData = await response.json();
       setData(resData);
-      setLoading(false);
     } catch (error) {
       console.error("Error fetching event details:", error);
+    } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchEventStats = async () => {
+    try {
+      const response = await fetch(`${STATS_URL}/${event.id}`);
+      const resStats = await response.json();
+      if (response.ok) {
+        setStats(resStats);
+      }
+    } catch (error) {
+      console.error("Error fetching event stats:", error);
     }
   };
 
@@ -73,9 +92,7 @@ export default function ManageEvent({ route, navigation }) {
     </BlurView>
   );
 
-  const presenceCount = data.participants.filter(p => p.status === 'PRESENT').length;
-  const totalInscrit = data.participants.length;
-  const presenceRate = totalInscrit > 0 ? Math.round((presenceCount / totalInscrit) * 100) : 0;
+
 
   return (
     <OrganizerBackground>
@@ -94,9 +111,9 @@ export default function ManageEvent({ route, navigation }) {
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.statsRow}>
-          {rendersStatCard("Inscrit", totalInscrit)}
-          {rendersStatCard("Presents", presenceCount)}
-          {rendersStatCard("Taux présent", `${presenceRate}%`)}
+          {rendersStatCard("Inscrit", stats.totalInscrit)}
+          {rendersStatCard("Presents", stats.totalPresent)}
+          {rendersStatCard("Taux présent", stats.tauxPresence)}
         </View>
 
         <View style={styles.sectionHeader}>

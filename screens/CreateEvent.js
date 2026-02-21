@@ -152,12 +152,18 @@ export default function CreateEvent({ route, navigation }) {
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <BlurView intensity={30} tint={themeColors.blurTint} style={[styles.formCard, { borderColor: themeColors.cardBorder }]}>
           <View style={styles.inputGroup}>
-            <Text style={[styles.label, { color: themeColors.text }]}>Titre de l'événement</Text>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+              <Text style={[styles.label, { color: themeColors.text }]}>Titre de l'événement</Text>
+              <Text style={{ fontSize: 12, color: themeColors.subText, fontFamily: "Insignia" }}>
+                {form.title.length}/15
+              </Text>
+            </View>
             <TextInput
               style={[styles.input, { color: themeColors.text, borderBottomColor: themeColors.placeholder }]}
               placeholder="Titre..."
               placeholderTextColor={themeColors.placeholder}
               value={form.title}
+              maxLength={15}
               onChangeText={(text) => setForm({ ...form, title: text })}
             />
           </View>
