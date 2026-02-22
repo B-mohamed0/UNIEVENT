@@ -118,7 +118,7 @@ export default function StudentStats({ route, navigation }) {
                 style={StyleSheet.absoluteFillObject}
                 resizeMode="cover"
             />
-            <View style={[StyleSheet.absoluteFillObject, { backgroundColor: "rgba(0,0,0,0.4)" }]} />
+            <View style={[StyleSheet.absoluteFillObject, { backgroundColor: "rgba(0, 0, 0, 0.38)" }]} />
 
             <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
                 {/* Header */}
@@ -128,7 +128,7 @@ export default function StudentStats({ route, navigation }) {
                 </View>
 
                 {/* Circular Progress Card */}
-                <BlurView intensity={30} tint="light" style={styles.statsCard}>
+                <BlurView intensity={20} tint="light" style={styles.statsCard}>
                     <CircularProgress percentage={stats?.attendancePercentage || 0} />
 
                     <View style={styles.summaryContainer}>
@@ -213,14 +213,16 @@ const styles = StyleSheet.create({
     },
     greeting: {
         color: "rgba(255, 255, 255, 0.7)",
-        fontSize: 16,
+        fontSize: 25,
         fontFamily: "Insignia",
+        textAlign: "center",
     },
     name: {
         color: "#FFF",
-        fontSize: 28,
+        fontSize: 20,
         fontFamily: "jokeyone",
         textTransform: "uppercase",
+        textAlign: "center",
     },
     statsCard: {
         borderRadius: 30,
@@ -244,7 +246,7 @@ const styles = StyleSheet.create({
         color: "rgba(255, 255, 255, 0.7)",
         fontSize: 14,
         fontFamily: "Insignia",
-        marginTop: -5,
+        marginTop: 10,
     },
     summaryContainer: {
         flexDirection: "row",

@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Diagnostic Supabase - ESTC</title>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <style>
+        body {
+            font-family: sans-serif;
+            background: #1a1a1a;
+            color: white;
+            padding: 20px;
+        }
+
+        .log {
+            background: #000;
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 10px;
+            border-left: 5px solid #333;
+        }
+
+        .success {
+            border-left-color: #00ff00;
+        }
+
+        .error {
+            border-left-color: #ff0000;
+        }
+
+        .warning {
+            border-left-color: #ffaa00;
+        }
+
+        h1 {
+            color: #00a2ff;
+        }
+    </style>
+</head>
+
+<body>
+<h1>Diagnostic de connexion</h1>
+<div id="output">Initialisation...</div>
+
+<script src="js/supabase.js"></script>
+<script>
+    const output = document.getElementById('output');
+    function log(msg, type = '') {
+        const div = document.createElement('div');
+        div.className = 'log ' + type;
+        div.innerHTML = `<strong>[${new Date().toLocaleTimeString()}]</strong> ${msg}`;
+        output.appendChild(div);
+    }
+
+    async function runDiagnostic() {
+        output.innerHTML = '';
+        log("Vérification du client Supabase...");
+
+        if (typeof supabaseClient === 'undefined') {
+            log("ERREUR : supabaseClient n'est pas défini. Vérifiez js/supabase.js", "error");
+            return;
+        }
+        log("Client initialisé sur : " + SUPABASE_URL, "success");
+
+        // Test 1 : Lecture simple de la table admin
+        log("Test 1 : Lecture de la table 'admin'...");
+        const { data: adminData, error: adminErr } = await supabaseClient.from('admin').select('count');
+        if (adminErr) {
+            log("Erreur Lecture Table admin : " + adminErr.message, "error");
+        } else {
+            log("Table 'admin' accessible.", "success");
+        }
+
+        // Test 2 : Appel RPC
+        log("Test 2 : Appel de la fonction check_admin_login...");
+        const { data: rpcData, error: rpcErr } = await supabaseClient.rpc('check_admin_login', {
+            p_email: 'test@test.com',
+            p_password: 'test'
+        });
+
+        if (rpcErr) {
+            log("Erreur RPC : " + rpcErr.message + " (Code: " + rpcErr.code + ")", "error");
+            if (rpcErr.code === '42883') {
+                log("CONSEIL : Supabase ne trouve pas la fonction. Vérifiez que vous avez bien sélectionné le bon projet dans le SQL Editor.", "warning");
+            }
+        } else {
+            log("La fonction RPC est BIEN détectée et répond : " + rpcData, "success");
+        }
+
+        log("--- Diagnostic Terminé ---");
+    }
+
+    runDiagnostic();
+</script>
+</body>
+
+</html>

@@ -29,6 +29,7 @@ export default function StudentScreen() {
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [step, setStep] = useState(1); // 1 = email, 2 = password
   const emailAnim = useState(new Animated.Value(0))[0];
   const passwordAnim = useState(new Animated.Value(50))[0];
@@ -173,11 +174,21 @@ export default function StudentScreen() {
                 <TextInput
                   placeholder="entrez votre password"
                   placeholderTextColor="#999"
-                  secureTextEntry
+                  secureTextEntry={!showPassword}
                   value={password}
                   onChangeText={setPassword}
-                  style={styles.input}
+                  style={[styles.input, { flex: 1 }]}
                 />
+                <TouchableOpacity
+                  onPress={() => setShowPassword(!showPassword)}
+                  style={{ paddingRight: 25 }}
+                >
+                  <Ionicons
+                    name={showPassword ? "eye-off" : "eye"}
+                    size={20}
+                    color="#000000ff"
+                  />
+                </TouchableOpacity>
               </View>
               {step === 2 && (
                 <TouchableOpacity onPress={goBackToEmail}>
@@ -295,9 +306,9 @@ const styles = StyleSheet.create({
     position: "absolute",
     pointerEvents: "none",
     zIndex: 100,
-    width: 550,
-    height: 400,
-    marginTop: 70,
+    width: 600,
+    height: 450,
+    marginTop: 45,
     shadowColor: "#000",
     shadowOffset: {
       width: -10,
@@ -305,7 +316,7 @@ const styles = StyleSheet.create({
     },
     shadowOpacity: 1,
     alignSelf: "center",
-    paddingLeft: 50,
+    paddingLeft: 130,
     shadowRadius: 13,
     elevation: 8,
   },
@@ -347,6 +358,8 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 6,
     marginBottom: 30,
+    flexDirection: "row",
+    alignItems: "center",
   },
 
   loginButton: {

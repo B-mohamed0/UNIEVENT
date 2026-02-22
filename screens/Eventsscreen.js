@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   View,
   Text,
@@ -10,6 +10,7 @@ import {
   ActivityIndicator,
   TextInput,
   ImageBackground,
+  Animated,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { BlurView } from "expo-blur";
@@ -43,9 +44,29 @@ export default function EventsScreen({ route, navigation }) {
   const [selectedFilter, setSelectedFilter] = useState("TOUS");
   const [selectedCategory, setSelectedCategory] = useState("TOUTES");
   const [expandedEventId, setExpandedEventId] = useState(null);
+  const [isFilterVisible, setIsFilterVisible] = useState(false);
+  const sidebarWidth = SCREEN_WIDTH * 0.75;
+  const sidebarAnim = useRef(new Animated.Value(sidebarWidth)).current;
 
   const filters = ["TOUS", "À VENIR", "EN COURS", "TERMINÉ"];
   const categories = ["TOUTES", "Conférence", "Atelier", "Soirée"];
+
+  const toggleFilter = () => {
+    if (!isFilterVisible) {
+      setIsFilterVisible(true);
+      Animated.timing(sidebarAnim, {
+        toValue: 0,
+        duration: 300,
+        useNativeDriver: true,
+      }).start();
+    } else {
+      Animated.timing(sidebarAnim, {
+        toValue: sidebarWidth,
+        duration: 300,
+        useNativeDriver: true,
+      }).start(() => setIsFilterVisible(false));
+    }
+  };
 
   useEffect(() => {
     fetchEvents();
@@ -144,7 +165,11 @@ export default function EventsScreen({ route, navigation }) {
           </BlurView>
         </TouchableOpacity>
         <Text style={styles.pageTitle}>ÉVÉNEMENTS</Text>
-        <View style={{ width: 50 }} />
+        <TouchableOpacity onPress={toggleFilter} style={styles.iconButtonGlass}>
+          <BlurView intensity={20} tint="light" style={styles.iconBlur}>
+            <Ionicons name="filter" size={24} color="#FFF" />
+          </BlurView>
+        </TouchableOpacity>
       </View>
 
       {/* SEARCH & FILTERS */}
@@ -159,30 +184,6 @@ export default function EventsScreen({ route, navigation }) {
             onChangeText={setSearchQuery}
           />
         </BlurView>
-
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterContainer}>
-          {categories.map((c) => (
-            <TouchableOpacity
-              key={c}
-              onPress={() => setSelectedCategory(c)}
-              style={[styles.filterBtn, selectedCategory === c && styles.filterBtnActive]}
-            >
-              <Text style={[styles.filterText, selectedCategory === c && styles.filterTextActive]}>{c}</Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
-
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={[styles.filterContainer, { marginTop: 10 }]}>
-          {filters.map((f) => (
-            <TouchableOpacity
-              key={f}
-              onPress={() => setSelectedFilter(f)}
-              style={[styles.filterBtn, selectedFilter === f && styles.filterBtnActive]}
-            >
-              <Text style={[styles.filterText, selectedFilter === f && styles.filterTextActive]}>{f}</Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
       </View>
 
       {/* EVENTS LIST */}
@@ -278,6 +279,49 @@ export default function EventsScreen({ route, navigation }) {
       </ScrollView>
 
       <BottomNav id={id} nom={nom} />
+
+      {/* SIDEBAR FILTER */}
+      {isFilterVisible && (
+        <TouchableOpacity
+          style={styles.backdrop}
+          activeOpacity={1}
+          onPress={toggleFilter}
+        />
+      )}
+
+      <Animated.View style={[styles.sidebar, { transform: [{ translateX: sidebarAnim }] }]}>
+        <BlurView intensity={40} tint="light" style={styles.sidebarBlur}>
+          <Text style={styles.sidebarTitle}>FILTRES</Text>
+
+          <Text style={styles.sidebarLabel}>CATÉGORIES</Text>
+          <View style={styles.sidebarFilterList}>
+            {categories.map((c) => (
+              <TouchableOpacity
+                key={c}
+                onPress={() => setSelectedCategory(c)}
+                style={[styles.sidebarFilterBtn, selectedCategory === c && styles.sidebarFilterBtnActive]}
+              >
+                <Text style={[styles.sidebarFilterText, selectedCategory === c && styles.sidebarFilterTextActive]}>{c}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+
+          <View style={styles.sidebarDivider} />
+
+          <Text style={styles.sidebarLabel}>STATUT</Text>
+          <View style={styles.sidebarFilterList}>
+            {filters.map((f) => (
+              <TouchableOpacity
+                key={f}
+                onPress={() => setSelectedFilter(f)}
+                style={[styles.sidebarFilterBtn, selectedFilter === f && styles.sidebarFilterBtnActive]}
+              >
+                <Text style={[styles.sidebarFilterText, selectedFilter === f && styles.sidebarFilterTextActive]}>{f}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </BlurView>
+      </Animated.View>
     </ImageBackground>
   );
 }
@@ -405,7 +449,7 @@ const styles = StyleSheet.create({
     marginBottom: 5,
     fontWeight: "600",
     fontFamily: "insignia",
-    
+
   },
   timeText: {
     color: "#FFF",
@@ -465,5 +509,71 @@ const styles = StyleSheet.create({
     marginTop: 50,
     fontSize: 16,
     fontFamily: "Insignia",
+  },
+  // SIDEBAR STYLES
+  backdrop: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    zIndex: 90,
+  },
+  sidebar: {
+    position: "absolute",
+    right: 0,
+    top: 0,
+    bottom: 0,
+    width: SCREEN_WIDTH * 0.45,
+    zIndex: 100,
+  },
+  sidebarBlur: {
+    flex: 1,
+    paddingTop: 80,
+    paddingHorizontal: 20,
+    backgroundColor: "rgba(142, 142, 142, 0.12)",
+  },
+  sidebarTitle: {
+    fontSize: 28,
+    color: "#FFF",
+    fontFamily: "jokeyone",
+    marginBottom: 30,
+    letterSpacing: 2,
+    alignSelf: "center",
+  },
+  sidebarLabel: {
+    fontSize: 14,
+    color: "rgba(255,255,255,0.6)",
+    fontFamily: "Insignia",
+    marginBottom: 15,
+    marginTop: 20,
+    textTransform: "uppercase",
+  },
+  sidebarFilterList: {
+    flexDirection: "column",
+    gap: 10,
+  },
+  sidebarFilterBtn: {
+    paddingVertical: 12,
+    paddingHorizontal: 15,
+    borderRadius: 15,
+    backgroundColor: "rgba(255,255,255,0.1)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.1)",
+  },
+  sidebarFilterBtnActive: {
+    backgroundColor: "#FFF",
+    borderColor: "#FFF",
+  },
+  sidebarFilterText: {
+    color: "rgba(255,255,255,0.8)",
+    fontFamily: "jokeyone",
+    alignSelf: "center",
+    fontSize: 16,
+  },
+  sidebarFilterTextActive: {
+    color: "#000",
+  },
+  sidebarDivider: {
+    height: 1,
+    backgroundColor: "rgba(255,255,255,0.1)",
+    marginVertical: 10,
   },
 });

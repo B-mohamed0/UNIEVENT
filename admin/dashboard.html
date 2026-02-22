@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - ESTC Admin</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/dashboard.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <!-- Phosphor Icons for modern UI -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <!-- CryptoJS for Password Hashing -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+</head>
+
+<body class="dashboard-body" style="display: none;"> <!-- Hidden until authenticated -->
+<div class="dashboard-layout">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <h2>ESTC <span class="text-blue">Admin</span></h2>
+        </div>
+        <nav class="sidebar-nav">
+            <a href="#" class="nav-item active" data-target="overview">
+                <i class="ph ph-squares-four"></i> Overview
+            </a>
+            <a href="#" class="nav-item" data-target="students">
+                <i class="ph ph-users"></i> Students
+            </a>
+            <a href="#" class="nav-item" data-target="professors">
+                <i class="ph ph-chalkboard-teacher"></i> Professors
+            </a>
+            <a href="#" class="nav-item" data-target="organizers">
+                <i class="ph ph-briefcase"></i> Organizers
+            </a>
+        </nav>
+        <div class="sidebar-footer">
+            <button id="logout-btn" class="btn btn-logout">
+                <i class="ph ph-sign-out"></i> Logout
+            </button>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <header class="topbar">
+            <h1 id="page-title">Overview</h1>
+            <div class="user-profile">
+                <span id="user-email">admin@estc.edu</span>
+                <div class="avatar">
+                    <i class="ph ph-user"></i>
+                </div>
+            </div>
+        </header>
+
+        <div class="content-area">
+            <!-- Overview Section -->
+            <section id="section-overview" class="content-section active">
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon"><i class="ph ph-users"></i></div>
+                        <div class="stat-details">
+                            <h3>Total Students</h3>
+                            <p class="stat-number" id="stats-students">0</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon"><i class="ph ph-chalkboard-teacher"></i></div>
+                        <div class="stat-details">
+                            <h3>Total Professors</h3>
+                            <p class="stat-number" id="stats-professors">0</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon"><i class="ph ph-briefcase"></i></div>
+                        <div class="stat-details">
+                            <h3>Total Organizers</h3>
+                            <p class="stat-number" id="stats-organizers">0</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Students Section -->
+            <section id="section-students" class="content-section" style="display: none;">
+                <div class="section-header">
+                    <h2>Manage Students</h2>
+                    <button class="btn btn-primary" onclick="openModal('studentModal')">
+                        <i class="ph ph-plus"></i> Add Student
+                    </button>
+                </div>
+                <div class="table-container">
+                    <table class="data-table" id="students-table">
+                        <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Nom</th>
+                            <th>Email</th>
+                            <th>Actions</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <!-- Data will be loaded here -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Professors Section -->
+            <section id="section-professors" class="content-section" style="display: none;">
+                <div class="section-header">
+                    <h2>Manage Professors</h2>
+                    <button class="btn btn-primary" onclick="openModal('professorModal')">
+                        <i class="ph ph-plus"></i> Add Professor
+                    </button>
+                </div>
+                <div class="table-container">
+                    <table class="data-table" id="professors-table">
+                        <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Nom</th>
+                            <th>Code Affilié</th>
+                            <th>Email</th>
+                            <th>Actions</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <!-- Data will be loaded here -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Organizers Section -->
+            <section id="section-organizers" class="content-section" style="display: none;">
+                <div class="section-header">
+                    <h2>Manage Organizers</h2>
+                    <button class="btn btn-primary" onclick="openModal('organizerModal')">
+                        <i class="ph ph-plus"></i> Add Organizer
+                    </button>
+                </div>
+                <div class="table-container">
+                    <table class="data-table" id="organizers-table">
+                        <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Nom</th>
+                            <th>Email</th>
+                            <th>Actions</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <!-- Data will be loaded here -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </div>
+    </main>
+</div>
+
+<!-- Modals -->
+<!-- Student Modal -->
+<div id="studentModal" class="modal">
+    <div class="modal-content">
+        <span class="close-modal" onclick="closeModal('studentModal')">×</span>
+        <h2>Add New Student</h2>
+        <form id="student-form">
+            <div class="form-group">
+                <label for="student-id-input">ID</label>
+                <input type="text" id="student-id-input" required>
+            </div>
+            <div class="form-group">
+                <label for="student-nom">Nom Complet</label>
+                <input type="text" id="student-nom" required>
+            </div>
+            <div class="form-group">
+                <label for="student-email">Email</label>
+                <input type="email" id="student-email" required>
+            </div>
+            <div class="form-group">
+                <label for="student-pass">Mot de passe</label>
+                <input type="password" id="student-pass" required>
+            </div>
+            <button type="submit" class="btn btn-primary">Enregistrer l'étudiant</button>
+        </form>
+    </div>
+</div>
+
+<!-- Professor Modal -->
+<div id="professorModal" class="modal">
+    <div class="modal-content">
+        <span class="close-modal" onclick="closeModal('professorModal')">×</span>
+        <h2>Add New Professor</h2>
+        <form id="professor-form">
+            <input type="hidden" id="professor-id">
+            <div class="form-group">
+                <label for="professor-nom">Nom Complet</label>
+                <input type="text" id="professor-nom" required>
+            </div>
+            <div class="form-group">
+                <label for="professor-code">Code Affilié</label>
+                <input type="text" id="professor-code" required>
+            </div>
+            <div class="form-group">
+                <label for="professor-email">Email</label>
+                <input type="email" id="professor-email" required>
+            </div>
+            <div class="form-group">
+                <label for="professor-pass">Mot de passe</label>
+                <input type="password" id="professor-pass" required>
+            </div>
+            <button type="submit" class="btn btn-primary">Enregistrer le professeur</button>
+        </form>
+    </div>
+</div>
+
+<!-- Organizer Modal -->
+<div id="organizerModal" class="modal">
+    <div class="modal-content">
+        <span class="close-modal" onclick="closeModal('organizerModal')">×</span>
+        <h2>Add New Organizer</h2>
+        <form id="organizer-form">
+            <input type="hidden" id="organizer-id">
+            <div class="form-group">
+                <label for="organizer-nom">Nom Complet</label>
+                <input type="text" id="organizer-nom" required>
+            </div>
+            <div class="form-group">
+                <label for="organizer-email">Email</label>
+                <input type="email" id="organizer-email" required>
+            </div>
+            <div class="form-group">
+                <label for="organizer-pass">Mot de passe</label>
+                <input type="password" id="organizer-pass" required>
+            </div>
+            <button type="submit" class="btn btn-primary">Enregistrer l'organisateur</button>
+        </form>
+    </div>
+</div>
+
+<script src="js/supabase.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/dashboard.js"></script>
+</body>
+
+</html>
