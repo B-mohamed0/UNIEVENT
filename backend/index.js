@@ -684,7 +684,6 @@ app.get("/api/events", async (req, res) => {
         idorganisateur,
         theme_color
       FROM evenement
-      WHERE status != 'EXPIRE'
       ORDER BY date DESC, heure_debut DESC`
     );
 
@@ -712,7 +711,7 @@ app.get("/api/events", async (req, res) => {
       };
     });
 
-    console.log(`✅ ${events.length} événements non expirés récupérés`);
+    console.log(`✅ ${events.length} événements récupérés`);
     res.json(events);
   } catch (error) {
     console.error("❌ Erreur API /events:", error);

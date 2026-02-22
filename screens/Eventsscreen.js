@@ -209,7 +209,7 @@ export default function EventsScreen({ route, navigation }) {
                   colors={THEME_GRADIENTS[event.theme_color] || THEME_GRADIENTS.default}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 1 }}
-                  style={[styles.activeEventCard, !isExpanded && { paddingBottom: 18 }]}
+                  style={[styles.activeEventCard, !isExpanded && { paddingBottom: 1 }]}
                 >
                   <View style={styles.eventContainer}>
                     <View style={[styles.eventContent, { flex: 1 }]}>
@@ -228,7 +228,7 @@ export default function EventsScreen({ route, navigation }) {
 
                       {/* INFORMATIONS SUPPLÉMENTAIRES (Si agrandi) */}
                       {isExpanded && (
-                        <View style={{ marginTop: 10 }}>
+                        <View>
                           <Text style={styles.animatorText}>{event.nom_animateur || event.animator}</Text>
                           <Text style={styles.timeText}>
                             {(event.time || event.heure_debut || "00:00").slice(0, 5)}
@@ -238,7 +238,7 @@ export default function EventsScreen({ route, navigation }) {
 
                       {/* BOUTON D'ACTION (Si agrandi) */}
                       {isExpanded && (
-                        <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginTop: 15 }}>
+                        <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
                           <TouchableOpacity
                             style={styles.viewButton}
                             onPress={() =>
@@ -404,11 +404,15 @@ const styles = StyleSheet.create({
     fontSize: 15,
     marginBottom: 5,
     fontWeight: "600",
+    fontFamily: "insignia",
+    
   },
   timeText: {
     color: "#FFF",
     fontSize: 14,
     fontWeight: "600",
+    fontFamily: "insignia",
+    letterSpacing: 1,
   },
   dateBox: {
     alignItems: "center",
@@ -418,7 +422,7 @@ const styles = StyleSheet.create({
   },
   dateDay: {
     color: "#FFF",
-    fontSize: 50,
+    fontSize: 45,
     fontWeight: "700",
     fontFamily: "Comicy",
     letterSpacing: 5,
@@ -426,14 +430,14 @@ const styles = StyleSheet.create({
   },
   dateMonth: {
     color: "#FFF",
-    fontSize: 27,
+    fontSize: 30,
     textTransform: "uppercase",
     fontFamily: "Comicy",
     lineHeight: 40,
   },
   dateYear: {
     color: "#FFF",
-    fontSize: 23,
+    fontSize: 24,
     fontWeight: "700",
     fontFamily: "Comicy",
     lineHeight: 40,
