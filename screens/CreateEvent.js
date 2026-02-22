@@ -76,7 +76,7 @@ export default function CreateEvent({ route, navigation }) {
     { name: "Golden Hour", colors: ["#F2994A", "#F2C94C"] },
   ];
 
-  const API_URL = "http://192.168.1.3:3000/api/events";
+  const API_URL = `${process.env.EXPO_PUBLIC_API_URL}/events`;
 
   const handleCreate = async () => {
     // Validation simple
@@ -106,7 +106,7 @@ export default function CreateEvent({ route, navigation }) {
         theme_color: form.theme_color,
       };
 
-      const url = editEvent ? `http://192.168.1.3:3000/api/events/${editEvent.id}` : API_URL;
+      const url = editEvent ? `${process.env.EXPO_PUBLIC_API_URL}/events/${editEvent.id}` : API_URL;
       const method = editEvent ? "PUT" : "POST";
 
       console.log("SENDING PAYLOAD:", payload);

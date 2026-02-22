@@ -41,7 +41,7 @@ const EventInfo = ({ route, navigation }) => {
 
   useFocusEffect(
     React.useCallback(() => {
-      fetch(`http://192.168.1.3:3000/api/events/detail/${eventId}/${studentId}`)
+      fetch(`${process.env.EXPO_PUBLIC_API_URL}/events/detail/${eventId}/${studentId}`)
         .then((res) => res.json())
         .then((data) => {
           setEvent(data);

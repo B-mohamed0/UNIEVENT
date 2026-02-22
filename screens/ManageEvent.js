@@ -38,8 +38,8 @@ export default function ManageEvent({ route, navigation }) {
     cardBorder: isDarkMode ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.05)",
   };
 
-  const API_URL = "http://192.168.1.3:3000/api/organizer";
-  const STATS_URL = "http://192.168.1.3:3000/api/events/stats";
+  const API_URL = `${process.env.EXPO_PUBLIC_API_URL}/organizer`;
+  const STATS_URL = `${process.env.EXPO_PUBLIC_API_URL}/events/stats`;
 
   useEffect(() => {
     fetchEventDetails();

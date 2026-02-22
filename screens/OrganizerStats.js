@@ -40,7 +40,7 @@ export default function OrganizerStats({ route, navigation }) {
     useEffect(() => {
         const fetchStats = async () => {
             try {
-                const response = await fetch(`http://192.168.1.3:3000/api/organizer/stats/${id}`);
+                const response = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/organizer/stats/${id}`);
                 const data = await response.json();
                 if (response.ok) {
                     setStats(data);

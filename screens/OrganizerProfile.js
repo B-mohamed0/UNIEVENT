@@ -31,7 +31,7 @@ export default function OrganizerProfile({ route, navigation }) {
         photo: null,
     });
 
-    const API_URL = "http://192.168.1.3:3000/api/organizer"; // Ajuster l'IP si besoin
+    const API_URL = `${process.env.EXPO_PUBLIC_API_URL}/organizer`;
 
     const themeColors = {
         text: isDarkMode ? "#FFF" : "#0A0A1A",

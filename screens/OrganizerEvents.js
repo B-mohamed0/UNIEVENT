@@ -39,7 +39,7 @@ export default function OrganizerEvents({ route, navigation }) {
     blurTint: isDarkMode ? "dark" : "light",
   };
 
-  const API_URL = "http://192.168.1.3:3000/api/organizer";
+  const API_URL = `${process.env.EXPO_PUBLIC_API_URL}/organizer`;
 
   useEffect(() => {
     fetchEvents();
@@ -68,7 +68,7 @@ export default function OrganizerEvents({ route, navigation }) {
           style: "destructive",
           onPress: async () => {
             try {
-              const response = await fetch(`http://192.168.1.3:3000/api/events/${eventId}`, {
+              const response = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/events/${eventId}`, {
                 method: "DELETE",
               });
 

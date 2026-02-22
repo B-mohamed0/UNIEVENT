@@ -27,7 +27,7 @@ const Inscription = ({ route, navigation }) => {
   const handleSubmit = async () => {
     try {
       const response = await fetch(
-        `http://192.168.1.3:3000/api/events/${eventId}/inscription`,
+        `${process.env.EXPO_PUBLIC_API_URL}/events/${eventId}/inscription`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },

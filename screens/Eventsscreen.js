@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -6,21 +6,17 @@ import {
   ScrollView,
   TouchableOpacity,
   StatusBar,
-  Animated,
   Dimensions,
+  ActivityIndicator,
+  TextInput,
+  ImageBackground,
 } from "react-native";
-import { ImageBackground } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { BlurView } from "expo-blur";
 import { LinearGradient } from "expo-linear-gradient";
 import BottomNav from "../components/navbar";
 
-
-
-
-
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
-const CARD_WIDTH = SCREEN_WIDTH - 40;
 
 const THEME_GRADIENTS = {
   "Dusk": ["#FF512F", "#DD2476"],
@@ -36,311 +32,101 @@ const THEME_GRADIENTS = {
   "default": ["#000000ff", "#434343ff"]
 };
 
-// ================= CONFIGURATION API =================
-const API_URL_USER = "http://192.168.1.3:3000/api/user";
-const API_URL_EVENTS = "http://192.168.1.3:3000/api/events";
+const API_URL_EVENTS = `${process.env.EXPO_PUBLIC_API_URL}/events`;
 
-export default function ProfileScreen({ route, navigation }) {
+export default function EventsScreen({ route, navigation }) {
   const { nom, id } = route.params;
 
-  const [openEventId, setOpenEventId] = useState(null);
-
-  const [userData, setUserData] = useState({
-    name: nom || "N O M   P R E N O M",
-    greeting: "Bonjour",
-    dateInfo: new Date().toLocaleDateString("fr-FR"),
-    stats: { upcomingEvents: 0, todayEvents: 0, completedEvents: 0 },
-  });
-
   const [events, setEvents] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedFilter, setSelectedFilter] = useState("TOUS");
+  const [selectedCategory, setSelectedCategory] = useState("TOUTES");
+  const [expandedEventId, setExpandedEventId] = useState(null);
 
-  // ================= 🆕 ÉTAT POUR CARROUSEL D'ÉVÉNEMENTS =================
-  const [upcomingEvents, setUpcomingEvents] = useState([]);
-  const [currentIndex, setCurrentIndex] = useState(1);
-  const [loadingEvents, setLoadingEvents] = useState(true);
-  const loopedEvents =
-    upcomingEvents.length > 0
-      ? [
-        upcomingEvents[upcomingEvents.length - 1],
-        ...upcomingEvents,
-        upcomingEvents[0],
-      ]
-      : [];
-  const scrollX = useRef(new Animated.Value(0)).current;
-  const carouselRef = useRef(null);
-
-  // ================= 🆕 ANIMATION BARRE DE PROGRESSION =================
-  const [progressAnim] = useState(new Animated.Value(0));
+  const filters = ["TOUS", "À VENIR", "EN COURS", "TERMINÉ"];
+  const categories = ["TOUTES", "Conférence", "Atelier", "Soirée"];
 
   useEffect(() => {
-    if (upcomingEvents.length > 0) {
-      progressAnim.setValue(0);
+    fetchEvents();
+  }, []);
 
-      Animated.loop(
-        Animated.sequence([
-          Animated.timing(progressAnim, {
-            toValue: 1,
-            duration: 3000,
-            useNativeDriver: false,
-          }),
-          Animated.timing(progressAnim, {
-            toValue: 0,
-            duration: 0,
-            useNativeDriver: false,
-          }),
-        ]),
-      ).start();
+  const fetchEvents = async () => {
+    try {
+      const res = await fetch(API_URL_EVENTS);
+      const data = await res.json();
+      setEvents(Array.isArray(data) ? data : data.data || []);
+    } catch (err) {
+      console.log("Erreur fetch events:", err);
+    } finally {
+      setLoading(false);
     }
-  }, [upcomingEvents]);
-
-  // ================= CAROUSEL AUTO INFINI =================
-
-  // Auto scroll
-  useEffect(() => {
-    if (upcomingEvents.length === 0) return;
-
-    setCurrentIndex(1);
-
-    const interval = setInterval(() => {
-      setCurrentIndex((prev) => prev + 1);
-    }, 2000);
-
-    return () => clearInterval(interval);
-  }, [upcomingEvents]);
-
-  // Déplacement automatique quand currentIndex change
-  useEffect(() => {
-    if (!carouselRef.current) return;
-
-    carouselRef.current.scrollTo({
-      x: currentIndex * SCREEN_WIDTH,
-      animated: true,
-    });
-  }, [currentIndex]);
-
-  // Loop invisible
-  const handleScrollEnd = (event) => {
-    const offsetX = event.nativeEvent.contentOffset.x;
-    let index = Math.round(offsetX / SCREEN_WIDTH);
-
-    if (index === 0) {
-      carouselRef.current.scrollTo({
-        x: upcomingEvents.length * SCREEN_WIDTH,
-        animated: false,
-      });
-      index = upcomingEvents.length;
-    }
-
-    if (index === loopedEvents.length - 1) {
-      carouselRef.current.scrollTo({
-        x: SCREEN_WIDTH,
-        animated: false,
-      });
-      index = 1;
-    }
-
-    setCurrentIndex(index);
   };
 
-  // ================= 🆕 RÉCUPÉRATION ÉVÉNEMENTS NON EXPIRÉS =================
-  useEffect(() => {
-    const fetchUpcomingEvents = async () => {
-      try {
-        const response = await fetch(`${API_URL_EVENTS}/upcoming/${id}`);
-        const data = await response.json();
+  const getStatusLabel = (date, hDebut, hFin) => {
+    if (!date || !hDebut || !hFin) return "À VENIR";
 
-        if (data.events && data.events.length > 0) {
-          setUpcomingEvents(data.events);
-        } else {
-          setUpcomingEvents([]);
-        }
-        setLoadingEvents(false);
-      } catch (error) {
-        console.error("Erreur lors du chargement des événements:", error);
-        setLoadingEvents(false);
-      }
-    };
+    const now = new Date();
+    const eventDate = new Date(date);
 
-    fetchUpcomingEvents();
-    const interval = setInterval(fetchUpcomingEvents, 30000);
-    return () => clearInterval(interval);
-  }, [id]);
+    // Normalize dates to compare days
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const eventDay = new Date(eventDate.getFullYear(), eventDate.getMonth(), eventDate.getDate());
 
-  // ================= API CALLS ORIGINAUX =================
-  useEffect(() => {
-    const fetchStats = async () => {
-      try {
-        const res = await fetch(`${API_URL_EVENTS}/${id}`);
-        const data = await res.json();
-        setUserData((prev) => ({
-          ...prev,
-          stats: {
-            upcomingEvents: data.upcomingEvents ?? 0,
-            todayEvents: data.todayEvents ?? 0,
-            completedEvents: data.completedEvents ?? 0,
-          },
-        }));
-      } catch (err) {
-        console.log("Erreur fetch stats:", err);
-      }
-    };
+    if (eventDay > today) return "À VENIR";
+    if (eventDay < today) return "TERMINÉ";
 
-    const fetchEventList = async () => {
-      try {
-        const res = await fetch(API_URL_EVENTS);
-        const data = await res.json();
-        const eventsArray = Array.isArray(data) ? data : data.data || [];
-        setEvents(eventsArray);
-      } catch (err) {
-        console.log("Erreur fetch events:", err);
-      }
-    };
+    // Same day logic
+    const [hStart, mStart] = hDebut.split(":").map(Number);
+    const [hEnd, mEnd] = hFin.split(":").map(Number);
+    const start = new Date(now).setHours(hStart, mStart, 0, 0);
+    const end = new Date(now).setHours(hEnd, mEnd, 0, 0);
 
-    const fetchUserData = async () => {
-      try {
-        const res = await fetch(API_URL_USER);
-        const data = await res.json();
-        setUserData((prev) => ({
-          ...prev,
-          ...data,
-          name: nom,
-          dateInfo: new Date().toLocaleDateString("fr-FR"),
-        }));
-      } catch (err) {
-        console.log("Erreur fetch user:", err);
-      }
-    };
+    if (now < start) return "À VENIR";
+    if (now > end) return "TERMINÉ";
+    return "EN COURS";
+  };
 
-    fetchStats();
-    fetchEventList();
-    fetchUserData();
-  }, [id]);
+  const formatDate = (dateInput) => {
+    let day, month, year;
 
-  // ================= 🆕 FONCTION POUR FORMATER LA DATE =================
-  const formatDate = (dateString) => {
-    const date = new Date(dateString);
-    const day = date.getDate().toString().padStart(2, "0");
-    const month = date
-      .toLocaleDateString("fr-FR", { month: "short" })
-      .normalize("NFD") // sépare les accents
-      .replace(/[\u0300-\u036f]/g, "") // supprime les accents
+    // Si c'est un objet (déjà formaté par le backend)
+    if (dateInput && typeof dateInput === "object" && dateInput.day) {
+      day = dateInput.day;
+      month = dateInput.month || "";
+      year = dateInput.year;
+    } else {
+      const date = new Date(dateInput);
+      if (isNaN(date.getTime())) return { day: "??", month: "???", year: "????" };
+      day = date.getDate().toString().padStart(2, "0");
+      month = date.toLocaleDateString("fr-FR", { month: "short" });
+      year = date.getFullYear();
+    }
+
+    // Suppression systématique des accents pour le mois
+    const normalizedMonth = month
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
       .replace(".", "")
-      .slice(0, 3)
-      .toUpperCase();
-    const year = date.getFullYear();
-    return { day, month, year };
+      .toUpperCase()
+      .slice(0, 3);
+
+    return { day, month: normalizedMonth, year };
   };
 
-  // ================= 🆕 RENDU D'UNE CARTE ÉVÉNEMENT =================
-  const renderEventCard = (event, index) => {
-    const { day, month, year } = formatDate(event.date);
+  const filteredEvents = events.filter((ev) => {
+    // Utiliser le statut du backend s'il existe, sinon calculer en local
+    let status = ev.event_status || getStatusLabel(ev.date, ev.heure_debut || ev.time, ev.heure_fin);
 
-    return (
-      <View key={`${event.id}-${index}`} style={styles.carouselCard}>
-        <LinearGradient
-          colors={THEME_GRADIENTS[event.theme_color] || THEME_GRADIENTS.default}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={styles.activeEventCard}
-        >
-          <View style={styles.eventContainer}>
-            <View style={styles.eventContent}>
-              {/* Informations de l'événement */}
-              <View style={styles.eventInfo}>
-                <Text style={styles.eventTitle}>{event.nom_evenement}</Text>
-                <Text style={styles.animatorText}>{event.nom_animateur}</Text>
-                <Text style={styles.timeText}>
-                  {event.heure_debut ? event.heure_debut.slice(0, 5) : "00:00"}
-                </Text>
-              </View>
+    // Normaliser pour la comparaison avec les filtres (cas du accent sur TERMINÉ)
+    if (status === "TERMINE") status = "TERMINÉ";
 
-              {/* Bouton "Voir l'événement" */}
-              <TouchableOpacity
-                style={styles.viewButton}
-                onPress={() =>
-                  navigation.navigate("Eventinfo", {
-                    eventId: event.id,
-                    studentId: id,
-                    nom,
-                  })
-                }
-              >
-                <Text style={styles.viewButtonText}>voir l'évènement</Text>
-              </TouchableOpacity>
-            </View>
-            {/* Date box */}
-            <View style={styles.dateBox}>
-              <Text style={styles.dateDay}>{day}</Text>
-              <Text style={styles.dateMonth}>{month}</Text>
-              <Text style={styles.dateYear}>{year}</Text>
-            </View>
-          </View>
-          {/* Indicateur de statut d'inscription */}
-          {event.participation_status && (
-            <View style={styles.statusIndicator}>
-              <View
-                style={[
-                  styles.statusDot,
-                  {
-                    backgroundColor:
-                      event.participation_status === "PRESENT"
-                        ? "#4CAF50"
-                        : event.participation_status === "INSCRIT"
-                          ? "#FFC107"
-                          : "#F44336",
-                  },
-                ]}
-              />
-              <Text style={styles.statusText}>
-                {event.participation_status === "PRESENT"
-                  ? "Présent"
-                  : event.participation_status === "INSCRIT"
-                    ? "Inscrit"
-                    : "Absent"}
-              </Text>
-            </View>
-          )}
-        </LinearGradient>
-      </View>
-    );
-  };
-
-  // ================= 🆕 RENDU DU CARROUSEL =================
-  const renderCarousel = () => {
-    if (loadingEvents) {
-      return (
-        <View style={styles.loadingCard}>
-          <Text style={styles.loadingText}>Chargement...</Text>
-        </View>
-      );
-    }
-
-    if (upcomingEvents.length === 0) {
-      return (
-        <View style={styles.noEventCard}>
-          <Ionicons name="calendar-outline" size={40} color="#999" />
-          <Text style={styles.noEventText}>Aucun événement à venir</Text>
-        </View>
-      );
-    }
-
-    return (
-      <View style={styles.carouselContainer}>
-        <ScrollView
-          ref={carouselRef}
-          horizontal
-          pagingEnabled
-          showsHorizontalScrollIndicator={false}
-          snapToInterval={SCREEN_WIDTH}
-          decelerationRate="fast"
-          onMomentumScrollEnd={handleScrollEnd}
-          contentOffset={{ x: SCREEN_WIDTH, y: 0 }}
-        >
-          {loopedEvents.map((event, index) => renderEventCard(event, index))}
-        </ScrollView>
-      </View>
-    );
-  };
+    const matchesFilter = selectedFilter === "TOUS" || status === selectedFilter;
+    const matchesCategory = selectedCategory === "TOUTES" || ev.categorie === selectedCategory;
+    const evName = ev.nom_evenement || ev.title || "";
+    const matchesSearch = evName.toLowerCase().includes(searchQuery.toLowerCase());
+    return matchesFilter && matchesCategory && matchesSearch;
+  });
 
   return (
     <ImageBackground
@@ -348,301 +134,246 @@ export default function ProfileScreen({ route, navigation }) {
       style={{ flex: 1 }}
       resizeMode="cover"
     >
-      <StatusBar
-        barStyle="dark-content"
-        backgroundColor="transparent"
-        translucent
-      />
+      <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent />
 
-      {/* HEADER FIXE */}
+      {/* HEADER */}
       <View style={styles.header}>
-        <TouchableOpacity style={styles.iconButtonBlue}>
-          <Ionicons name="notifications" size={20} color="#ffffffff" />
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.iconButtonGlass}>
+          <BlurView intensity={20} tint="light" style={styles.iconBlur}>
+            <Ionicons name="chevron-back" size={24} color="#FFF" />
+          </BlurView>
         </TouchableOpacity>
-
-        <View style={styles.userInfo}>
-          <Text style={styles.dateText}>{userData.dateInfo}</Text>
-        </View>
-
-        <TouchableOpacity style={styles.iconButtonBlue}>
-          <Ionicons name="person" size={20} color="#ffffffff" />
-        </TouchableOpacity>
+        <Text style={styles.pageTitle}>ÉVÉNEMENTS</Text>
+        <View style={{ width: 50 }} />
       </View>
 
-      {/* SCROLL SEULEMENT ICI */}
-      <ScrollView
-        style={{ flex: 1 }}
-        contentContainerStyle={{ paddingBottom: 160, paddingTop: 10 }}
-        showsVerticalScrollIndicator={false}
-        nestedScrollEnabled={true}
-      >
-        {/* GREETING */}
-        <View style={styles.greetingSection}>
-          <Text style={styles.greetingText}>{userData.greeting}</Text>
-          <Text style={styles.nameText}>{userData.name}</Text>
-        </View>
-        {/* CAROUSEL */}
-        {renderCarousel()}
+      {/* SEARCH & FILTERS */}
+      <View style={styles.searchSection}>
+        <BlurView intensity={20} tint="light" style={styles.searchBar}>
+          <Ionicons name="search" size={20} color="rgba(3, 3, 3, 0.6)" />
+          <TextInput
+            placeholder="Rechercher un événement..."
+            placeholderTextColor="rgba(0, 0, 0, 1)"
+            style={styles.searchInput}
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+          />
+        </BlurView>
 
-        {/* STATS */}
-        <View style={styles.statsContainer}>
-          <BlurView intensity={10} tint="light" style={styles.statCard}>
-            <Ionicons name="calendar" size={40} color="#000" />
-            <Text style={styles.statLabel}>Événements à venir</Text>
-            <Text style={styles.statNumber}>
-              {userData.stats.upcomingEvents}
-            </Text>
-          </BlurView>
-
-          <BlurView intensity={10} tint="light" style={styles.statCard}>
-            <Ionicons name="time" size={40} color="#000" />
-            <Text style={styles.statLabel}>Événements d'aujourd'hui</Text>
-            <Text style={styles.statNumber}>{userData.stats.todayEvents}</Text>
-          </BlurView>
-
-          <BlurView intensity={10} tint="light" style={styles.statCard}>
-            <Ionicons name="checkmark-circle" size={40} color="#000" />
-            <Text style={styles.statLabel}>Événements terminés</Text>
-            <Text style={styles.statNumber}>
-              {userData.stats.completedEvents}
-            </Text>
-          </BlurView>
-        </View>
-
-        {/* EVENTS LIST */}
-        <View style={styles.scrollContent}>
-          {events.map((event) => (
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterContainer}>
+          {categories.map((c) => (
             <TouchableOpacity
-              key={event.id}
-              activeOpacity={0.9}
-              onPress={() =>
-                setOpenEventId(openEventId === event.id ? null : event.id)
-              }
+              key={c}
+              onPress={() => setSelectedCategory(c)}
+              style={[styles.filterBtn, selectedCategory === c && styles.filterBtnActive]}
             >
-              <LinearGradient
-                colors={THEME_GRADIENTS[event.theme_color] || THEME_GRADIENTS.default}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
-                style={styles.eventCard}
-              >
-                <View style={styles.eventHeader}>
-                  <View style={styles.eventTextContainer}>
-                    <Text style={styles.eventTitle}>{event.title}</Text>
-                    <Text style={styles.animatorText}>{event.animator}</Text>
-                    {openEventId === event.id && (
-                      <Text style={styles.timeText}>{event.time}</Text>
-                    )}
-                  </View>
-                </View>
-              </LinearGradient>
+              <Text style={[styles.filterText, selectedCategory === c && styles.filterTextActive]}>{c}</Text>
             </TouchableOpacity>
           ))}
+        </ScrollView>
 
-          {/* BUTTONS */}
-          <View style={styles.actionButtonsContainer}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={[styles.filterContainer, { marginTop: 10 }]}>
+          {filters.map((f) => (
             <TouchableOpacity
-              style={styles.actionButtonWrapper}
-              onPress={() => navigation.navigate("Eventsscreen", { id, nom })}
-              activeOpacity={0.8}
+              key={f}
+              onPress={() => setSelectedFilter(f)}
+              style={[styles.filterBtn, selectedFilter === f && styles.filterBtnActive]}
             >
-              <LinearGradient
-                colors={["rgba(124,154,225,0.8)", "#426EBC"]}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
-                style={styles.gradientActionButton}
+              <Text style={[styles.filterText, selectedFilter === f && styles.filterTextActive]}>{f}</Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+      </View>
+
+      {/* EVENTS LIST */}
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={{ paddingBottom: 120, paddingHorizontal: 20 }}
+        showsVerticalScrollIndicator={false}
+      >
+        {loading ? (
+          <ActivityIndicator size="large" color="#FFF" style={{ marginTop: 50 }} />
+        ) : filteredEvents.length > 0 ? (
+          filteredEvents.map((event, index) => {
+            const { day, month, year } = formatDate(event.date);
+            const isExpanded = expandedEventId === event.id;
+
+            return (
+              <TouchableOpacity
+                key={`${event.id}-${index}`}
+                activeOpacity={0.9}
+                onPress={() => setExpandedEventId(isExpanded ? null : event.id)}
+                style={styles.cardContainer}
               >
-                <Text style={styles.actionButtonText}>Voir Évènements</Text>
-              </LinearGradient>
-            </TouchableOpacity>
+                <LinearGradient
+                  colors={THEME_GRADIENTS[event.theme_color] || THEME_GRADIENTS.default}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={[styles.activeEventCard, !isExpanded && { paddingBottom: 18 }]}
+                >
+                  <View style={styles.eventContainer}>
+                    <View style={[styles.eventContent, { flex: 1 }]}>
+                      {/* LIGNE DE TITRE (Toujours visible) */}
+                      <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+                        <Text
+                          style={[styles.eventTitle, { flex: 1, marginBottom: isExpanded ? 5 : 0 }]}
+                          numberOfLines={isExpanded ? 0 : 1}
+                        >
+                          {event.nom_evenement || event.title || "Événement sans nom"}
+                        </Text>
+                        {!isExpanded && (
+                          <Ionicons name="chevron-down" size={20} color="rgba(255,255,255,0.6)" style={{ marginLeft: 10 }} />
+                        )}
+                      </View>
 
-            <TouchableOpacity
-              style={styles.actionButtonWrapper}
-              onPress={() =>
-                navigation.navigate("EditProfileScreen", { id, nom })
-              }
-            >
-              <View style={styles.actionButtonOutline}>
-                <Text style={styles.actionButtonOutlineText}>
-                  Modifier le Profil
-                </Text>
-              </View>
-            </TouchableOpacity>
-          </View>
-        </View>
+                      {/* INFORMATIONS SUPPLÉMENTAIRES (Si agrandi) */}
+                      {isExpanded && (
+                        <View style={{ marginTop: 10 }}>
+                          <Text style={styles.animatorText}>{event.nom_animateur || event.animator}</Text>
+                          <Text style={styles.timeText}>
+                            {(event.time || event.heure_debut || "00:00").slice(0, 5)}
+                          </Text>
+                        </View>
+                      )}
+
+                      {/* BOUTON D'ACTION (Si agrandi) */}
+                      {isExpanded && (
+                        <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginTop: 15 }}>
+                          <TouchableOpacity
+                            style={styles.viewButton}
+                            onPress={() =>
+                              navigation.navigate("Eventinfo", {
+                                eventId: event.id,
+                                studentId: id,
+                                nom,
+                              })
+                            }
+                          >
+                            <Text style={styles.viewButtonText}>voir l'évènement</Text>
+                          </TouchableOpacity>
+
+                          <TouchableOpacity onPress={() => setExpandedEventId(null)} style={{ padding: 10 }}>
+                            <Ionicons name="chevron-up" size={24} color="#FFF" />
+                          </TouchableOpacity>
+                        </View>
+                      )}
+                    </View>
+
+                    {/* Date box - Uniquement si agrandi */}
+                    {isExpanded && (
+                      <View style={styles.dateBox}>
+                        <Text style={styles.dateDay}>{day}</Text>
+                        <Text style={styles.dateMonth}>{month}</Text>
+                        <Text style={styles.dateYear}>{year}</Text>
+                      </View>
+                    )}
+                  </View>
+                </LinearGradient>
+              </TouchableOpacity>
+            );
+          })
+        ) : (
+          <Text style={styles.noEventsText}>Aucun événement trouvé.</Text>
+        )}
       </ScrollView>
-      <BottomNav id={id} nom={nom} />
 
+      <BottomNav id={id} nom={nom} />
     </ImageBackground>
   );
 }
-// ================= STYLES =================
+
 const styles = StyleSheet.create({
-  background: { flex: 1, backgroundColor: "#818181ff" },
-  container: { flex: 1, paddingTop: 50 },
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
+    alignItems: "center",
     paddingHorizontal: 20,
+    paddingTop: 60,
     paddingBottom: 20,
-    marginTop: 50,
   },
-  iconButtonBlue: {
-    marginTop: 10,
+  iconButtonGlass: {
     width: 50,
     height: 50,
-    borderRadius: 50,
-    backgroundColor: "#05378d7b",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  userInfo: { alignItems: "center" },
-  dateText: {
-    fontSize: 25,
-    color: "#333",
-    fontWeight: "500",
-    marginTop: 15,
-    fontFamily: "jokeyone",
-  },
-  greetingSection: {
-    alignItems: "flex-start",
-    marginBottom: 20,
-    marginLeft: 40,
-  },
-  greetingText: {
-    fontSize: 20,
-    color: "#ffffffff",
-    paddingBottom: 10,
-    fontFamily: "jokeyone",
-  },
-  nameText: { fontSize: 30, fontWeight: "700", fontFamily: "daretro" },
-  statsContainer: {
-    flexDirection: "row",
-    justifyContent: "center",
-    marginVertical: 10,
-    gap: 10,
-  },
-  statCard: {
-    borderRadius: 30,
-    height: 220,
-    width: 110,
-    paddingTop: 30,
-    alignItems: "center",
+    borderRadius: 25,
     overflow: "hidden",
+    backgroundColor: "rgba(0, 74, 143, 0.46)",
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.48)",
-    backgroundColor: "rgba(255, 255, 255, 0.3)",
+    borderColor: "rgba(255, 255, 255, 0.13)",
   },
-
-  statLabel: {
-    fontSize: 15,
-    paddingHorizontal: 10,
-    color: "#666",
-    marginTop: 10,
-    marginBottom: 15,
+  iconBlur: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  pageTitle: {
+    fontSize: 24,
+    color: "#FFF",
     fontFamily: "jokeyone",
-    textAlign: "center",
+    letterSpacing: 2,
   },
-  statNumber: { fontSize: 30, fontFamily: "babyu" },
-
-  // ================= 🆕 STYLES CARROUSEL =================
-  carouselContainer: {
-    position: "relative",
+  searchSection: {
+    paddingHorizontal: 20,
     marginBottom: 20,
   },
-  carouselCard: {
-    width: SCREEN_WIDTH,
-    paddingHorizontal: 20,
-  },
-  arrowLeft: {
-    position: "absolute",
-    left: 10,
-    top: "50%",
-    marginTop: -20,
-    zIndex: 10,
-    backgroundColor: "#FFF",
-    borderRadius: 20,
-    width: 40,
-    height: 40,
-    justifyContent: "center",
-    alignItems: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 5,
-  },
-  arrowRight: {
-    position: "absolute",
-    right: 10,
-    top: "50%",
-    marginTop: -20,
-    zIndex: 10,
-    backgroundColor: "#FFF",
-    borderRadius: 20,
-    width: 40,
-    height: 40,
-    justifyContent: "center",
-    alignItems: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 5,
-  },
-  paginationDots: {
+  searchBar: {
     flexDirection: "row",
-    justifyContent: "center",
     alignItems: "center",
-    marginTop: 15,
-    gap: 8,
+    backgroundColor: "rgba(255, 255, 255, 0.15)",
+    borderRadius: 20,
+    paddingHorizontal: 15,
+    height: 50,
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.2)",
+    marginBottom: 15,
+    overflow: "hidden",
   },
-  dot: {
-    height: 8,
-    borderRadius: 4,
-    transition: "width 0.3s",
+  searchInput: {
+    flex: 1,
+    marginLeft: 10,
+    color: "#FFF",
+    fontSize: 16,
+    fontFamily: "Insignia",
   },
-
-  // ================= STYLES CARTE ÉVÉNEMENT =================
+  filterContainer: {
+    paddingBottom: 5,
+  },
+  filterBtn: {
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 20,
+    backgroundColor: "rgba(255, 255, 255, 0.1)",
+    marginRight: 10,
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.1)",
+  },
+  filterBtnActive: {
+    backgroundColor: "#FFF",
+    borderColor: "#FFF",
+  },
+  filterText: {
+    color: "rgba(255, 255, 255, 0.8)",
+    fontFamily: "jokeyone",
+    fontSize: 14,
+  },
+  filterTextActive: {
+    color: "#000",
+  },
+  cardContainer: {
+    marginBottom: 15,
+    borderRadius: 30,
+    overflow: "hidden",
+    elevation: 4,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+  },
   activeEventCard: {
     borderRadius: 30,
     paddingTop: 18,
     paddingRight: 20,
-    paddingBottom: 10,
     paddingLeft: 20,
-  },
-  liveBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "rgba(0, 0, 0, 1)",
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 15,
-    alignSelf: "flex-start",
-    marginBottom: 15,
-  },
-  liveDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    marginRight: 6,
-  },
-  liveText: {
-    color: "#FFF",
-    fontSize: 12,
-    fontWeight: "700",
-    letterSpacing: 0.5,
-  },
-  progressBarContainer: {
-    height: 4,
-    backgroundColor: "rgba(255, 255, 255, 0.3)",
-    borderRadius: 2,
-    overflow: "hidden",
-    marginBottom: 15,
-  },
-  progressBar: {
-    height: "100%",
-    backgroundColor: "#FFF",
-    borderRadius: 2,
+    paddingBottom: 15,
   },
   eventContainer: {
     flexDirection: "row",
@@ -661,7 +392,7 @@ const styles = StyleSheet.create({
   },
   eventTitle: {
     color: "#FFF",
-    fontSize: 30,
+    fontSize: 24,
     fontWeight: "700",
     marginBottom: 5,
     textTransform: "uppercase",
@@ -724,106 +455,11 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "600",
   },
-
-  loadingCard: {
-    backgroundColor: "#F5F5F5",
-    borderRadius: 20,
-    padding: 40,
-    marginHorizontal: 20,
-    marginVertical: 15,
-    alignItems: "center",
-  },
-  loadingText: {
-    color: "#666",
-    fontSize: 14,
-  },
-  noEventCard: {
-    backgroundColor: "#F5F5F5",
-    borderRadius: 20,
-    padding: 40,
-    marginHorizontal: 20,
-    marginVertical: 15,
-    alignItems: "center",
-  },
-  noEventText: {
-    color: "#666",
-    fontSize: 14,
-    marginTop: 10,
-  },
-
-  // ================= STYLES ORIGINAUX =================
-  scrollContent: { padding: 20, paddingBottom: 120 },
-  eventCard: { borderRadius: 15, padding: 15, marginBottom: 10 },
-  eventHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-  },
-  eventTextContainer: { flex: 1, paddingRight: 10 },
-  dateBoxLarge: {
-    backgroundColor: "rgba(50,70,100,0.7)",
-    borderRadius: 12,
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    alignItems: "center",
-    minWidth: 80,
-  },
-  dateDayLarge: {
+  noEventsText: {
     color: "#FFF",
-    fontSize: 24,
-    fontWeight: "700",
-    lineHeight: 28,
-  },
-  dateMonthLarge: { color: "#FFF", fontSize: 12, lineHeight: 16 },
-  dateYearLarge: {
-    color: "#FFF",
-    fontSize: 20,
-    fontWeight: "700",
-    lineHeight: 24,
-  },
-  chevronContainer: { alignItems: "center", marginTop: 8 },
-
-  actionButtonsContainer: { flexDirection: "row", gap: 12, marginTop: 20 },
-  actionButtonWrapper: {
-    flex: 1,
-  },
-
-  gradientActionButton: {
-    width: "100%",
-    height: 50,
-    borderRadius: 30,
-    alignItems: "center",
-    justifyContent: "center",
-    borderBlockColor: "#ffffffff",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.13,
-    shadowRadius: 24,
-    elevation: 8,
-  },
-
-  actionButtonText: {
-    color: "#FFF",
+    textAlign: "center",
+    marginTop: 50,
     fontSize: 16,
-    fontWeight: "600",
-    fontFamily: "jokeyone",
+    fontFamily: "Insignia",
   },
-
-  actionButtonOutline: {
-    width: "100%",
-    borderWidth: 2,
-    borderColor: "#01419aff",
-    height: 50,
-    borderRadius: 30,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-
-  actionButtonOutlineText: {
-    color: "#000000ff",
-    fontSize: 17,
-    fontWeight: "600",
-    fontFamily: "jokeyone",
-  },
-
 });

@@ -22,7 +22,7 @@ import { useState } from "react";
 const { width, height } = Dimensions.get("window");
 
 /* 🔗 URL BACKEND */
-const API_BASE = "http://192.168.1.3:3000/api/auth";
+const API_BASE = `${process.env.EXPO_PUBLIC_API_URL}/auth`;
 
 export default function StudentScreen() {
   const navigation = useNavigation();

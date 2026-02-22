@@ -37,8 +37,8 @@ const THEME_GRADIENTS = {
 };
 
 // ================= CONFIGURATION API =================
-const API_URL_USER = "http://192.168.1.3:3000/api/user";
-const API_URL_EVENTS = "http://192.168.1.3:3000/api/events";
+const API_URL_USER = `${process.env.EXPO_PUBLIC_API_URL}/user`;
+const API_URL_EVENTS = `${process.env.EXPO_PUBLIC_API_URL}/events`;
 
 export default function ProfileScreen({ route, navigation }) {
   const { nom, id } = route.params;
