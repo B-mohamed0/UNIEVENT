@@ -164,14 +164,14 @@ app.post("/api/auth/login", async (req, res) => {
 
     // Tenter de trouver dans etudiant
     let result = await pool.query(
-      "SELECT nom, id, password, 'STUDENT' as role FROM etudiant WHERE email = $1",
+      "SELECT nom, email, id, password, 'STUDENT' as role, photo FROM etudiant WHERE email = $1",
       [email]
     );
 
     // Si non trouvé et on n'a pas spécifié de rôle ou on a spécifié ORGANIZER, on cherche dans organisateur
     if (result.rowCount === 0) {
       result = await pool.query(
-        "SELECT nom, id, password, 'ORGANIZER' as role FROM organisateur WHERE email = $1",
+        "SELECT nom, email, id, password, 'ORGANIZER' as role, photo FROM organisateur WHERE email = $1",
         [email]
       );
     }
@@ -183,6 +183,7 @@ app.post("/api/auth/login", async (req, res) => {
     }
 
     const user = result.rows[0];
+
     const validPassword = await bcrypt.compare(password, user.password);
 
     if (!validPassword) {
@@ -193,7 +194,7 @@ app.post("/api/auth/login", async (req, res) => {
 
     res.json({
       message: "Connexion réussie ✅",
-      user: { nom: user.nom, id: user.id, role: user.role },
+      user: { nom: user.nom, id: user.id, role: user.role, photo: user.photo },
     });
   } catch (error) {
     console.error("BACKEND ERROR:", error);
@@ -841,6 +842,109 @@ app.delete("/api/events/unregister/:participationId", async (req, res) => {
     });
   } catch (error) {
     console.error("❌ Erreur lors de la désinscription:", error);
+    res.status(500).json({ error: "Erreur serveur" });
+  }
+});
+
+/**
+ * 🆕 GET /api/student/stats/:id
+ * 
+ * Récupère les statistiques de participation pour un étudiant
+ */
+app.get("/api/student/stats/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // 1️⃣ Total des événements auxquels l'étudiant est inscrit
+    const enrolledQuery = await pool.query(
+      "SELECT COUNT(*) FROM participation WHERE idetudiant = $1",
+      [id]
+    );
+    const totalEnrolled = parseInt(enrolledQuery.rows[0].count);
+
+    // 2️⃣ Total des événements où l'étudiant a été marqué PRESENT
+    const attendedQuery = await pool.query(
+      "SELECT COUNT(*) FROM participation WHERE idetudiant = $1 AND status = 'PRESENT'",
+      [id]
+    );
+    const totalAttended = parseInt(attendedQuery.rows[0].count);
+
+    // 3️⃣ Calcul du pourcentage
+    const attendancePercentage = totalEnrolled > 0
+      ? Math.round((totalAttended / totalEnrolled) * 100)
+      : 0;
+
+    // 4️⃣ Liste détaillée des événements avec statut de participation
+    const eventsQuery = await pool.query(
+      `SELECT e.id, e.nom_evenement as title, e.nom_animateur as animator, 
+              e.date, e.heure_debut, e.theme_color, e.categorie,
+              p.status as participation_status
+       FROM evenement e
+       JOIN participation p ON e.id = p.idevenement
+       WHERE p.idetudiant = $1
+       ORDER BY e.date DESC`,
+      [id]
+    );
+
+    res.json({
+      totalEnrolled,
+      totalAttended,
+      attendancePercentage,
+      enrolledEvents: eventsQuery.rows
+    });
+  } catch (error) {
+    console.error("❌ Erreur API /student/stats/:id:", error);
+    res.status(500).json({ error: "Erreur serveur" });
+  }
+});
+
+/**
+ * 🆕 GET /api/student/profile/:id
+ * Récupère le profil de l'étudiant
+ */
+app.get("/api/student/profile/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const result = await pool.query(
+      "SELECT id, nom, email, photo FROM etudiant WHERE id = $1",
+      [id]
+    );
+
+    if (result.rowCount === 0) {
+      return res.status(404).json({ error: "Étudiant non trouvé" });
+    }
+
+    res.json(result.rows[0]);
+  } catch (error) {
+    console.error("❌ Erreur API /student/profile/:id:", error);
+    res.status(500).json({ error: "Erreur serveur" });
+  }
+});
+
+/**
+ * 🆕 PUT /api/student/profile/:id
+ * Met à jour le profil de l'étudiant
+ */
+app.put("/api/student/profile/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { nom, photo } = req.body;
+
+    const result = await pool.query(
+      "UPDATE etudiant SET nom = $1, photo = $2 WHERE id = $3 RETURNING id, nom, email, photo",
+      [nom, photo, id]
+    );
+
+    if (result.rowCount === 0) {
+      return res.status(404).json({ error: "Étudiant non trouvé" });
+    }
+
+    res.json({
+      message: "Profil mis à jour avec succès ✅",
+      user: result.rows[0]
+    });
+  } catch (error) {
+    console.error("❌ Erreur API /student/profile/:id (PUT):", error);
     res.status(500).json({ error: "Erreur serveur" });
   }
 });

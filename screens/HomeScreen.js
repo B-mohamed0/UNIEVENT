@@ -8,6 +8,7 @@ import {
   StatusBar,
   Animated,
   Dimensions,
+  Image,
 } from "react-native";
 import { ImageBackground } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
@@ -37,10 +38,9 @@ const THEME_GRADIENTS = {
 };
 
 // ================= CONFIGURATION API =================
-const API_URL_USER = `${process.env.EXPO_PUBLIC_API_URL}/user`;
 const API_URL_EVENTS = `${process.env.EXPO_PUBLIC_API_URL}/events`;
 
-export default function ProfileScreen({ route, navigation }) {
+export default function HomeScreen({ route, navigation }) {
   const { nom, id } = route.params;
 
   const [openEventId, setOpenEventId] = useState(null);
@@ -199,16 +199,17 @@ export default function ProfileScreen({ route, navigation }) {
 
     const fetchUserData = async () => {
       try {
-        const res = await fetch(API_URL_USER);
-        const data = await res.json();
+        const profileRes = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/student/profile/${id}`);
+        const profileData = await profileRes.json();
+
         setUserData((prev) => ({
           ...prev,
-          ...data,
-          name: nom,
+          name: profileData.nom || nom,
+          photo: profileData.photo,
           dateInfo: new Date().toLocaleDateString("fr-FR"),
         }));
       } catch (err) {
-        console.log("Erreur fetch user:", err);
+        console.log("Erreur fetch user profile:", err);
       }
     };
 
@@ -363,10 +364,14 @@ export default function ProfileScreen({ route, navigation }) {
 
         <TouchableOpacity
           style={styles.iconButtonGlass}
-          onPress={() => console.log("Profile")}
+          onPress={() => navigation.navigate("StudentProfile", { id, nom: userData.name })}
         >
           <BlurView intensity={20} tint="light" style={styles.iconBlur}>
-            <Ionicons name="person" size={20} color="#ffffffff" />
+            {userData.photo ? (
+              <Image source={{ uri: userData.photo }} style={styles.headerProfilePhoto} />
+            ) : (
+              <Ionicons name="person" size={20} color="#ffffffff" />
+            )}
           </BlurView>
         </TouchableOpacity>
       </View>
@@ -378,11 +383,17 @@ export default function ProfileScreen({ route, navigation }) {
         showsVerticalScrollIndicator={false}
         nestedScrollEnabled={true}
       >
-        {/* GREETING */}
-        <View style={styles.greetingSection}>
-          <Text style={styles.greetingText}>{userData.greeting}</Text>
-          <Text style={styles.nameText}>{userData.name}</Text>
-        </View>
+        {/* GREETING SECTION */}
+        <TouchableOpacity
+          style={styles.greetingSection}
+          onPress={() => navigation.navigate("StudentProfile", { id, nom: userData.name })}
+          activeOpacity={0.7}
+        >
+          <View>
+            <Text style={styles.greetingText}>{userData.greeting}</Text>
+            <Text style={styles.nameText}>{userData.name}</Text>
+          </View>
+        </TouchableOpacity>
         {/* CAROUSEL */}
         {renderCarousel()}
 
@@ -460,7 +471,7 @@ export default function ProfileScreen({ route, navigation }) {
             <TouchableOpacity
               style={styles.actionButtonWrapper}
               onPress={() =>
-                navigation.navigate("EditProfileScreen", { id, nom })
+                navigation.navigate("StudentProfile", { id, nom: userData.name })
               }
             >
               <View style={styles.actionButtonOutline}>
@@ -480,7 +491,30 @@ export default function ProfileScreen({ route, navigation }) {
 // ================= STYLES =================
 const styles = StyleSheet.create({
   background: { flex: 1, backgroundColor: "#818181ff" },
-  container: { flex: 1, paddingTop: 50 },
+  greetingSection: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: 25,
+    marginTop: 20,
+    marginBottom: 20,
+  },
+  greetingText: {
+    fontSize: 18,
+    color: "rgba(0, 0, 0, 0.6)",
+    fontFamily: "Insignia",
+  },
+  nameText: {
+    fontSize: 28,
+    color: "#000",
+    fontFamily: "jokeyone",
+    textTransform: "uppercase",
+  },
+  headerProfilePhoto: {
+    width: "100%",
+    height: "100%",
+    borderRadius: 25,
+  },
   header: {
     flexDirection: "row",
     justifyContent: "space-between",

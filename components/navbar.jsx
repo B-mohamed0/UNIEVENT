@@ -41,6 +41,8 @@ const BottomNav = ({ id, nom }) => {
       if (route.name === TABS[i].screen) return i;
     }
     if (route.name === "Eventinfo") return 1;
+    if (route.name === "StudentStats") return 2;
+    if (route.name === "StudentProfile") return 3;
     return -1;
   };
 
@@ -67,7 +69,13 @@ const BottomNav = ({ id, nom }) => {
   });
 
   const handlePress = (tab) => {
-    navigation.navigate(tab.screen, { nom, id });
+    if (tab.screen === "Organizer") {
+      navigation.navigate("StudentStats", { nom, id });
+    } else if (tab.screen === "Student") {
+      navigation.navigate("StudentProfile", { nom, id });
+    } else {
+      navigation.navigate(tab.screen, { nom, id });
+    }
   };
 
   return (
