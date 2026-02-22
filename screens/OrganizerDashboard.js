@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   Dimensions,
   ImageBackground,
+  Image,
   StatusBar,
   ScrollView,
   FlatList,
@@ -22,7 +23,9 @@ import ThemeToggle from "../components/ThemeToggle";
 const { width } = Dimensions.get("window");
 
 export default function OrganizerDashboard({ route, navigation }) {
-  const { id, nom } = route.params;
+  const { id, nom: initialNom } = route.params;
+  const [nom, setNom] = useState(initialNom);
+  const [photo, setPhoto] = useState(null);
   const [stats, setStats] = useState({
     activeEvents: 0,
     totalRegistrations: 0,
@@ -56,7 +59,27 @@ export default function OrganizerDashboard({ route, navigation }) {
   useEffect(() => {
     fetchStats();
     fetchWeekEvents();
+    fetchProfile();
   }, []);
+
+  // Rafraîchir si on revient de la page profil avec de nouveaux paramètres
+  useEffect(() => {
+    if (route.params?.nom) setNom(route.params.nom);
+    if (route.params?.photo) setPhoto(route.params.photo);
+  }, [route.params?.refresh]);
+
+  const fetchProfile = async () => {
+    try {
+      const response = await fetch(`${API_URL}/profile/${id}`);
+      const data = await response.json();
+      if (response.ok) {
+        setNom(data.nom);
+        setPhoto(data.photo);
+      }
+    } catch (error) {
+      console.error("Error fetching profile:", error);
+    }
+  };
 
   const fetchStats = async () => {
     try {
@@ -93,9 +116,16 @@ export default function OrganizerDashboard({ route, navigation }) {
             </View>
           </View>
           <View style={styles.headerRight}>
-            <TouchableOpacity style={[styles.profileButton, { borderColor: isDarkMode ? "rgba(255,255,255,0.2)" : "rgba(0,0,0,0.1)" }]}>
+            <TouchableOpacity
+              style={[styles.profileButton, { borderColor: isDarkMode ? "rgba(255,255,255,0.2)" : "rgba(0,0,0,0.1)" }]}
+              onPress={() => navigation.navigate("OrganizerProfile", { id })}
+            >
               <View style={[styles.avatarPlaceholder, { backgroundColor: isDarkMode ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.05)" }]}>
-                <Ionicons name="person" size={18} color={themeColors.text} />
+                {photo ? (
+                  <Image source={{ uri: photo }} style={styles.avatarImage} />
+                ) : (
+                  <Ionicons name="person" size={18} color={themeColors.text} />
+                )}
               </View>
             </TouchableOpacity>
             <ThemeToggle color={themeColors.text} />
@@ -241,6 +271,11 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     justifyContent: "center",
     alignItems: "center",
+    overflow: "hidden",
+  },
+  avatarImage: {
+    width: "100%",
+    height: "100%",
   },
   titleContainer: {
     flexDirection: "column",
@@ -303,15 +338,15 @@ const styles = StyleSheet.create({
   },
   statCard: {
     flex: 1,
-    borderRadius: 24,
+    borderRadius: 30,
     overflow: "hidden",
     borderWidth: 1,
     borderColor: "rgba(255,255,255,0.15)",
   },
   cardGradient: {
     padding: 20,
-    alignItems: "flex-start",
-    gap: 12,
+    alignItems: "center",
+    gap: 0,
   },
   statLabel: {
     color: "rgba(255, 255, 255, 0.6)",
@@ -321,7 +356,7 @@ const styles = StyleSheet.create({
   },
   statValue: {
     color: "#FFF",
-    fontSize: 28,
+    fontSize: 40,
     fontWeight: "700",
     fontFamily: "jokeyone",
   },

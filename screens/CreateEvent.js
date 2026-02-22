@@ -10,6 +10,7 @@ import {
   StatusBar,
   Dimensions,
   Platform,
+  Modal,
 } from "react-native";
 import { BlurView } from "expo-blur";
 import { Ionicons } from "@expo/vector-icons";
@@ -36,13 +37,21 @@ export default function CreateEvent({ route, navigation }) {
     placeholder: isDarkMode ? "rgba(255,255,255,0.4)" : "rgba(0,0,0,0.4)",
   };
 
+  const getInitialTime = (timeStr) => {
+    const d = new Date();
+    if (timeStr) {
+      const [h, m] = timeStr.split(":");
+      d.setHours(parseInt(h), parseInt(m), 0, 0);
+    }
+    return d;
+  };
+
   const [form, setForm] = useState({
     title: editEvent?.nom_evenement || "",
     description: editEvent?.description || "",
-    dateDebut: editEvent ? new Date(editEvent.date) : new Date(),
-    dateFin: editEvent ? new Date(editEvent.date_fin || editEvent.date) : new Date(),
-    heureDebut: editEvent ? new Date(`2000-01-01T${editEvent.heure_debut}:00`) : new Date(),
-    heureFin: editEvent ? new Date(`2000-01-01T${editEvent.heure_fin}:00`) : new Date(),
+    date: editEvent ? new Date(editEvent.date) : new Date(),
+    heureDebut: getInitialTime(editEvent?.heure_debut),
+    heureFin: getInitialTime(editEvent?.heure_fin),
     lieu: editEvent?.lieu || "",
     categorie: editEvent?.categorie || "Conférence",
     capaciteMax: editEvent?.capacite_max?.toString() || "100",
@@ -51,6 +60,7 @@ export default function CreateEvent({ route, navigation }) {
   });
 
   const [showDatePicker, setShowDatePicker] = useState(null); // 'debut', 'fin', 'hDebut', 'hFin'
+  const [tempDate, setTempDate] = useState(new Date());
 
   const categories = ["Conférence", "Atelier", "Soirée"];
   const themeOptions = [
@@ -86,8 +96,8 @@ export default function CreateEvent({ route, navigation }) {
         nom_animateur: form.animator,
         description: form.description,
         lieu: form.lieu,
-        date: formatDate(form.dateDebut),
-        date_fin: formatDate(form.dateFin),
+        date: formatDate(form.date),
+        date_fin: formatDate(form.date),
         heure_debut: form.heureDebut.toTimeString().split(" ")[0].slice(0, 5),
         heure_fin: form.heureFin.toTimeString().split(" ")[0].slice(0, 5),
         categorie: form.categorie,
@@ -126,13 +136,34 @@ export default function CreateEvent({ route, navigation }) {
   };
 
   const onDateChange = (event, selectedDate) => {
-    setShowDatePicker(null);
-    if (selectedDate) {
-      if (showDatePicker === 'debut') setForm({ ...form, dateDebut: selectedDate });
-      if (showDatePicker === 'fin') setForm({ ...form, dateFin: selectedDate });
-      if (showDatePicker === 'hDebut') setForm({ ...form, heureDebut: selectedDate });
-      if (showDatePicker === 'hFin') setForm({ ...form, heureFin: selectedDate });
+    if (Platform.OS === 'android') {
+      setShowDatePicker(null);
+      if (selectedDate) {
+        if (showDatePicker === 'date') setForm({ ...form, date: selectedDate });
+        if (showDatePicker === 'hDebut') setForm({ ...form, heureDebut: selectedDate });
+        if (showDatePicker === 'hFin') setForm({ ...form, heureFin: selectedDate });
+      }
+    } else {
+      // iOS: juste mettre à jour le tempDate sans fermer
+      if (selectedDate) setTempDate(selectedDate);
     }
+  };
+
+  const handlePickerConfirm = () => {
+    if (showDatePicker === 'date') setForm({ ...form, date: tempDate });
+    if (showDatePicker === 'hDebut') setForm({ ...form, heureDebut: tempDate });
+    if (showDatePicker === 'hFin') setForm({ ...form, heureFin: tempDate });
+    setShowDatePicker(null);
+  };
+
+  const openPicker = (type) => {
+    let initialDate = new Date();
+    if (type === 'date') initialDate = form.date;
+    if (type === 'hDebut') initialDate = form.heureDebut;
+    if (type === 'hFin') initialDate = form.heureFin;
+
+    setTempDate(initialDate);
+    setShowDatePicker(type);
   };
 
   return (
@@ -171,7 +202,7 @@ export default function CreateEvent({ route, navigation }) {
           <View style={styles.inputGroup}>
             <Text style={[styles.label, { color: themeColors.text }]}>Description</Text>
             <TextInput
-              style={[styles.input, { height: 80, color: themeColors.text, borderBottomColor: themeColors.placeholder }]}
+              style={[styles.input, { height: 40, color: themeColors.text, borderBottomColor: themeColors.placeholder }]}
               placeholder="Décrivez votre événement..."
               placeholderTextColor={themeColors.placeholder}
               multiline
@@ -181,18 +212,11 @@ export default function CreateEvent({ route, navigation }) {
           </View>
 
           <View style={styles.row}>
-            <View style={[styles.inputGroup, { flex: 1, marginRight: 10 }]}>
-              <Text style={[styles.label, { color: themeColors.text }]}>Date de début</Text>
-              <TouchableOpacity style={[styles.datePickerBtn, { backgroundColor: themeColors.inputBg }]} onPress={() => setShowDatePicker('debut')}>
-                <Ionicons name="calendar-outline" size={20} color={themeColors.text} />
-                <Text style={[styles.dateText, { color: themeColors.text }]}>{form.dateDebut.toLocaleDateString()}</Text>
-              </TouchableOpacity>
-            </View>
             <View style={[styles.inputGroup, { flex: 1 }]}>
-              <Text style={[styles.label, { color: themeColors.text }]}>Date de fin</Text>
-              <TouchableOpacity style={[styles.datePickerBtn, { backgroundColor: themeColors.inputBg }]} onPress={() => setShowDatePicker('fin')}>
+              <Text style={[styles.label, { color: themeColors.text }]}>Date de l'événement</Text>
+              <TouchableOpacity style={[styles.datePickerBtn, { backgroundColor: themeColors.inputBg }]} onPress={() => openPicker('date')}>
                 <Ionicons name="calendar-outline" size={20} color={themeColors.text} />
-                <Text style={[styles.dateText, { color: themeColors.text }]}>{form.dateFin.toLocaleDateString()}</Text>
+                <Text style={[styles.dateText, { color: themeColors.text }]}>{form.date.toLocaleDateString()}</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -200,13 +224,13 @@ export default function CreateEvent({ route, navigation }) {
           <View style={styles.row}>
             <View style={[styles.inputGroup, { flex: 1, marginRight: 10 }]}>
               <Text style={[styles.label, { color: themeColors.text }]}>Heure</Text>
-              <TouchableOpacity style={[styles.datePickerBtn, { backgroundColor: themeColors.inputBg }]} onPress={() => setShowDatePicker('hDebut')}>
+              <TouchableOpacity style={[styles.datePickerBtn, { backgroundColor: themeColors.inputBg }]} onPress={() => openPicker('hDebut')}>
                 <Ionicons name="time-outline" size={20} color={themeColors.text} />
                 <Text style={[styles.dateText, { color: themeColors.text }]}>{formatTime(form.heureDebut)}</Text>
               </TouchableOpacity>
             </View>
             <View style={[styles.inputGroup, { flex: 1, justifyContent: 'flex-end' }]}>
-              <TouchableOpacity style={[styles.datePickerBtn, { backgroundColor: themeColors.inputBg }]} onPress={() => setShowDatePicker('hFin')}>
+              <TouchableOpacity style={[styles.datePickerBtn, { backgroundColor: themeColors.inputBg }]} onPress={() => openPicker('hFin')}>
                 <Ionicons name="time-outline" size={20} color={themeColors.text} />
                 <Text style={[styles.dateText, { color: themeColors.text }]}>{formatTime(form.heureFin)}</Text>
               </TouchableOpacity>
@@ -292,17 +316,46 @@ export default function CreateEvent({ route, navigation }) {
       </ScrollView>
 
       {showDatePicker && (
-        <DateTimePicker
-          value={
-            showDatePicker === 'debut' ? form.dateDebut :
-              showDatePicker === 'fin' ? form.dateFin :
+        Platform.OS === 'ios' ? (
+          <Modal transparent animationType="fade">
+            <View style={styles.modalOverlay}>
+              <View style={styles.modalContent}>
+                <BlurView intensity={70} tint={isDarkMode ? "dark" : "light"} style={styles.modalBlur}>
+                  <View style={styles.modalHeader}>
+                    <TouchableOpacity onPress={() => setShowDatePicker(null)}>
+                      <Text style={[styles.modalBtn, { color: "#FF3B30" }]}>Annuler</Text>
+                    </TouchableOpacity>
+                    <Text style={[styles.modalTitle, { color: themeColors.text }]}>
+                      {showDatePicker.startsWith('h') ? "Réglage Heure" : "Réglage Date"}
+                    </Text>
+                    <TouchableOpacity onPress={handlePickerConfirm}>
+                      <Text style={[styles.modalBtn, { color: "#005AC1", fontWeight: '700' }]}>OK</Text>
+                    </TouchableOpacity>
+                  </View>
+                  <DateTimePicker
+                    value={tempDate}
+                    mode={showDatePicker.startsWith('h') ? 'time' : 'date'}
+                    is24Hour={true}
+                    display="spinner"
+                    textColor={isDarkMode ? "#FFF" : "#000"}
+                    onChange={onDateChange}
+                  />
+                </BlurView>
+              </View>
+            </View>
+          </Modal>
+        ) : (
+          <DateTimePicker
+            value={
+              showDatePicker === 'date' ? form.date :
                 showDatePicker === 'hDebut' ? form.heureDebut : form.heureFin
-          }
-          mode={showDatePicker.startsWith('h') ? 'time' : 'date'}
-          is24Hour={true}
-          display="default"
-          onChange={onDateChange}
-        />
+            }
+            mode={showDatePicker.startsWith('h') ? 'time' : 'date'}
+            is24Hour={true}
+            display="default"
+            onChange={onDateChange}
+          />
+        )
       )}
       <OrganizerNavbar id={id} nom={nom} />
     </OrganizerBackground>
@@ -458,6 +511,42 @@ const styles = StyleSheet.create({
   themeLabel: {
     fontSize: 12,
     fontFamily: "Insignia",
+    textAlign: 'center',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.3)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  modalContent: {
+    width: '100%',
+    borderRadius: 30,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.2)',
+  },
+  modalBlur: {
+    paddingBottom: 20,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255,255,255,0.1)',
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    fontFamily: 'jokeyone',
+  },
+  modalBtn: {
+    fontSize: 16,
+    fontFamily: 'Insignia',
+    minWidth: 60,
     textAlign: 'center',
   },
 });

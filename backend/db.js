@@ -20,4 +20,8 @@ pool.connect((err) => {
   }
 });
 
+pool.on('error', (err, client) => {
+  console.error('Erreur inattendue sur un client PostgreSQL (idle) :', err);
+});
+
 module.exports = pool;

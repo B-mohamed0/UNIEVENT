@@ -10,7 +10,8 @@ const app = express();
 // --- CONFIGURATION SÉCURITÉ ET MIDDLEWARES ---
 app.use(helmet());
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: "50mb" }));
+app.use(express.urlencoded({ limit: "50mb", extended: true }));
 
 // --- STOCKAGE TEMPORAIRE DES CODES OTP ---
 const otpStore = new Map();
@@ -33,6 +34,24 @@ const formatEventStatus = (dbStatus, date, startTime, endTime) => {
   }
 
   return "À VENIR";
+};
+
+/**
+ * 🆕 HELPER : DÉTERMINER LE STATUT POUR LA BASE DE DONNÉES
+ */
+const getDbStatus = (date, startTime, endTime) => {
+  const now = new Date();
+  const today = now.toISOString().split("T")[0];
+  const currentTime = now.toTimeString().split(" ")[0].substring(0, 5);
+  const eventDate = new Date(date).toISOString().split("T")[0];
+
+  if (eventDate < today || (eventDate === today && endTime && currentTime > endTime)) {
+    return 'EXPIRE';
+  }
+  if (eventDate === today && startTime && currentTime >= startTime && (!endTime || currentTime <= endTime)) {
+    return 'MAINTENANT';
+  }
+  return 'BIENTOT';
 };
 
 // --- CONFIGURATION DE NODEMAILER ---
@@ -363,6 +382,57 @@ app.get("/api/organizer/manage/:eventId", async (req, res) => {
     });
   } catch (error) {
     console.error("Error managing event:", error);
+    res.status(500).json({ error: "Erreur serveur" });
+  }
+});
+
+/**
+ * GET /api/organizer/profile/:id
+ * Récupère le profil de l'organisateur
+ */
+app.get("/api/organizer/profile/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const result = await pool.query(
+      "SELECT id, nom, email, photo FROM organisateur WHERE id = $1",
+      [id]
+    );
+
+    if (result.rowCount === 0) {
+      return res.status(404).json({ error: "Organisateur non trouvé" });
+    }
+
+    res.json(result.rows[0]);
+  } catch (error) {
+    console.error("Error fetching profile:", error);
+    res.status(500).json({ error: "Erreur serveur" });
+  }
+});
+
+/**
+ * PUT /api/organizer/profile/:id
+ * Met à jour le profil de l'organisateur
+ */
+app.put("/api/organizer/profile/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { nom, photo } = req.body;
+
+    const result = await pool.query(
+      "UPDATE organisateur SET nom = $1, photo = $2 WHERE id = $3 RETURNING id, nom, email, photo",
+      [nom, photo, id]
+    );
+
+    if (result.rowCount === 0) {
+      return res.status(404).json({ error: "Organisateur non trouvé" });
+    }
+
+    res.json({
+      message: "Profil mis à jour avec succès ✅",
+      user: result.rows[0]
+    });
+  } catch (error) {
+    console.error("Error updating profile:", error);
     res.status(500).json({ error: "Erreur serveur" });
   }
 });
@@ -787,12 +857,14 @@ app.post("/api/events", async (req, res) => {
       categorie, capacite_max, idorganisateur, theme_color
     } = req.body;
 
+    const status = getDbStatus(date, heure_debut, heure_fin);
+
     const result = await pool.query(
       `INSERT INTO evenement 
        (nom_evenement, nom_animateur, description, lieu, date, date_fin, heure_debut, heure_fin, categorie, capacite_max, idorganisateur, status, theme_color)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, 'BIENTOT', $12)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
        RETURNING *`,
-      [nom_evenement, nom_animateur, description, lieu, date, date_fin, heure_debut, heure_fin, categorie, capacite_max, idorganisateur, theme_color || 'Dusk']
+      [nom_evenement, nom_animateur, description, lieu, date, date_fin, heure_debut, heure_fin, categorie, capacite_max, idorganisateur, status, theme_color || 'Dusk']
     );
 
     res.status(201).json(result.rows[0]);
@@ -815,14 +887,16 @@ app.put("/api/events/:id", async (req, res) => {
       categorie, capacite_max, theme_color
     } = req.body;
 
+    const status = getDbStatus(date, heure_debut, heure_fin);
+
     const result = await pool.query(
       `UPDATE evenement 
        SET nom_evenement=$1, nom_animateur=$2, description=$3, lieu=$4, 
            date=$5, date_fin=$6, heure_debut=$7, heure_fin=$8, 
-           categorie=$9, capacite_max=$10, theme_color=$11
-       WHERE id=$12
+           categorie=$9, capacite_max=$10, theme_color=$11, status=$12
+       WHERE id=$13
        RETURNING *`,
-      [nom_evenement, nom_animateur, description, lieu, date, date_fin, heure_debut, heure_fin, categorie, capacite_max, theme_color, id]
+      [nom_evenement, nom_animateur, description, lieu, date, date_fin, heure_debut, heure_fin, categorie, capacite_max, theme_color, status, id]
     );
 
     if (result.rowCount === 0) return res.status(404).json({ error: "Événement non trouvé" });

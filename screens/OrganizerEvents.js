@@ -9,6 +9,7 @@ import {
   StatusBar,
   FlatList,
   Alert,
+  ScrollView,
 } from "react-native";
 import { BlurView } from "expo-blur";
 import { Ionicons } from "@expo/vector-icons";
@@ -16,7 +17,6 @@ import OrganizerNavbar from "../components/OrganizerNavbar";
 import { useThemeContext } from "../context/ThemeContext";
 import OrganizerBackground from "../components/OrganizerBackground";
 import ThemeToggle from "../components/ThemeToggle";
-
 const { width } = Dimensions.get("window");
 
 export default function OrganizerEvents({ route, navigation }) {
@@ -24,6 +24,12 @@ export default function OrganizerEvents({ route, navigation }) {
   const { isDarkMode } = useThemeContext();
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [selectedCategory, setSelectedCategory] = useState("Toutes");
+  const [selectedStatus, setSelectedStatus] = useState("Toutes");
+  const [sortOrder, setSortOrder] = useState("desc"); // 'asc' or 'desc'
+
+  const categories = ["Toutes", "Conférence", "Atelier", "Soirée"];
+  const statuses = ["Toutes", "À VENIR", "EN COURS", "TERMINE"];
 
   const themeColors = {
     text: isDarkMode ? "#FFF" : "#0A0A1A",
@@ -138,16 +144,79 @@ export default function OrganizerEvents({ route, navigation }) {
         <View style={styles.titleContainer}>
           <Text style={[styles.headerTitle, { color: themeColors.headerTitle }]}>Mes Événements</Text>
         </View>
-        <ThemeToggle color={themeColors.text} />
+        <TouchableOpacity
+          onPress={() => setSortOrder(sortOrder === "asc" ? "desc" : "asc")}
+          style={[styles.sortBtn, { backgroundColor: isDarkMode ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.05)" }]}
+        >
+          <Ionicons name={sortOrder === "asc" ? "arrow-up" : "arrow-down"} size={20} color={themeColors.text} />
+        </TouchableOpacity>
+      </View>
+
+      <View style={styles.filterBar}>
+        <Text style={[styles.filterLabel, { color: themeColors.subText }]}>Catégorie</Text>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterScroll}>
+          {categories.map((cat) => (
+            <TouchableOpacity
+              key={cat}
+              style={[
+                styles.filterTab,
+                selectedCategory === cat && styles.filterTabActive,
+                { backgroundColor: isDarkMode ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.05)" }
+              ]}
+              onPress={() => setSelectedCategory(cat)}
+            >
+              <Text style={[
+                styles.filterTabText,
+                { color: themeColors.text },
+                selectedCategory === cat && styles.filterTabTextActive
+              ]}>
+                {cat}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+      </View>
+
+      <View style={styles.filterBar}>
+        <Text style={[styles.filterLabel, { color: themeColors.subText }]}>Statut</Text>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterScroll}>
+          {statuses.map((stat) => (
+            <TouchableOpacity
+              key={stat}
+              style={[
+                styles.filterTab,
+                selectedStatus === stat && styles.filterTabActive,
+                { backgroundColor: isDarkMode ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.05)" }
+              ]}
+              onPress={() => setSelectedStatus(stat)}
+            >
+              <Text style={[
+                styles.filterTabText,
+                { color: themeColors.text },
+                selectedStatus === stat && styles.filterTabTextActive
+              ]}>
+                {stat}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
       </View>
 
       <FlatList
-        data={events}
+        data={events
+          .filter(e => (selectedCategory === "Toutes" || e.categorie === selectedCategory))
+          .filter(e => (selectedStatus === "Toutes" || e.event_status === selectedStatus))
+          .sort((a, b) => {
+            const dateA = new Date(a.date);
+            const dateB = new Date(b.date);
+            return sortOrder === "asc" ? dateA - dateB : dateB - dateA;
+          })
+        }
         renderItem={renderEvent}
         keyExtractor={(item) => item.id.toString()}
         contentContainerStyle={styles.listContent}
         ListEmptyComponent={
-          !loading && <Text style={styles.emptyText}>Aucun événement créé pour le moment.</Text>
+          !loading && <Text style={styles.emptyText}>Aucun événement trouvé.</Text>
         }
       />
       <OrganizerNavbar id={id} nom={nom} />
@@ -265,5 +334,46 @@ const styles = StyleSheet.create({
     marginTop: 50,
     fontFamily: "Insignia",
     fontSize: 16,
+  },
+  sortBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  filterBar: {
+    marginBottom: 15,
+  },
+  filterLabel: {
+    fontSize: 14,
+    fontFamily: "Insignia",
+    fontWeight: "600",
+    marginLeft: 20,
+    marginBottom: 8,
+    opacity: 0.8,
+  },
+  filterScroll: {
+    paddingHorizontal: 20,
+    gap: 10,
+  },
+  filterTab: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.1)",
+  },
+  filterTabActive: {
+    backgroundColor: "#005AC1",
+    borderColor: "#005AC1",
+  },
+  filterTabText: {
+    fontSize: 14,
+    fontFamily: "Insignia",
+    fontWeight: "600",
+  },
+  filterTabTextActive: {
+    color: "#FFF",
   },
 });

@@ -19,6 +19,7 @@ import CreateEvent from "./screens/CreateEvent";
 import ManageEvent from "./screens/ManageEvent";
 import OrganizerEventDetails from "./screens/OrganizerEventDetails";
 import OrganizerStats from "./screens/OrganizerStats";
+import OrganizerProfile from "./screens/OrganizerProfile";
 import { NavbarProvider } from "./context/NavbarContext";
 import { ThemeProvider } from "./context/ThemeContext";
 import inscription from "./screens/inscription";
@@ -65,6 +66,7 @@ export default function App() {
             <Stack.Screen name="ManageEvent" component={ManageEvent} options={{ headerShown: false }} />
             <Stack.Screen name="OrganizerEventDetails" component={OrganizerEventDetails} options={{ headerShown: false }} />
             <Stack.Screen name="OrganizerStats" component={OrganizerStats} />
+            <Stack.Screen name="OrganizerProfile" component={OrganizerProfile} />
             <Stack.Screen name="inscription" component={inscription} />
           </Stack.Navigator>
         </NavigationContainer>
