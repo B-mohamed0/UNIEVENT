@@ -1,17 +1,67 @@
 // Dashboard Functionality
 
-    document.addEventListener('DOMContentLoaded', () => {
-        // Sidebar Navigation
-        setupNavigation();
+document.addEventListener('DOMContentLoaded', () => {
+    // Sidebar Navigation
+    setupNavigation();
 
-        // Initial Data Load (Mock data if Supabase isn't connected)
-        loadData();
+    // Theme Toggle Logic
+    initTheme();
 
-        // Form Submissions
-        document.getElementById('student-form').addEventListener('submit', handleStudentSubmit);
-        document.getElementById('professor-form').addEventListener('submit', handleProfessorSubmit);
-        document.getElementById('organizer-form').addEventListener('submit', handleOrganizerSubmit);
+    // Initial Data Load (Mock data if Supabase isn't connected)
+    loadData();
+
+    // Form Submissions
+    document.getElementById('student-form').addEventListener('submit', handleStudentSubmit);
+    document.getElementById('professor-form').addEventListener('submit', handleProfessorSubmit);
+    document.getElementById('organizer-form').addEventListener('submit', handleOrganizerSubmit);
+
+    // Global Search Logic
+    document.getElementById('global-search').addEventListener('input', handleSearch);
+});
+
+// Theme Logic
+function initTheme() {
+    const themeBtn = document.getElementById('theme-toggle-btn');
+    const currentTheme = localStorage.getItem('theme') || 'light';
+
+    document.body.setAttribute('data-theme', currentTheme);
+    updateThemeIcon(currentTheme);
+
+    themeBtn.addEventListener('click', () => {
+        const newTheme = document.body.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
+        document.body.setAttribute('data-theme', newTheme);
+        localStorage.setItem('theme', newTheme);
+        updateThemeIcon(newTheme);
     });
+}
+
+function updateThemeIcon(theme) {
+    const icon = document.querySelector('#theme-toggle-btn i');
+    if (theme === 'dark') {
+        icon.className = 'ph ph-sun';
+    } else {
+        icon.className = 'ph ph-moon';
+    }
+}
+
+// Global Search
+function handleSearch(e) {
+    const term = e.target.value.toLowerCase();
+    const activeSection = document.querySelector('.content-section[style*="block"]') || document.querySelector('#section-overview.active');
+
+    if (!activeSection) return;
+
+    if (activeSection.id === 'section-overview') {
+        // In overview, we could filter stats or just clear the search
+        return;
+    }
+
+    const rows = activeSection.querySelectorAll('tbody tr');
+    rows.forEach(row => {
+        const text = row.textContent.toLowerCase();
+        row.style.display = text.includes(term) ? '' : 'none';
+    });
+}
 
 // Setup sidebar navigation
 function setupNavigation() {
