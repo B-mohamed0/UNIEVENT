@@ -1144,3 +1144,43 @@ app.listen(3000, () => {
   console.log("✅ Serveur lancé sur le port 3000");
 });
 
+
+///////////////////scan qr cde 
+app.post("/api/scan", async (req, res) => {
+  const { cne, eventId } = req.body;
+
+  try {
+    const result = await pool.query(
+      `SELECT * FROM participation 
+       WHERE idetudiant = $1 AND idevenement = $2`,
+      [cne, eventId]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(400).json({
+        message: "Étudiant non inscrit ❌",
+      });
+    }
+
+    const participant = result.rows[0];
+
+    if (participant.status === "PRESENT") {
+      return res.status(400).json({
+        message: "Déjà marqué présent ⚠️",
+      });
+    }
+
+    await pool.query(
+      `UPDATE participation
+       SET status = 'PRESENT'
+       WHERE idetudiant = $1 AND idevenement = $2`,
+      [cne, eventId]
+    );
+
+    res.json({ message: "Présence validée ✅" });
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Erreur serveur" });
+  }
+});

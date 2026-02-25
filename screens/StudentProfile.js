@@ -13,6 +13,7 @@ import {
     StatusBar,
     ImageBackground,
 } from "react-native";
+import QRCode from "react-native-qrcode-svg";
 import { BlurView } from "expo-blur";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
@@ -172,7 +173,14 @@ export default function StudentProfile({ route, navigation }) {
                             <Ionicons name="camera" size={20} color="#FFF" />
                         </View>
                     </TouchableOpacity>
-                    <Text style={styles.cneText}>CNE: {profile.id}</Text>
+                    <View style={{ alignItems: "center", marginVertical: 15 }}>
+                        <QRCode
+                            value={profile.id ? profile.id.toString() : "no-cne"}
+                            size={180}
+                            color="#FFF"
+                            backgroundColor="transparent"
+                        />
+                    </View>
                     <Text style={styles.emailText}>{profile.email}</Text>
                 </View>
 

@@ -25,6 +25,7 @@ import StudentProfile from "./screens/StudentProfile";
 import { NavbarProvider } from "./context/NavbarContext";
 import { ThemeProvider } from "./context/ThemeContext";
 import inscription from "./screens/inscription";
+import Scanner from "./screens/Scanner";
 
 const Stack = createNativeStackNavigator();
 
@@ -72,6 +73,7 @@ export default function App() {
             <Stack.Screen name="StudentStats" component={StudentStats} />
             <Stack.Screen name="StudentProfile" component={StudentProfile} />
             <Stack.Screen name="inscription" component={inscription} />
+            <Stack.Screen name="Scanner" component={Scanner} />
           </Stack.Navigator>
         </NavigationContainer>
       </NavbarProvider>

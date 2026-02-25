@@ -69,6 +69,7 @@ const OrganizerEventDetails = ({ route, navigation }) => {
                                 <Text style={styles.buttonText}>Gérer</Text>
                             </BlurView>
                         </TouchableOpacity>
+
                     </View>
                 </View>
             </ImageBackground>
@@ -79,6 +80,15 @@ const OrganizerEventDetails = ({ route, navigation }) => {
                 imageStyle={styles.bodyImage}
             >
                 <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+                    <TouchableOpacity
+                        style={styles.scanButton}
+                        onPress={() => navigation.navigate("Scanner", { eventId: eventData.id })}
+                    >
+                        <Ionicons name="qr-code-outline" size={25} color="#FFF" />
+                        <Text style={{ color: "#FFF", marginLeft: 8, marginTop: 10, marginBottom: 10, fontFamily: "Insignia" }}>
+                            Scanner un étudiant
+                        </Text>
+                    </TouchableOpacity>
                     <BlurView intensity={20} tint={themeColors.blurTint} style={[styles.card, { backgroundColor: themeColors.cardBg }]}>
                         <Text style={[styles.sectionTitle, { color: themeColors.text }]}>Description</Text>
                         <Text style={[styles.descriptionText, { color: themeColors.text }]}>{eventData.description || "Aucune description fournie."}</Text>
@@ -177,6 +187,16 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontWeight: "700",
         fontFamily: "Insignia",
+    },
+    scanButton: {
+        flexDirection: "row",
+        alignSelf: "center",
+        alignItems: "center",
+        backgroundColor: "#005AC1",
+        paddingHorizontal: 70,
+        paddingVertical: 10,
+        borderRadius: 50,
+        marginBottom: 20,
     },
     bodyBackground: {
         flex: 1,
