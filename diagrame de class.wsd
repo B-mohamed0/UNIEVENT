@@ -1,0 +1,208 @@
+@startuml DiagrammeCasUtilisation
+' Diagramme de cas d'utilisation
+left to right direction
+skinparam actorStyle stickman
+skinparam packageStyle rectangle
+
+actor "Utilisateur" as ActorUser <<Abstract>>
+actor "Participant" as Participant
+actor "Organisateur" as Organisateur
+actor "Administrateur" as Admin
+
+' Hiérarchie des acteurs
+ActorUser <|-- Participant
+ActorUser <|-- Organisateur
+ActorUser <|-- Admin
+
+rectangle "Application de Gestion d'Événements" {
+  usecase "Consulter les événements" as UC_Consult
+  ActorUser --> UC_Consult
+
+  ' Espace Participant
+  package "Espace Participant" {
+    usecase "S'inscrire à un événement" as UC_Subscribe
+    usecase "Se désinscrire d'un événement" as UC_Unsubscribe
+    usecase "Valider sa présence\n(bouton 'Je suis présent')" as UC_Validate
+    usecase "Consulter l'historique des participations" as UC_History
+    usecase "Donner un feedback post-événement" as UC_Feedback
+    usecase "Recevoir une notification push (système)" as UC_Notify
+  }
+
+  ' Espace Organisateur
+  package "Espace Organisateur" {
+    usecase "Créer un événement" as UC_Create
+    usecase "Modifier un événement" as UC_Modify
+    usecase "Supprimer un événement" as UC_Delete
+    usecase "Gérer les inscriptions" as UC_ManageReg
+    usecase "Gérer les présences" as UC_ManageAtt
+    usecase "Consulter les statistiques de participation" as UC_Stats
+    usecase "Exporter les listes de présence" as UC_Export
+  }
+
+  ' Espace Administrateur
+  package "Espace Administrateur" {
+    usecase "Consulter les statistiques des utilisateurs" as UC_UserStats
+    usecase "Ajouter un utilisateur" as UC_AddUser
+    usecase "Modifier un utilisateur" as UC_EditUser
+    usecase "Supprimer un utilisateur" as UC_DeleteUser
+    usecase "Gérer les rôles" as UC_ManageRoles
+  }
+
+  Participant --> UC_Subscribe
+  Participant --> UC_Unsubscribe
+  Participant --> UC_Validate
+  Participant --> UC_History
+  Participant --> UC_Feedback
+  Participant <-- UC_Notify
+
+  Organisateur --> UC_Create
+  Organisateur --> UC_Modify
+  Organisateur --> UC_Delete
+  Organisateur --> UC_ManageReg
+  Organisateur --> UC_ManageAtt
+  Organisateur --> UC_Stats
+  Organisateur --> UC_Export
+
+  Admin --> UC_UserStats
+  Admin --> UC_AddUser
+  Admin --> UC_EditUser
+  Admin --> UC_DeleteUser
+  Admin --> UC_ManageRoles
+
+  UC_ManageReg ..> UC_Export : <<include>>
+
+  note right of UC_Validate
+    **Contraintes :**
+    - Visible uniquement pour les inscrits
+    - Actif pendant une plage définie
+      (ex: 15 min avant et après l'événement)
+    - Envoie ID user, ID event, timestamp
+  end note
+}
+@enduml
+
+@startuml DiagrammeDeClassesFinal
+' Styles
+skinparam classAttributeIconSize 0
+skinparam class {
+  BackgroundColor White
+  BorderColor Black
+}
+
+' Énumérations
+enum StatusParticipation {
+  INSCRIT
+  PRESENT
+  ABSENT
+}
+
+enum StatusFeedback {
+  SATISFAIT
+  NEUTRE
+  INSATISFAIT
+}
+
+' Classe abstraite User
+abstract class User {
+  - id : String
+  - nom : String
+  - email : String {unique}
+  - password : String
+  - photo : String
+  + login(email, password): Boolean
+  + updateProfile(data): void
+}
+
+' Sous-classes
+class Etudiant {
+  ' Hérite de id, nom, etc.
+  - numeroEtudiant : String
+}
+
+class Professeur {
+  ' Hérite de id, nom, etc.
+  - codeAffiliation : String {unique}
+}
+
+class Organisateur {
+  ' Hérite de id
+}
+
+class Admin {
+  ' Hérite de id
+}
+
+' Héritage
+User <|-- Etudiant
+User <|-- Professeur
+User <|-- Organisateur
+User <|-- Admin
+
+' Classe Evenement
+class Evenement {
+  - id : Integer
+  - nom_evenement : String
+  - nom_animateur : String
+  - status : String
+  - description : String
+  - lieu : String
+  - heure_debut : Time
+  - heure_fin : Time
+  - date : Date
+  - categorie : String
+  - capacite_max : Integer = 100
+  - date_fin : Date
+  - theme_color : String = "Dusk"
+  + ajouterParticipant(user: User): Boolean
+  + supprimerParticipant(user: User): Boolean
+  + estInscriptible(): Boolean
+  + peutValiderPresence(instant: DateTime): Boolean
+  + getTauxParticipation(): Float
+  + getMoyenneFeedback(): Float
+  + exporterListePresence(): File
+}
+
+' Classe Participation (association entre Evenement et Etudiant/Professeur)
+class Participation {
+  - id : Integer
+  - status : StatusParticipation
+  - filiere : String
+  - annee : String
+  - nom : String
+  + confirmerPresence(): void
+  + annuler(): void
+}
+
+' Classe Feedback (association entre Evenement et Etudiant/Professeur)
+class Feedback {
+  - id : Integer
+  - status : StatusFeedback
+  - description : String
+  - created_at : DateTime
+  + soumettre(): void
+}
+
+' Relations
+Evenement "1" -- "*" Participation : contient
+Participation "*" -- "1" User : effectuée par
+
+Evenement "1" -- "*" Feedback : reçoit
+Feedback "*" -- "1" User : donné par
+
+Evenement "1" -- "1" Organisateur : créé par
+
+' Contraintes
+note right of Participation
+  Un utilisateur (Etudiant ou Professeur)
+  ne peut s'inscrire qu'une seule fois
+  à un même événement.
+end note
+
+note bottom of Participation
+  Le bouton "Je suis présent" est actif
+  uniquement pendant la plage définie
+  (par ex. 15 min avant/après l'événement).
+  Il appelle la méthode confirmerPresence().
+end note
+
+@enduml
