@@ -29,13 +29,13 @@ export default function OrganizerEvents({ route, navigation }) {
   const [sortOrder, setSortOrder] = useState("desc"); // 'asc' or 'desc'
 
   const categories = ["Toutes", "Conférence", "Atelier", "Soirée"];
-  const statuses = ["Toutes", "À VENIR", "EN COURS", "TERMINE"];
+  const statuses = ["Toutes", "À venir", "En cours", "Terminé"];
 
   const themeColors = {
     text: isDarkMode ? "#FFF" : "#0A0A1A",
     subText: isDarkMode ? "rgba(255,255,255,0.7)" : "rgba(10, 10, 26, 0.7)",
-    headerTitle: isDarkMode ? "#FFF" : "#143287",
-    cardBorder: isDarkMode ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.05)",
+    headerTitle: isDarkMode ? "#ffffffff" : "#143287",
+    cardBorder: isDarkMode ? "rgba(255, 255, 255, 0.1)" : "rgba(0,0,0,0.05)",
     blurTint: isDarkMode ? "dark" : "light",
   };
 
@@ -89,7 +89,7 @@ export default function OrganizerEvents({ route, navigation }) {
   };
 
   const renderEvent = ({ item }) => {
-    const statusColor = item.event_status === "EN COURS" ? "#00F908" : (item.event_status === "À VENIR" ? "#F4F900" : "#FF0000");
+    const statusColor = item.event_status === "En cours" ? "#00F908" : (item.event_status === "À venir" ? "#F4F900" : "#FF0000");
 
     return (
       <View style={styles.eventCard}>
@@ -97,7 +97,8 @@ export default function OrganizerEvents({ route, navigation }) {
           activeOpacity={0.7}
           onPress={() => navigation.navigate("OrganizerEventDetails", { event: item, organizerId: id, nom })}
         >
-          <BlurView intensity={30} tint={themeColors.blurTint} style={styles.cardInner}>
+
+          <BlurView intensity={30} tint={themeColors.blurTint} style={[styles.cardInner, { backgroundColor: isDarkMode ? "rgba(255, 255, 255, 0.14)" : "rgba(0, 0, 0, 0.09)" }]}>
             <View style={styles.cardHeader}>
               <View style={styles.titleRow}>
                 <View style={[styles.logoBox, { backgroundColor: isDarkMode ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.05)" }]}>
@@ -146,7 +147,7 @@ export default function OrganizerEvents({ route, navigation }) {
         </View>
         <TouchableOpacity
           onPress={() => setSortOrder(sortOrder === "asc" ? "desc" : "asc")}
-          style={[styles.sortBtn, { backgroundColor: isDarkMode ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.05)" }]}
+          style={[styles.sortBtn, { backgroundColor: isDarkMode ? "rgba(255, 255, 255, 0.1)" : "rgba(0,0,0,0.05)" }]}
         >
           <Ionicons name={sortOrder === "asc" ? "arrow-up" : "arrow-down"} size={20} color={themeColors.text} />
         </TouchableOpacity>
@@ -161,7 +162,7 @@ export default function OrganizerEvents({ route, navigation }) {
               style={[
                 styles.filterTab,
                 selectedCategory === cat && styles.filterTabActive,
-                { backgroundColor: isDarkMode ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.05)" }
+                { backgroundColor: isDarkMode ? "rgba(255, 255, 255, 0.18)" : "rgba(0, 0, 0, 0.22)" }
               ]}
               onPress={() => setSelectedCategory(cat)}
             >
@@ -186,7 +187,7 @@ export default function OrganizerEvents({ route, navigation }) {
               style={[
                 styles.filterTab,
                 selectedStatus === stat && styles.filterTabActive,
-                { backgroundColor: isDarkMode ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.05)" }
+                { backgroundColor: isDarkMode ? "rgba(255,255,255,0.1)" : "rgba(0, 0, 0, 0.15)" }
               ]}
               onPress={() => setSelectedStatus(stat)}
             >
@@ -267,8 +268,6 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     borderRadius: 20,
     overflow: "hidden",
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.1)",
   },
   cardInner: {
     padding: 20,

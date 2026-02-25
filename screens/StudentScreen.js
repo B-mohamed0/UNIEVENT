@@ -95,13 +95,6 @@ export default function StudentScreen() {
   };
   return (
     <View style={styles.container}>
-      <TouchableOpacity
-        style={styles.backButton}
-        onPress={() => navigation.goBack()}
-        activeOpacity={0.2}
-      >
-        <Ionicons name="chevron-back" size={25} color="#ffffffff" />
-      </TouchableOpacity>
       <ImageBackground
         source={require("../assets/project/est.png")}
         style={styles.background}
@@ -153,6 +146,7 @@ export default function StudentScreen() {
                   autoCapitalize="none"
                   style={styles.input}
                   onSubmitEditing={goToPassword}
+                  blurOnSubmit={false}
                 />
               </View>
             </Animated.View>
@@ -239,6 +233,13 @@ export default function StudentScreen() {
           <Text style={styles.signupText}>sign up</Text>
         </TouchableOpacity>
       </View>
+      <TouchableOpacity
+        style={styles.backButton}
+        onPress={() => navigation.goBack()}
+        activeOpacity={0.2}
+      >
+        <Ionicons name="chevron-back" size={25} color="#ffffffff" />
+      </TouchableOpacity>
     </View>
   );
 }
@@ -307,8 +308,8 @@ const styles = StyleSheet.create({
     pointerEvents: "none",
     zIndex: 100,
     width: 600,
-    height: 450,
-    marginTop: 45,
+    height: 400,
+    marginTop: 70,
     shadowColor: "#000",
     shadowOffset: {
       width: -10,

@@ -41,14 +41,14 @@ export default function EventsScreen({ route, navigation }) {
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedFilter, setSelectedFilter] = useState("TOUS");
+  const [selectedFilter, setSelectedFilter] = useState("Tous");
   const [selectedCategory, setSelectedCategory] = useState("TOUTES");
   const [expandedEventId, setExpandedEventId] = useState(null);
   const [isFilterVisible, setIsFilterVisible] = useState(false);
   const sidebarWidth = SCREEN_WIDTH * 0.75;
   const sidebarAnim = useRef(new Animated.Value(sidebarWidth)).current;
 
-  const filters = ["TOUS", "À VENIR", "EN COURS", "TERMINÉ"];
+  const filters = ["Tous", "À venir", "En cours", "Terminé"];
   const categories = ["TOUTES", "Conférence", "Atelier", "Soirée"];
 
   const toggleFilter = () => {
@@ -85,7 +85,7 @@ export default function EventsScreen({ route, navigation }) {
   };
 
   const getStatusLabel = (date, hDebut, hFin) => {
-    if (!date || !hDebut || !hFin) return "À VENIR";
+    if (!date || !hDebut || !hFin) return "À venir";
 
     const now = new Date();
     const eventDate = new Date(date);
@@ -94,8 +94,8 @@ export default function EventsScreen({ route, navigation }) {
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     const eventDay = new Date(eventDate.getFullYear(), eventDate.getMonth(), eventDate.getDate());
 
-    if (eventDay > today) return "À VENIR";
-    if (eventDay < today) return "TERMINÉ";
+    if (eventDay > today) return "À venir";
+    if (eventDay < today) return "Terminé";
 
     // Same day logic
     const [hStart, mStart] = hDebut.split(":").map(Number);
@@ -103,9 +103,9 @@ export default function EventsScreen({ route, navigation }) {
     const start = new Date(now).setHours(hStart, mStart, 0, 0);
     const end = new Date(now).setHours(hEnd, mEnd, 0, 0);
 
-    if (now < start) return "À VENIR";
-    if (now > end) return "TERMINÉ";
-    return "EN COURS";
+    if (now < start) return "À venir";
+    if (now > end) return "Terminé";
+    return "En cours";
   };
 
   const formatDate = (dateInput) => {
@@ -140,9 +140,7 @@ export default function EventsScreen({ route, navigation }) {
     let status = ev.event_status || getStatusLabel(ev.date, ev.heure_debut || ev.time, ev.heure_fin);
 
     // Normaliser pour la comparaison avec les filtres (cas du accent sur TERMINÉ)
-    if (status === "TERMINE") status = "TERMINÉ";
-
-    const matchesFilter = selectedFilter === "TOUS" || status === selectedFilter;
+    const matchesFilter = selectedFilter === "Tous" || status === selectedFilter;
     const matchesCategory = selectedCategory === "TOUTES" || ev.categorie === selectedCategory;
     const evName = ev.nom_evenement || ev.title || "";
     const matchesSearch = evName.toLowerCase().includes(searchQuery.toLowerCase());

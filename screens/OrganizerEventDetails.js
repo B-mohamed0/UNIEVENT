@@ -27,7 +27,7 @@ const OrganizerEventDetails = ({ route, navigation }) => {
     const themeColors = {
         text: isDarkMode ? "#FFF" : "#0A0A1A",
         subText: isDarkMode ? "rgba(255, 255, 255, 0.6)" : "rgba(10, 10, 26, 0.6)",
-        cardBg: isDarkMode ? "rgba(255, 255, 255, 0.1)" : "rgba(0, 0, 0, 0.05)",
+        cardBg: isDarkMode ? "rgba(0, 0, 0, 0.34)" : "rgba(0, 0, 0, 0.05)",
         blurTint: isDarkMode ? "dark" : "light",
     };
 
@@ -148,7 +148,7 @@ const styles = StyleSheet.create({
         paddingBottom: 130,
     },
     title: {
-        color: "#FFF",
+        color: "#ffffffff",
         fontSize: 32,
         fontWeight: "800",
         fontFamily: "jokeyone",

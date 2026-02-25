@@ -85,6 +85,23 @@ export default function CreateEvent({ route, navigation }) {
       return;
     }
 
+    // Validation des dates (Empêcher les dates passées)
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const eventDate = new Date(form.date);
+    eventDate.setHours(0, 0, 0, 0);
+
+    if (eventDate < today) {
+      alert("La date de l'événement ne peut pas être dans le passé.");
+      return;
+    }
+
+    // Validation des heures (Heure de fin après l'heure de début)
+    if (form.heureFin <= form.heureDebut) {
+      alert("L'heure de fin doit être strictement supérieure à l'heure de début.");
+      return;
+    }
+
     try {
       const formatDate = (date) => {
         const d = new Date(date);

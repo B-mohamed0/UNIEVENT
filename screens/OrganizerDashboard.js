@@ -52,6 +52,7 @@ export default function OrganizerDashboard({ route, navigation }) {
     cardBg: isDarkMode ? "rgba(255, 255, 255, 0.05)" : "rgba(0, 0, 0, 0.03)",
     blurTint: isDarkMode ? "light" : "dark",
     headerTitle: isDarkMode ? "#FFF" : "#143287",
+    headerFade: isDarkMode ? ["#0A0A1A", "rgba(10, 10, 26, 0.9)", "rgba(10, 10, 26, 0)"] : ["#FFFFFF", "rgba(255, 255, 255, 0.9)", "rgba(255, 255, 255, 0)"],
   };
 
   const API_URL = `${process.env.EXPO_PUBLIC_API_URL}/organizer`;
@@ -107,7 +108,12 @@ export default function OrganizerDashboard({ route, navigation }) {
     <OrganizerBackground>
       <StatusBar barStyle={isDarkMode ? "light-content" : "dark-content"} translucent backgroundColor="transparent" />
 
-      <View style={styles.header}>
+      <LinearGradient
+        colors={themeColors.headerFade}
+        style={styles.header}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 0, y: 1 }}
+      >
         <View style={styles.headerTop}>
           <View style={styles.headerLeft}>
             <View style={styles.titleContainer}>
@@ -115,7 +121,7 @@ export default function OrganizerDashboard({ route, navigation }) {
               <Text style={[styles.headerSubTitle, { color: themeColors.text }]}>{nom}</Text>
             </View>
           </View>
-          <View style={styles.headerRight}>
+          <BlurView intensity={30} tint={isDarkMode ? "dark" : "light"} style={styles.glassActionBar}>
             <TouchableOpacity
               style={[styles.profileButton, { borderColor: isDarkMode ? "rgba(255,255,255,0.2)" : "rgba(0,0,0,0.1)" }]}
               onPress={() => navigation.navigate("OrganizerProfile", { id })}
@@ -124,20 +130,28 @@ export default function OrganizerDashboard({ route, navigation }) {
                 {photo ? (
                   <Image source={{ uri: photo }} style={styles.avatarImage} />
                 ) : (
-                  <Ionicons name="person" size={18} color={themeColors.text} />
+                  <Ionicons name="person" size={16} color={themeColors.text} />
                 )}
               </View>
             </TouchableOpacity>
-            <ThemeToggle color={themeColors.text} />
-            <TouchableOpacity style={[styles.notificationButton, { backgroundColor: isDarkMode ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.03)", borderColor: isDarkMode ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.05)" }]}>
+
+            <View style={styles.actionBarDivider} />
+
+            <View style={styles.actionIcon}>
+              <ThemeToggle color={themeColors.text} size={20} />
+            </View>
+
+            <View style={styles.actionBarDivider} />
+
+            <TouchableOpacity style={styles.actionIcon}>
               <View style={styles.notificationCircle}>
-                <Ionicons name="notifications-outline" size={22} color={themeColors.text} />
+                <Ionicons name="notifications-outline" size={20} color={themeColors.text} />
                 <View style={styles.notificationBadge} />
               </View>
             </TouchableOpacity>
-          </View>
+          </BlurView>
         </View>
-      </View>
+      </LinearGradient>
 
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         {/* Statistics 2x2 Grid */}
@@ -233,37 +247,50 @@ const styles = StyleSheet.create({
     backgroundColor: "#0A0A1A",
   },
   header: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
     paddingTop: 60,
     paddingHorizontal: 20,
-    paddingBottom: 20,
+    paddingBottom: 60,
+    zIndex: 100,
   },
   headerTop: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
   },
-  headerRight: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-  themeToggle: {
-    padding: 8,
-    borderRadius: 12,
-    backgroundColor: "rgba(255,255,255,0.1)",
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.1)",
-  },
   headerLeft: {
     flexDirection: "row",
     alignItems: "center",
     gap: 12,
   },
-  profileButton: {
-    padding: 2,
-    borderRadius: 20,
+  titleContainer: {
+    flexDirection: "column",
+    justifyContent: "center",
+  },
+  glassActionBar: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "rgba(255, 255, 255, 0.03)",
+    borderRadius: 30,
+    paddingHorizontal: 15,
+    paddingVertical: 4,
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.3)",
+    borderColor: "rgba(116, 116, 116, 0.2)",
+    overflow: "hidden",
+  },
+  actionIcon: {
+    padding: 6,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  actionBarDivider: {
+    width: 1,
+    height: 20,
+    backgroundColor: "rgba(255, 255, 255, 0.2)",
+    marginHorizontal: 4,
   },
   avatarPlaceholder: {
     width: 32,
@@ -276,17 +303,6 @@ const styles = StyleSheet.create({
   avatarImage: {
     width: "100%",
     height: "100%",
-  },
-  titleContainer: {
-    flexDirection: "column",
-    justifyContent: "center",
-  },
-  notificationButton: {
-    padding: 8,
-    borderRadius: 12,
-    backgroundColor: "rgba(255,255,255,0.1)",
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.1)",
   },
   notificationCircle: {
     position: "relative",
@@ -326,6 +342,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingHorizontal: 20,
+    paddingTop: 150,
     paddingBottom: 150,
   },
   statsGrid: {

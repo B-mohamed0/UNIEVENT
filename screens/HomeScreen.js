@@ -284,9 +284,9 @@ export default function HomeScreen({ route, navigation }) {
                 styles.statusDot,
                 {
                   backgroundColor:
-                    event.event_status === "EN COURS"
+                    event.event_status === "En cours"
                       ? "#00F908"
-                      : event.event_status === "À VENIR"
+                      : event.event_status === "À venir"
                         ? "#F4F900"
                         : "#FF0000",
                 },

@@ -15,54 +15,54 @@ import { Easing } from "react-native";
 const { width, height } = Dimensions.get("window");
 
 export default function SplashScreen({ navigation }) {
-const scaleAnim = useRef(new Animated.Value(0.95)).current;
-const opacityAnim = useRef(new Animated.Value(0)).current;
+  const scaleAnim = useRef(new Animated.Value(0.95)).current;
+  const opacityAnim = useRef(new Animated.Value(0)).current;
 
 
-useEffect(() => {
+  useEffect(() => {
 
-  const loopAnimation = Animated.loop(
-    Animated.sequence([
-      // Apparition
-      Animated.parallel([
-        Animated.timing(scaleAnim, {
-          toValue: 1,
-          duration: 700,
-          easing: Easing.out(Easing.ease),
-          useNativeDriver: true,
-        }),
-        Animated.timing(opacityAnim, {
-          toValue: 1,
-          duration: 700,
-          easing: Easing.out(Easing.ease),
-          useNativeDriver: true,
-        }),
-      ]),
+    const loopAnimation = Animated.loop(
+      Animated.sequence([
+        // Apparition
+        Animated.parallel([
+          Animated.timing(scaleAnim, {
+            toValue: 1,
+            duration: 700,
+            easing: Easing.out(Easing.ease),
+            useNativeDriver: true,
+          }),
+          Animated.timing(opacityAnim, {
+            toValue: 1,
+            duration: 700,
+            easing: Easing.out(Easing.ease),
+            useNativeDriver: true,
+          }),
+        ]),
 
-      // Disparition
-      Animated.parallel([
-        Animated.timing(scaleAnim, {
-          toValue: 0.98,
-          duration: 300,
-          easing: Easing.in(Easing.ease),
-          useNativeDriver: true,
-        }),
-        Animated.timing(opacityAnim, {
-          toValue: 0,
-          duration: 300,
-          easing: Easing.in(Easing.ease),
-          useNativeDriver: true,
-        }),
-      ]),
-    ])
-  );
+        // Disparition
+        Animated.parallel([
+          Animated.timing(scaleAnim, {
+            toValue: 0.98,
+            duration: 300,
+            easing: Easing.in(Easing.ease),
+            useNativeDriver: true,
+          }),
+          Animated.timing(opacityAnim, {
+            toValue: 0,
+            duration: 300,
+            easing: Easing.in(Easing.ease),
+            useNativeDriver: true,
+          }),
+        ]),
+      ])
+    );
 
-  const timer = setTimeout(() => { navigation.replace("QuiSuisJe"); }, 3000);
-  loopAnimation.start();
+    const timer = setTimeout(() => { navigation.replace("QuiSuisJe"); }, 3000);
+    loopAnimation.start();
 
-  return () => loopAnimation.stop();
+    return () => loopAnimation.stop();
 
-}, []);
+  }, []);
 
 
 
@@ -72,10 +72,12 @@ useEffect(() => {
       style={styles.background}
     >
       <View style={styles.logoContainer}>
-        <Image
-          source={require("../assets/project/logoblue.png")}
-          style={styles.logo}
-        />
+        <View style={styles.logoShadow}>
+          <Image
+            source={require("../assets/project/logoblue.png")}
+            style={styles.logo}
+          />
+        </View>
 
         {/* TEXTE UNIEVENT AVEC DÉGRADÉ + ZOOM */}
         <MaskedView
@@ -86,13 +88,13 @@ useEffect(() => {
           }
         >
           <Animated.View
-  style={{
-    opacity: opacityAnim,
-    transform: [
-      { scale: scaleAnim },
-    ],
-  }}
->
+            style={{
+              opacity: opacityAnim,
+              transform: [
+                { scale: scaleAnim },
+              ],
+            }}
+          >
 
             <LinearGradient
               colors={[
@@ -127,21 +129,29 @@ const styles = StyleSheet.create({
     marginBottom: 290,
   },
 
-  logo: {
-    width: 100,
-    height: 100,
-    resizeMode: "contain",
-    marginBottom: 20,
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.3,
-    shadowRadius: 4.65,
-    elevation: 8,
-  },
+  logoShadow: {
+  width: 110,
+  height: 110,
+  justifyContent: "center",
+  alignItems: "center",
+  marginBottom: 20,
 
+  backgroundColor: "#fff",     // IMPORTANT pour Android
+  borderRadius: 30,            // pour une ombre “propre”
+  
+  shadowColor: "#000",         // iOS
+  shadowOffset: { width: 0, height: 7 },
+  shadowOpacity: 0.7,
+  shadowRadius: 10,
+
+  elevation: 8,                // Android
+},
+
+logo: {
+  width: 100,
+  height: 100,
+  resizeMode: "contain",
+},
   title: {
     fontSize: 28,
     letterSpacing: 3,

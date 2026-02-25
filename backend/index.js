@@ -26,14 +26,14 @@ const formatEventStatus = (dbStatus, date, startTime, endTime) => {
   const eventDate = new Date(date).toISOString().split("T")[0];
 
   if (dbStatus === "EXPIRE" || (eventDate < today) || (eventDate === today && endTime && currentTime > endTime)) {
-    return "TERMINE";
+    return "Terminé";
   }
 
   if (dbStatus === "MAINTENANT" || (eventDate === today && startTime && currentTime >= startTime && (!endTime || currentTime <= endTime))) {
-    return "EN COURS";
+    return "En cours";
   }
 
-  return "À VENIR";
+  return "À venir";
 };
 
 /**
@@ -308,11 +308,14 @@ app.get("/api/organizer/stats/:id", async (req, res) => {
 app.get("/api/organizer/events-week/:id", async (req, res) => {
   try {
     const { id } = req.params;
-    const startOfWeek = new Date();
-    startOfWeek.setHours(0, 0, 0, 0);
-    const endOfWeek = new Date();
-    endOfWeek.setDate(endOfWeek.getDate() + 7);
-    endOfWeek.setHours(23, 59, 59, 999);
+    const now = new Date();
+    const startOfWeek = now.toISOString().split("T")[0];
+
+    const end = new Date();
+    end.setDate(now.getDate() + 7);
+    const endOfWeek = end.toISOString().split("T")[0];
+
+    console.log(`📅 Fetching weekly events for ${id} between ${startOfWeek} and ${endOfWeek}`);
 
     const result = await pool.query(
       `SELECT * FROM evenement 

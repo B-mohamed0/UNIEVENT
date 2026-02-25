@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import {
   View,
   Text,
@@ -21,6 +21,7 @@ export default function OrganizerScreen() {
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const passwordRef = useRef(null);
 
   const handleLogin = async () => {
     try {
@@ -48,13 +49,6 @@ export default function OrganizerScreen() {
 
   return (
     <View style={styles.container}>
-      <TouchableOpacity
-        style={styles.backButton}
-        onPress={() => navigation.goBack()}
-        activeOpacity={0.2}
-      >
-        <Ionicons name="chevron-back" size={30} color="#ffffffff" />
-      </TouchableOpacity>
       <ImageBackground
         source={require("../assets/project/est.png")}
         style={styles.background}
@@ -89,6 +83,8 @@ export default function OrganizerScreen() {
               onChangeText={setEmail}
               keyboardType="email-address"
               autoCapitalize="none"
+              onSubmitEditing={() => passwordRef.current?.focus()}
+              blurOnSubmit={false}
             />
           </View>
 
@@ -101,6 +97,8 @@ export default function OrganizerScreen() {
               secureTextEntry
               value={password}
               onChangeText={setPassword}
+              ref={passwordRef}
+              onSubmitEditing={handleLogin}
             />
           </View>
 
@@ -114,6 +112,13 @@ export default function OrganizerScreen() {
           </TouchableOpacity>
         </BlurView>
       </View>
+      <TouchableOpacity
+        style={styles.backButton}
+        onPress={() => navigation.goBack()}
+        activeOpacity={0.2}
+      >
+        <Ionicons name="chevron-back" size={30} color="#ffffffff" />
+      </TouchableOpacity>
     </View>
   );
 }
