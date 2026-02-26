@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import {
   View,
   Text,
@@ -7,6 +7,7 @@ import {
   ActivityIndicator,
   TouchableOpacity,
   ScrollView,
+  Animated,
 } from "react-native";
 import { BlurView } from "expo-blur";
 import { Ionicons } from "@expo/vector-icons";
@@ -33,11 +34,52 @@ const THEME_GRADIENTS = {
   "default": ["#000000ff", "#434343ff"]
 };
 
+// Point pulsant style LIVE (Instagram/Facebook)
+const PulsingDot = () => {
+  const pulseScale = useRef(new Animated.Value(1)).current;
+  const pulseOpacity = useRef(new Animated.Value(0.6)).current;
+
+  useEffect(() => {
+    const animation = Animated.loop(
+      Animated.sequence([
+        Animated.parallel([
+          Animated.timing(pulseScale, { toValue: 2.5, duration: 1000, useNativeDriver: true }),
+          Animated.timing(pulseOpacity, { toValue: 0, duration: 1000, useNativeDriver: true }),
+        ]),
+        Animated.parallel([
+          Animated.timing(pulseScale, { toValue: 1, duration: 0, useNativeDriver: true }),
+          Animated.timing(pulseOpacity, { toValue: 0.6, duration: 0, useNativeDriver: true }),
+        ]),
+      ])
+    );
+    animation.start();
+    return () => animation.stop();
+  }, []);
+
+  return (
+    <View style={{ width: 20, height: 20, justifyContent: "center", alignItems: "center", marginRight: 10 }}>
+      <Animated.View
+        style={{
+          position: "absolute",
+          width: 20,
+          height: 20,
+          borderRadius: 10,
+          backgroundColor: "#00F908",
+          opacity: pulseOpacity,
+          transform: [{ scale: pulseScale }],
+        }}
+      />
+      <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: "#00F908" }} />
+    </View>
+  );
+};
+
 const EventInfo = ({ route, navigation }) => {
   const { eventId, studentId, nom } = route.params;
 
   const [event, setEvent] = useState(null);
   const [loading, setLoading] = useState(true);
+
 
   useFocusEffect(
     React.useCallback(() => {
@@ -115,45 +157,47 @@ const EventInfo = ({ route, navigation }) => {
           </View>
 
           <View style={styles.statusContainer}>
-            <View
-              style={[
-                styles.statusDot,
-                {
-                  backgroundColor:
-                    event.event_status === "En cours"
-                      ? "#00F908"
-                      : event.event_status === "À venir"
+            {event.event_status === "En cours" ? (
+              <PulsingDot />
+            ) : (
+              <View
+                style={[
+                  styles.statusDot,
+                  {
+                    backgroundColor:
+                      event.event_status === "À venir"
                         ? "#f9dc00ff"
                         : "#FF0000",
-                },
-              ]}
-            />
+                  },
+                ]}
+              />
+            )}
             <Text style={styles.statusText}>
               {event.event_status}
             </Text>
           </View>
         </View>
-      </ImageBackground>
+      </ImageBackground >
 
       {/* BACKGROUND ESTWH FIXE */}
-      <ImageBackground
+      < ImageBackground
         source={estwhite}
         style={styles.estBackground}
         imageStyle={styles.estImage}
       >
         {/* SEULE PARTIE SCROLLABLE */}
-        <ScrollView
+        < ScrollView
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
         >
           {/* DESCRIPTION */}
-          <BlurView intensity={20} tint="light" style={styles.card}>
+          < BlurView intensity={20} tint="light" style={styles.card} >
             <Text style={styles.sectionTitle}>Description</Text>
             <Text>{event.description}</Text>
-          </BlurView>
+          </BlurView >
 
           {/* INFORMATIONS */}
-          <BlurView intensity={20} tint="light" style={styles.card}>
+          < BlurView intensity={20} tint="light" style={styles.card} >
             <Text style={styles.sectionTitle}>Informations</Text>
 
             <View style={styles.row}>
@@ -174,10 +218,10 @@ const EventInfo = ({ route, navigation }) => {
               <Ionicons name="location-outline" size={25} />
               <Text style={styles.infoText}>{event.lieu}</Text>
             </View>
-          </BlurView>
+          </BlurView >
 
           {/* ORGANISATION */}
-          <BlurView intensity={20} tint="light" style={styles.card}>
+          < BlurView intensity={20} tint="light" style={styles.card} >
             <Text style={styles.sectionTitle}>Organisation</Text>
             <View style={styles.inforga}>
               <Text><Text style={{ fontWeight: 'bold' }}>Organisateur :</Text> {event.organisateur_nom}</Text>
@@ -185,15 +229,15 @@ const EventInfo = ({ route, navigation }) => {
               <Text><Text style={{ fontWeight: 'bold' }}>Catégorie :</Text> {event.categorie}</Text>
 
             </View>
-          </BlurView>
+          </BlurView >
 
           <View style={{ height: 120 }} />
-        </ScrollView>
-      </ImageBackground>
+        </ScrollView >
+      </ImageBackground >
 
       {/* NAVBAR FIXE */}
-      <BottomNav id={studentId} nom={nom} />
-    </View>
+      < BottomNav id={studentId} nom={nom} />
+    </View >
   );
 };
 

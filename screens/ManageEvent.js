@@ -86,8 +86,8 @@ export default function ManageEvent({ route, navigation }) {
         </View>
         <Text style={[styles.participantName, { color: themeColors.text }]}>{item.nom}</Text>
       </View>
-      <View style={[styles.presenceBadge, { backgroundColor: item.status === 'PRESENT' ? '#00A86B' : '#C41E3A' }]}>
-        <Text style={styles.presenceText}>{item.status === 'PRESENT' ? 'Présent' : 'Absent'}</Text>
+      <View style={[styles.presenceBadge, { backgroundColor: item.status === 'PRESENT' ? '#00A86B' : item.status === 'INSCRIT' ? '#2E5BFF' : '#C41E3A' }]}>
+        <Text style={styles.presenceText}>{item.status === 'PRESENT' ? 'Présent' : item.status === 'INSCRIT' ? 'Inscrit' : 'Absent'}</Text>
       </View>
     </BlurView>
   );

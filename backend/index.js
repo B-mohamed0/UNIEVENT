@@ -802,7 +802,7 @@ app.post("/api/events/register", async (req, res) => {
 
     // Inscription
     await pool.query(
-      "INSERT INTO participation (idevenement, idetudiant, status) VALUES ($1, $2, 'EN_COURS')",
+      "INSERT INTO participation (idevenement, idetudiant, status) VALUES ($1, $2, 'INSCRIT')",
       [eventId, studentId]
     );
 
@@ -810,7 +810,7 @@ app.post("/api/events/register", async (req, res) => {
 
     res.json({
       message: "Inscription réussie ✅",
-      status: "EN_COURS",
+      status: "INSCRIT",
     });
   } catch (error) {
     console.error("❌ Erreur lors de l'inscription:", error);

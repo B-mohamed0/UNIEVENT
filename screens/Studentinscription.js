@@ -145,7 +145,7 @@ export default function Studentinscription() {
       const data = await response.json();
       if (response.ok) {
         Alert.alert("Succès", `Bienvenue ${data.user.nom} !`);
-        navigation.navigate("Home", { nom: data.user.nom, cne: data.user.cne });
+        navigation.navigate("Home", { nom: data.user.nom, id: data.user.cne });
       } else {
         setError(data.message);
       }
