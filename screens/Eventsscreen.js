@@ -149,7 +149,7 @@ export default function EventsScreen({ route, navigation }) {
 
   return (
     <ImageBackground
-      source={require("../assets/project/estwh.png")}
+      source={require("../assets/project/organizer_bg_light.png")}
       style={{ flex: 1 }}
       resizeMode="cover"
     >
@@ -338,9 +338,9 @@ const styles = StyleSheet.create({
     height: 50,
     borderRadius: 25,
     overflow: "hidden",
-    backgroundColor: "rgba(0, 74, 143, 0.46)",
+    backgroundColor: "rgba(255, 255, 255, 0.22)",
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.13)",
+    borderColor: "rgba(255, 255, 255, 0.38)",
   },
   iconBlur: {
     flex: 1,

@@ -157,15 +157,15 @@ export default function OrganizerDashboard({ route, navigation }) {
         {/* Statistics 2x2 Grid */}
         <View style={styles.statsGrid}>
           <View style={styles.statsRow}>
-            <BlurView intensity={20} tint={themeColors.blurTint} style={styles.statCard}>
-              <LinearGradient colors={isDarkMode ? ["rgba(255, 255, 255, 0)", "rgba(255,255,255,0.05)"] : ["rgba(0, 0, 0, 0)", "rgba(0,0,0,0.02)"]} style={styles.cardGradient}>
+            <BlurView intensity={10} tint={themeColors.blurTint} style={styles.statCard}>
+              <LinearGradient colors={isDarkMode ? ["rgba(255, 255, 255, 0)", "rgba(255,255,255,0.05)"] : ["rgba(255, 255, 255, 0)", "rgba(255, 255, 255, 0)"]} style={styles.cardGradient}>
                 <Ionicons name="flash-outline" size={24} color={themeColors.text} />
                 <Text style={[styles.statValue, { color: themeColors.text }]}>{stats.activeEvents}</Text>
                 <Text style={[styles.statLabel, { color: themeColors.subText }]}>Événements actifs</Text>
               </LinearGradient>
             </BlurView>
 
-            <BlurView intensity={20} tint={themeColors.blurTint} style={styles.statCard}>
+            <BlurView intensity={10} tint={themeColors.blurTint} style={styles.statCard}>
               <LinearGradient colors={isDarkMode ? ["rgba(255,255,255,0.1)", "rgba(255,255,255,0.05)"] : ["rgba(0,0,0,0.05)", "rgba(0,0,0,0.02)"]} style={styles.cardGradient}>
                 <Ionicons name="people-outline" size={24} color={themeColors.text} />
                 <Text style={[styles.statValue, { color: themeColors.text }]}>{stats.totalRegistrations}</Text>
@@ -175,7 +175,7 @@ export default function OrganizerDashboard({ route, navigation }) {
           </View>
 
           <View style={styles.statsRow}>
-            <BlurView intensity={20} tint={themeColors.blurTint} style={styles.statCard}>
+            <BlurView intensity={10} tint={themeColors.blurTint} style={styles.statCard}>
               <LinearGradient colors={isDarkMode ? ["rgba(255,255,255,0.1)", "rgba(255,255,255,0.05)"] : ["rgba(0,0,0,0.05)", "rgba(0,0,0,0.02)"]} style={styles.cardGradient}>
                 <Ionicons name="checkmark-circle-outline" size={24} color={themeColors.text} />
                 <Text style={[styles.statValue, { color: themeColors.text }]}>{stats.totalAttendances}</Text>
@@ -183,7 +183,7 @@ export default function OrganizerDashboard({ route, navigation }) {
               </LinearGradient>
             </BlurView>
 
-            <BlurView intensity={20} tint={themeColors.blurTint} style={styles.statCard}>
+            <BlurView intensity={10} tint={themeColors.blurTint} style={styles.statCard}>
               <LinearGradient colors={isDarkMode ? ["rgba(255,255,255,0.1)", "rgba(255,255,255,0.05)"] : ["rgba(0,0,0,0.05)", "rgba(0,0,0,0.02)"]} style={styles.cardGradient}>
                 <Ionicons name="trending-up-outline" size={24} color={themeColors.text} />
                 <Text style={[styles.statValue, { color: themeColors.text }]}>{stats.avgAttendance}%</Text>
