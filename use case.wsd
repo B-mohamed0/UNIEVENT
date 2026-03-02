@@ -1,0 +1,100 @@
+@startuml UseCaseDiagram
+' Configuration du style
+skinparam packageStyle rectangle
+skinparam actorStyle stickman
+left to right direction
+
+actor "Utilisateur" as ActorUser <<Abstract>>
+actor "Participant" as Participant
+actor "Organisateur" as Organisateur
+actor "Administrateur" as Admin
+
+' Hiérarchie des acteurs
+ActorUser <|-- Participant
+ActorUser <|-- Organisateur
+ActorUser <|-- Admin
+
+rectangle "Application de Gestion d'Événements" {
+  ' Cas d'utilisation communs
+  usecase "Consulter les événements" as UC_Consult
+  
+  ' Espace Participant
+  package "Espace Participant" {
+    usecase "S'inscrire à un événement" as UC_Subscribe
+    usecase "Se désinscrire d'un événement" as UC_Unsubscribe
+    usecase "Valider sa présence\n(bouton 'Je suis présent')" as UC_Validate
+    usecase "Consulter l'historique des participations" as UC_History
+    usecase "Donner un feedback post-événement" as UC_Feedback
+    usecase "Recevoir une notification push (système)" as UC_Notify
+  }
+
+  ' Espace Organisateur
+  package "Espace Organisateur" {
+    usecase "Créer un événement" as UC_Create
+    usecase "Modifier un événement" as UC_Modify
+    usecase "Supprimer un événement" as UC_Delete
+    usecase "Gérer les inscriptions" as UC_ManageReg
+    usecase "Gérer les présences" as UC_ManageAtt
+    usecase "Consulter les statistiques de participation" as UC_Stats
+    usecase "Exporter les listes de présence" as UC_Export
+  }
+
+  ' Espace Administrateur
+  package "Espace Administrateur" {
+    usecase "Consulter les statistiques des utilisateurs" as UC_UserStats
+    usecase "Ajouter un utilisateur" as UC_AddUser
+    usecase "Modifier un utilisateur" as UC_EditUser
+    usecase "Supprimer un utilisateur" as UC_DeleteUser
+    usecase "Gérer les rôles" as UC_ManageRoles
+  }
+
+  ' Relations Acteurs -> Cas d'utilisation
+  ActorUser --> UC_Consult
+  
+  Participant --> UC_Subscribe
+  Participant --> UC_Unsubscribe
+  Participant --> UC_Validate
+  Participant --> UC_History
+  Participant --> UC_Feedback
+  Participant <-- UC_Notify
+
+  Organisateur --> UC_Create
+  Organisateur --> UC_Modify
+  Organisateur --> UC_Delete
+  Organisateur --> UC_ManageReg
+  Organisateur --> UC_ManageAtt
+  Organisateur --> UC_Stats
+  Organisateur --> UC_Export
+
+  Admin --> UC_UserStats
+  Admin --> UC_AddUser
+  Admin --> UC_EditUser
+  Admin --> UC_DeleteUser
+  Admin --> UC_ManageRoles
+
+  ' Relations entre UC
+  UC_ManageReg ..> UC_Export : <<include>>
+
+  note right of UC_Validate
+    **Contraintes :**
+    - Visible uniquement pour les inscrits
+    - Actif pendant une plage définie
+      (ex: 15 min avant et après l'événement)
+    - Envoie ID user, ID event, timestamp
+  end note
+}
+
+note top of Participant
+  **Participant :** Étudiant ou Professeur
+end note
+
+note top of Organisateur
+  **Organisateur :** Crée et gère les événements
+end note
+
+note top of Admin
+  **Administrateur :** Gère les comptes utilisateurs
+  (étudiants, professeurs, organisateurs)
+end note
+
+@enduml
