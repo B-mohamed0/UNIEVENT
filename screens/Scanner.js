@@ -8,6 +8,7 @@ import {
     StyleSheet,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { API_URL } from "../config";
 
 export default function Scanner({ route, navigation }) {
     const { eventId } = route.params;
@@ -38,7 +39,7 @@ export default function Scanner({ route, navigation }) {
 
         try {
             const response = await fetch(
-                `${process.env.EXPO_PUBLIC_API_URL}/scan`,
+                `${API_URL}/scan`,
                 {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },

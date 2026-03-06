@@ -16,6 +16,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useThemeContext } from "../context/ThemeContext";
 import OrganizerBackground from "../components/OrganizerBackground";
 import ThemeToggle from "../components/ThemeToggle";
+import { API_URL } from "../config";
 
 const { width } = Dimensions.get("window");
 
@@ -38,8 +39,8 @@ export default function ManageEvent({ route, navigation }) {
     cardBorder: isDarkMode ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.05)",
   };
 
-  const API_URL = `${process.env.EXPO_PUBLIC_API_URL}/organizer`;
-  const STATS_URL = `${process.env.EXPO_PUBLIC_API_URL}/events/stats`;
+  const API_URL_ORG = `${API_URL}/organizer`;
+  const STATS_URL = `${API_URL}/events/stats`;
 
   useEffect(() => {
     fetchEventDetails();
@@ -48,7 +49,7 @@ export default function ManageEvent({ route, navigation }) {
 
   const fetchEventDetails = async () => {
     try {
-      const response = await fetch(`${API_URL}/manage/${event.id}`);
+      const response = await fetch(`${API_URL_ORG}/manage/${event.id}`);
       const resData = await response.json();
       setData(resData);
     } catch (error) {

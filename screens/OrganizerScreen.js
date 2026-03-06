@@ -13,6 +13,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { BlurView } from "expo-blur";
 import { useNavigation } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
+import { API_URL } from "../config";
 
 const { width, height } = Dimensions.get("window");
 
@@ -25,7 +26,7 @@ export default function OrganizerScreen() {
 
   const handleLogin = async () => {
     try {
-      const response = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/auth/login`, {
+      const response = await fetch(`${API_URL}/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password, role: "ORGANIZER" }),

@@ -14,6 +14,7 @@ import { BlurView } from "expo-blur";
 import { LinearGradient } from "expo-linear-gradient";
 import Svg, { Circle } from "react-native-svg";
 import BottomNav from "../components/navbar";
+import { API_URL } from "../config";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
@@ -31,7 +32,7 @@ const THEME_GRADIENTS = {
     "default": ["#3b82f6", "#1e3a8a"]
 };
 
-const API_STATS = `${process.env.EXPO_PUBLIC_API_URL}/student/stats`;
+const API_STATS = `${API_URL}/student/stats`;
 
 const CircularProgress = ({ percentage, size = 180, strokeWidth = 15 }) => {
     const radius = (size - strokeWidth) / 2;

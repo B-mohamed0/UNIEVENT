@@ -16,6 +16,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { BlurView } from "expo-blur";
 import { LinearGradient } from "expo-linear-gradient";
 import BottomNav from "../components/navbar";
+import { API_URL } from "../config";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
@@ -33,7 +34,7 @@ const THEME_GRADIENTS = {
   "default": ["#000000ff", "#434343ff"]
 };
 
-const API_URL_EVENTS = `${process.env.EXPO_PUBLIC_API_URL}/events`;
+const API_URL_EVENTS = `${API_URL}/events`;
 
 export default function EventsScreen({ route, navigation }) {
   const { nom, id } = route.params;

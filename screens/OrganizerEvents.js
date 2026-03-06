@@ -17,6 +17,7 @@ import OrganizerNavbar from "../components/OrganizerNavbar";
 import { useThemeContext } from "../context/ThemeContext";
 import OrganizerBackground from "../components/OrganizerBackground";
 import ThemeToggle from "../components/ThemeToggle";
+import { API_URL } from "../config";
 const { width } = Dimensions.get("window");
 
 export default function OrganizerEvents({ route, navigation }) {
@@ -39,7 +40,7 @@ export default function OrganizerEvents({ route, navigation }) {
     blurTint: isDarkMode ? "dark" : "light",
   };
 
-  const API_URL = `${process.env.EXPO_PUBLIC_API_URL}/organizer`;
+  const API_URL_ORG = `${API_URL}/organizer`;
 
   useEffect(() => {
     fetchEvents();
@@ -47,7 +48,7 @@ export default function OrganizerEvents({ route, navigation }) {
 
   const fetchEvents = async () => {
     try {
-      const response = await fetch(`${API_URL}/events/${id}`);
+      const response = await fetch(`${API_URL_ORG}/events/${id}`);
       const data = await response.json();
       setEvents(data);
       setLoading(false);
@@ -68,7 +69,7 @@ export default function OrganizerEvents({ route, navigation }) {
           style: "destructive",
           onPress: async () => {
             try {
-              const response = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/events/${eventId}`, {
+              const response = await fetch(`${API_URL}/events/${eventId}`, {
                 method: "DELETE",
               });
 

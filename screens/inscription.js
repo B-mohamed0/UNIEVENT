@@ -13,6 +13,7 @@ import { BlurView } from "expo-blur";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import OrganizerBackground from "../components/OrganizerBackground";
+import { API_URL } from "../config";
 
 const Inscription = ({ route, navigation }) => {
   const { eventId, studentId, nom, eventName } = route.params;
@@ -27,7 +28,7 @@ const Inscription = ({ route, navigation }) => {
   const handleSubmit = async () => {
     try {
       const response = await fetch(
-        `${process.env.EXPO_PUBLIC_API_URL}/events/${eventId}/inscription`,
+        `${API_URL}/events/${eventId}/inscription`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },

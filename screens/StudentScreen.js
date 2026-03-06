@@ -16,13 +16,14 @@ import { BlurView } from "expo-blur";
 import { useNavigation } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 import { useState } from "react";
+import { API_URL } from "../config";
 
 
 
 const { width, height } = Dimensions.get("window");
 
 /* 🔗 URL BACKEND */
-const API_BASE = `${process.env.EXPO_PUBLIC_API_URL}/auth`;
+const API_BASE = `${API_URL}/auth`;
 
 export default function StudentScreen() {
   const navigation = useNavigation();

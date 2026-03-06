@@ -15,6 +15,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { BlurView } from "expo-blur";
 import { LinearGradient } from "expo-linear-gradient";
 import BottomNav from "../components/navbar";
+import { API_URL } from "../config";
 
 
 
@@ -38,7 +39,7 @@ const THEME_GRADIENTS = {
 };
 
 // ================= CONFIGURATION API =================
-const API_URL_EVENTS = `${process.env.EXPO_PUBLIC_API_URL}/events`;
+const API_URL_EVENTS = `${API_URL}/events`;
 
 export default function HomeScreen({ route, navigation }) {
   const { nom, id } = route.params;
@@ -199,7 +200,7 @@ export default function HomeScreen({ route, navigation }) {
 
     const fetchUserData = async () => {
       try {
-        const profileRes = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/student/profile/${id}`);
+        const profileRes = await fetch(`${API_URL}/student/profile/${id}`);
         const profileData = await profileRes.json();
 
         setUserData((prev) => ({

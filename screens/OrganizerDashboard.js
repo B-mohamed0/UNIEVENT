@@ -19,6 +19,7 @@ import OrganizerNavbar from "../components/OrganizerNavbar";
 import { useThemeContext } from "../context/ThemeContext";
 import OrganizerBackground from "../components/OrganizerBackground";
 import ThemeToggle from "../components/ThemeToggle";
+import { API_URL } from "../config";
 
 const { width } = Dimensions.get("window");
 
@@ -55,7 +56,7 @@ export default function OrganizerDashboard({ route, navigation }) {
     headerFade: isDarkMode ? ["#0A0A1A", "rgba(10, 10, 26, 0.9)", "rgba(10, 10, 26, 0)"] : ["#FFFFFF", "rgba(255, 255, 255, 0.9)", "rgba(255, 255, 255, 0)"],
   };
 
-  const API_URL = `${process.env.EXPO_PUBLIC_API_URL}/organizer`;
+  const API_URL_ORG = `${API_URL}/organizer`;
 
   useEffect(() => {
     fetchStats();
@@ -71,7 +72,7 @@ export default function OrganizerDashboard({ route, navigation }) {
 
   const fetchProfile = async () => {
     try {
-      const response = await fetch(`${API_URL}/profile/${id}`);
+      const response = await fetch(`${API_URL_ORG}/profile/${id}`);
       const data = await response.json();
       if (response.ok) {
         setNom(data.nom);
@@ -84,7 +85,7 @@ export default function OrganizerDashboard({ route, navigation }) {
 
   const fetchStats = async () => {
     try {
-      const response = await fetch(`${API_URL}/stats/${id}`);
+      const response = await fetch(`${API_URL_ORG}/stats/${id}`);
       const data = await response.json();
       setStats(data);
     } catch (error) {
@@ -94,7 +95,7 @@ export default function OrganizerDashboard({ route, navigation }) {
 
   const fetchWeekEvents = async () => {
     try {
-      const response = await fetch(`${API_URL}/events-week/${id}`);
+      const response = await fetch(`${API_URL_ORG}/events-week/${id}`);
       const data = await response.json();
       setWeekEvents(data);
       setLoading(false);

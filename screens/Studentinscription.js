@@ -8,11 +8,12 @@ import { LinearGradient } from "expo-linear-gradient";
 import { BlurView } from "expo-blur";
 import { useNavigation } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
+import { API_URL } from "../config";
 
 const { width, height } = Dimensions.get("window");
 
 // 🔗 URL BACKEND (Assurez-vous que l'IP est correcte)
-const API_BASE = `${process.env.EXPO_PUBLIC_API_URL}/auth`;
+const API_BASE = `${API_URL}/auth`;
 
 export default function Studentinscription() {
   const navigation = useNavigation();

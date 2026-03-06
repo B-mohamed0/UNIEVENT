@@ -17,6 +17,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import * as ImagePicker from "expo-image-picker";
 import OrganizerBackground from "../components/OrganizerBackground";
 import { useThemeContext } from "../context/ThemeContext";
+import { API_URL } from "../config";
 
 const { width } = Dimensions.get("window");
 
@@ -31,7 +32,7 @@ export default function OrganizerProfile({ route, navigation }) {
         photo: null,
     });
 
-    const API_URL = `${process.env.EXPO_PUBLIC_API_URL}/organizer`;
+    const API_URL_ORG = `${API_URL}/organizer`;
 
     const themeColors = {
         text: isDarkMode ? "#FFF" : "#0A0A1A",
@@ -47,7 +48,7 @@ export default function OrganizerProfile({ route, navigation }) {
 
     const fetchProfile = async () => {
         try {
-            const response = await fetch(`${API_URL}/profile/${id}`);
+            const response = await fetch(`${API_URL_ORG}/profile/${id}`);
             const data = await response.json();
             if (response.ok) {
                 setProfile(data);
@@ -90,7 +91,7 @@ export default function OrganizerProfile({ route, navigation }) {
 
         setSaving(true);
         try {
-            const response = await fetch(`${API_URL}/profile/${id}`, {
+            const response = await fetch(`${API_URL_ORG}/profile/${id}`, {
                 method: "PUT",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({

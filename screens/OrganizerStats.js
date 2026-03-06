@@ -15,6 +15,7 @@ import OrganizerNavbar from "../components/OrganizerNavbar";
 import { useThemeContext } from "../context/ThemeContext";
 import OrganizerBackground from "../components/OrganizerBackground";
 import ThemeToggle from "../components/ThemeToggle";
+import { API_URL } from "../config";
 
 const { width } = Dimensions.get("window");
 
@@ -40,7 +41,7 @@ export default function OrganizerStats({ route, navigation }) {
     useEffect(() => {
         const fetchStats = async () => {
             try {
-                const response = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/organizer/stats/${id}`);
+                const response = await fetch(`${API_URL}/organizer/stats/${id}`);
                 const data = await response.json();
                 if (response.ok) {
                     setStats(data);

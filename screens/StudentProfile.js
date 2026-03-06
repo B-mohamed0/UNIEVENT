@@ -19,6 +19,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import * as ImagePicker from "expo-image-picker";
 import BottomNav from "../components/navbar";
+import { API_URL } from "../config";
 
 const { width } = Dimensions.get("window");
 
@@ -33,7 +34,7 @@ export default function StudentProfile({ route, navigation }) {
         id: id,
     });
 
-    const API_URL = `${process.env.EXPO_PUBLIC_API_URL}/student/profile`;
+    const API_URL_PROFILE = `${API_URL}/student/profile`;
 
     useEffect(() => {
         fetchProfile();
@@ -41,7 +42,7 @@ export default function StudentProfile({ route, navigation }) {
 
     const fetchProfile = async () => {
         try {
-            const response = await fetch(`${API_URL}/${id}`);
+            const response = await fetch(`${API_URL_PROFILE}/${id}`);
             const data = await response.json();
             if (response.ok) {
                 setProfile(data);
@@ -84,7 +85,7 @@ export default function StudentProfile({ route, navigation }) {
 
         setSaving(true);
         try {
-            const response = await fetch(`${API_URL}/${id}`, {
+            const response = await fetch(`${API_URL_PROFILE}/${id}`, {
                 method: "PUT",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({

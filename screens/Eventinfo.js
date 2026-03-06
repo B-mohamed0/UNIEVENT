@@ -14,6 +14,7 @@ import { Ionicons } from "@expo/vector-icons";
 import BackButton from "../components/BackButton";
 import BottomNav from "../components/navbar";
 import { useFocusEffect } from "@react-navigation/native";
+import { API_URL } from "../config";
 
 
 import conference from "../assets/project/conference.png";
@@ -83,7 +84,7 @@ const EventInfo = ({ route, navigation }) => {
 
   useFocusEffect(
     React.useCallback(() => {
-      fetch(`${process.env.EXPO_PUBLIC_API_URL}/events/detail/${eventId}/${studentId}`)
+      fetch(`${API_URL}/events/detail/${eventId}/${studentId}`)
         .then((res) => res.json())
         .then((data) => {
           setEvent(data);

@@ -20,6 +20,7 @@ import OrganizerNavbar from "../components/OrganizerNavbar";
 import { useThemeContext } from "../context/ThemeContext";
 import OrganizerBackground from "../components/OrganizerBackground";
 import ThemeToggle from "../components/ThemeToggle";
+import { API_URL } from "../config";
 
 const { width } = Dimensions.get("window");
 
@@ -76,7 +77,7 @@ export default function CreateEvent({ route, navigation }) {
     { name: "Golden Hour", colors: ["#F2994A", "#F2C94C"] },
   ];
 
-  const API_URL = `${process.env.EXPO_PUBLIC_API_URL}/events`;
+  const API_URL_EVENTS = `${API_URL}/events`;
 
   const handleCreate = async () => {
     // Validation simple
@@ -123,7 +124,7 @@ export default function CreateEvent({ route, navigation }) {
         theme_color: form.theme_color,
       };
 
-      const url = editEvent ? `${process.env.EXPO_PUBLIC_API_URL}/events/${editEvent.id}` : API_URL;
+      const url = editEvent ? `${API_URL}/events/${editEvent.id}` : API_URL_EVENTS;
       const method = editEvent ? "PUT" : "POST";
 
       console.log("SENDING PAYLOAD:", payload);
@@ -203,7 +204,7 @@ export default function CreateEvent({ route, navigation }) {
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
               <Text style={[styles.label, { color: themeColors.text }]}>Titre de l'événement</Text>
               <Text style={{ fontSize: 12, color: themeColors.subText, fontFamily: "Insignia" }}>
-                {form.title.length}/15
+                {form.title.length}/14
               </Text>
             </View>
             <TextInput
@@ -211,7 +212,7 @@ export default function CreateEvent({ route, navigation }) {
               placeholder="Titre..."
               placeholderTextColor={themeColors.placeholder}
               value={form.title}
-              maxLength={15}
+              maxLength={14}
               onChangeText={(text) => setForm({ ...form, title: text })}
             />
           </View>
