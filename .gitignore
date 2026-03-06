@@ -1,0 +1,21 @@
+# Dépendances
+node_modules/
+
+# Fichiers d'environnement (contiennent des secrets)
+# .env   <-- COMMENTÉ : on n'ignore plus le .env racine car config.js gère l'IP auto
+
+# Fichiers système Mac
+.DS_Store
+
+# Logs
+*.log
+npm-debug.log*
+
+# Expo
+.expo/
+dist/
+web-build/
+
+# IDE
+.vscode/
+.idea/
