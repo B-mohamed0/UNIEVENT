@@ -56,7 +56,7 @@ const CircularProgress = ({ percentage, size = 180, strokeWidth = 15 }) => {
                     cx={size / 2}
                     cy={size / 2}
                     r={radius}
-                    stroke="#FFFFFF"
+                    stroke="#ffffffff"
                     strokeWidth={strokeWidth}
                     strokeDasharray={`${circumference} ${circumference}`}
                     strokeDashoffset={strokeDashoffset}
@@ -119,7 +119,7 @@ export default function StudentStats({ route, navigation }) {
                 style={StyleSheet.absoluteFillObject}
                 resizeMode="cover"
             />
-            <View style={[StyleSheet.absoluteFillObject, { backgroundColor: "rgba(0, 0, 0, 0.38)" }]} />
+            <View style={[StyleSheet.absoluteFillObject, { backgroundColor: "rgba(0, 0, 0, 0.22)" }]} />
 
             <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
                 {/* Header */}
@@ -150,7 +150,7 @@ export default function StudentStats({ route, navigation }) {
                 {/* Events List */}
                 {stats?.enrolledEvents.length > 0 ? (
                     stats.enrolledEvents.map((event, index) => (
-                        <BlurView key={`${event.id}-${index}`} intensity={20} tint="light" style={styles.eventItem}>
+                        <BlurView key={`${event.id}-${index}`} intensity={20} style={styles.eventItem}>
                             <LinearGradient
                                 colors={THEME_GRADIENTS[event.theme_color] || THEME_GRADIENTS.default}
                                 style={styles.themeBar}
@@ -224,6 +224,7 @@ const styles = StyleSheet.create({
         fontFamily: "jokeyone",
         textTransform: "uppercase",
         textAlign: "center",
+        marginTop: 10,
     },
     statsCard: {
         borderRadius: 30,
@@ -288,7 +289,7 @@ const styles = StyleSheet.create({
         flexDirection: "row",
         overflow: "hidden",
         borderWidth: 1,
-        borderColor: "rgba(255,255,255,0.1)",
+        borderColor: "rgba(255, 255, 255, 0.18)",
     },
     themeBar: {
         width: 6,

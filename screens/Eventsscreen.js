@@ -252,9 +252,6 @@ export default function EventsScreen({ route, navigation }) {
                             <Text style={styles.viewButtonText}>voir l'évènement</Text>
                           </TouchableOpacity>
 
-                          <TouchableOpacity onPress={() => setExpandedEventId(null)} style={{ padding: 10 }}>
-                            <Ionicons name="chevron-up" size={24} color="#FFF" />
-                          </TouchableOpacity>
                         </View>
                       )}
                     </View>
@@ -416,7 +413,7 @@ const styles = StyleSheet.create({
     paddingTop: 18,
     paddingRight: 20,
     paddingLeft: 20,
-    paddingBottom: 15,
+    paddingBottom: 10,
   },
   eventContainer: {
     flexDirection: "row",
@@ -444,7 +441,7 @@ const styles = StyleSheet.create({
   },
   animatorText: {
     color: "rgba(255, 255, 255, 0.85)",
-    fontSize: 15,
+    fontSize: 20,
     marginBottom: 5,
     fontWeight: "600",
     fontFamily: "insignia",
@@ -452,7 +449,7 @@ const styles = StyleSheet.create({
   },
   timeText: {
     color: "#FFF",
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: "600",
     fontFamily: "insignia",
     letterSpacing: 1,
@@ -461,11 +458,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     paddingHorizontal: 20,
-    paddingVertical: 4,
   },
   dateDay: {
     color: "#FFF",
-    fontSize: 45,
+    fontSize: 47,
     fontWeight: "700",
     fontFamily: "Comicy",
     letterSpacing: 5,
@@ -473,7 +469,7 @@ const styles = StyleSheet.create({
   },
   dateMonth: {
     color: "#FFF",
-    fontSize: 30,
+    fontSize: 25,
     textTransform: "uppercase",
     fontFamily: "Comicy",
     lineHeight: 40,
