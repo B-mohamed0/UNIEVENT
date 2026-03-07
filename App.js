@@ -22,6 +22,7 @@ import OrganizerStats from "./screens/OrganizerStats";
 import OrganizerProfile from "./screens/OrganizerProfile";
 import StudentStats from "./screens/StudentStats";
 import StudentProfile from "./screens/StudentProfile";
+import EditProfile from "./screens/EditProfile";
 import { NavbarProvider } from "./context/NavbarContext";
 import { ThemeProvider } from "./context/ThemeContext";
 import inscription from "./screens/inscription";
@@ -72,6 +73,7 @@ export default function App() {
             <Stack.Screen name="OrganizerProfile" component={OrganizerProfile} />
             <Stack.Screen name="StudentStats" component={StudentStats} />
             <Stack.Screen name="StudentProfile" component={StudentProfile} />
+            <Stack.Screen name="EditProfile" component={EditProfile} />
             <Stack.Screen name="inscription" component={inscription} />
             <Stack.Screen name="Scanner" component={Scanner} />
           </Stack.Navigator>

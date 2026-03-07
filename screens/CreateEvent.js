@@ -103,6 +103,17 @@ export default function CreateEvent({ route, navigation }) {
       return;
     }
 
+    // Validation capacité max
+    const capacity = parseInt(form.capaciteMax);
+    if (isNaN(capacity) || capacity <= 0) {
+      alert("La capacité doit être un nombre valide supérieur à 0.");
+      return;
+    }
+    if (capacity > 500) {
+      alert("La capacité maximale autorisée est de 500 personnes.");
+      return;
+    }
+
     try {
       const formatDate = (date) => {
         const d = new Date(date);
@@ -290,9 +301,23 @@ export default function CreateEvent({ route, navigation }) {
               <Ionicons name="people-outline" size={20} color={themeColors.text} />
               <TextInput
                 style={[styles.input, { flex: 1, textAlign: 'center', borderBottomWidth: 0, color: themeColors.text }]}
-                keyboardType="numeric"
+                keyboardType="number-pad"
                 value={form.capaciteMax}
-                onChangeText={(text) => setForm({ ...form, capaciteMax: text })}
+                placeholder="Max 500"
+                placeholderTextColor={themeColors.placeholder}
+                maxLength={3}
+                onChangeText={(text) => {
+                  // Ne garder que les chiffres
+                  const cleaned = text.replace(/[^0-9]/g, '');
+
+                  // Si le nombre est supérieur à 500, on le limite à 500
+                  const numericValue = parseInt(cleaned, 10);
+                  if (numericValue > 500) {
+                    setForm({ ...form, capaciteMax: "500" });
+                  } else {
+                    setForm({ ...form, capaciteMax: cleaned });
+                  }
+                }}
               />
             </View>
           </View>

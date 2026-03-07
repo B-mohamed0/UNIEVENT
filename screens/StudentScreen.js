@@ -83,7 +83,6 @@ export default function StudentScreen() {
       const data = await response.json();
 
       if (response.ok) {
-        Alert.alert("Succès", data.message);
         console.log("USER:", data.user);
         navigation.navigate("Home", { nom: data.user.nom, id: data.user.id });
       } else {

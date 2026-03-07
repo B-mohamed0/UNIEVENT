@@ -11,6 +11,7 @@ import {
   TextInput,
   ImageBackground,
   Animated,
+  RefreshControl,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { BlurView } from "expo-blur";
@@ -41,6 +42,7 @@ export default function EventsScreen({ route, navigation }) {
 
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedFilter, setSelectedFilter] = useState("Tous");
   const [selectedCategory, setSelectedCategory] = useState("TOUTES");
@@ -84,6 +86,17 @@ export default function EventsScreen({ route, navigation }) {
       setLoading(false);
     }
   };
+
+  const onRefresh = React.useCallback(async () => {
+    setRefreshing(true);
+    try {
+      await fetchEvents();
+    } catch (error) {
+      console.error("Erreur lors du rafraîchissement:", error);
+    } finally {
+      setRefreshing(false);
+    }
+  }, []);
 
   const getStatusLabel = (date, hDebut, hFin) => {
     if (!date || !hDebut || !hFin) return "À venir";
@@ -190,6 +203,14 @@ export default function EventsScreen({ route, navigation }) {
         style={{ flex: 1 }}
         contentContainerStyle={{ paddingBottom: 120, paddingHorizontal: 20 }}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor="#FFF"
+            colors={["#426EBC"]}
+          />
+        }
       >
         {loading ? (
           <ActivityIndicator size="large" color="#FFF" style={{ marginTop: 50 }} />

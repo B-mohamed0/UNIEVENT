@@ -9,6 +9,7 @@ import {
   Animated,
   Dimensions,
   Image,
+  RefreshControl,
 } from "react-native";
 import { ImageBackground } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
@@ -53,6 +54,7 @@ export default function HomeScreen({ route, navigation }) {
     stats: { upcomingEvents: 0, todayEvents: 0, completedEvents: 0 },
   });
   const [events, setEvents] = useState([]);
+  const [refreshing, setRefreshing] = useState(false);
 
   // ================= 🆕 ÉTAT POUR CARROUSEL D'ÉVÉNEMENTS =================
   const [upcomingEvents, setUpcomingEvents] = useState([]);
@@ -119,6 +121,69 @@ export default function HomeScreen({ route, navigation }) {
   }, [currentIndex]);
 
   // Loop invisible
+  const fetchUpcomingEvents = React.useCallback(async () => {
+    try {
+      const response = await fetch(`${API_URL_EVENTS}/upcoming/${id}`);
+      const data = await response.json();
+
+      if (data.events && data.events.length > 0) {
+        console.log("✅ Événements carrousel reçus:", data.events.length);
+        setUpcomingEvents(data.events);
+      } else {
+        console.log("⚠️ Aucun événement carrousel trouvé");
+        setUpcomingEvents([]);
+      }
+      setLoadingEvents(false);
+    } catch (error) {
+      console.error("Erreur lors du chargement des événements:", error);
+      setLoadingEvents(false);
+    }
+  }, [id]);
+
+  const fetchStats = React.useCallback(async () => {
+    try {
+      const res = await fetch(`${API_URL_EVENTS}/${id}`);
+      const data = await res.json();
+      setUserData((prev) => ({
+        ...prev,
+        stats: {
+          upcomingEvents: data.upcomingEvents ?? 0,
+          todayEvents: data.todayEvents ?? 0,
+          completedEvents: data.completedEvents ?? 0,
+        },
+      }));
+    } catch (err) {
+      console.log("Erreur fetch stats:", err);
+    }
+  }, [id]);
+
+  const fetchEventList = React.useCallback(async () => {
+    try {
+      const res = await fetch(API_URL_EVENTS);
+      const data = await res.json();
+      const eventsArray = Array.isArray(data) ? data : data.data || [];
+      setEvents(eventsArray);
+    } catch (err) {
+      console.log("Erreur fetch events:", err);
+    }
+  }, []);
+
+  const fetchUserData = React.useCallback(async () => {
+    try {
+      const profileRes = await fetch(`${API_URL}/student/profile/${id}`);
+      const profileData = await profileRes.json();
+
+      setUserData((prev) => ({
+        ...prev,
+        name: profileData.nom || nom,
+        photo: profileData.photo,
+        dateInfo: new Date().toLocaleDateString("fr-FR"),
+      }));
+    } catch (err) {
+      console.log("Erreur fetch user profile:", err);
+    }
+  }, [id, nom]);
+
   const handleScrollEnd = (event) => {
     const offsetX = event.nativeEvent.contentOffset.x;
     let index = Math.round(offsetX / SCREEN_WIDTH);
@@ -144,25 +209,6 @@ export default function HomeScreen({ route, navigation }) {
 
   // ================= 🆕 RÉCUPÉRATION ÉVÉNEMENTS NON EXPIRÉS =================
   useEffect(() => {
-    const fetchUpcomingEvents = async () => {
-      try {
-        const response = await fetch(`${API_URL_EVENTS}/upcoming/${id}`);
-        const data = await response.json();
-
-        if (data.events && data.events.length > 0) {
-          console.log("✅ Événements carrousel reçus:", data.events.length);
-          setUpcomingEvents(data.events);
-        } else {
-          console.log("⚠️ Aucun événement carrousel trouvé");
-          setUpcomingEvents([]);
-        }
-        setLoadingEvents(false);
-      } catch (error) {
-        console.error("Erreur lors du chargement des événements:", error);
-        setLoadingEvents(false);
-      }
-    };
-
     fetchUpcomingEvents();
     const interval = setInterval(fetchUpcomingEvents, 30000);
     return () => clearInterval(interval);
@@ -170,54 +216,26 @@ export default function HomeScreen({ route, navigation }) {
 
   // ================= API CALLS ORIGINAUX =================
   useEffect(() => {
-    const fetchStats = async () => {
-      try {
-        const res = await fetch(`${API_URL_EVENTS}/${id}`);
-        const data = await res.json();
-        setUserData((prev) => ({
-          ...prev,
-          stats: {
-            upcomingEvents: data.upcomingEvents ?? 0,
-            todayEvents: data.todayEvents ?? 0,
-            completedEvents: data.completedEvents ?? 0,
-          },
-        }));
-      } catch (err) {
-        console.log("Erreur fetch stats:", err);
-      }
-    };
-
-    const fetchEventList = async () => {
-      try {
-        const res = await fetch(API_URL_EVENTS);
-        const data = await res.json();
-        const eventsArray = Array.isArray(data) ? data : data.data || [];
-        setEvents(eventsArray);
-      } catch (err) {
-        console.log("Erreur fetch events:", err);
-      }
-    };
-
-    const fetchUserData = async () => {
-      try {
-        const profileRes = await fetch(`${API_URL}/student/profile/${id}`);
-        const profileData = await profileRes.json();
-
-        setUserData((prev) => ({
-          ...prev,
-          name: profileData.nom || nom,
-          photo: profileData.photo,
-          dateInfo: new Date().toLocaleDateString("fr-FR"),
-        }));
-      } catch (err) {
-        console.log("Erreur fetch user profile:", err);
-      }
-    };
-
     fetchStats();
     fetchEventList();
     fetchUserData();
   }, [id]);
+
+  const onRefresh = React.useCallback(async () => {
+    setRefreshing(true);
+    try {
+      await Promise.all([
+        fetchUpcomingEvents(),
+        fetchStats(),
+        fetchEventList(),
+        fetchUserData(),
+      ]);
+    } catch (error) {
+      console.error("Erreur lors du rafraîchissement:", error);
+    } finally {
+      setRefreshing(false);
+    }
+  }, [fetchUpcomingEvents, fetchStats, fetchEventList, fetchUserData]);
 
   // ================= 🆕 FONCTION POUR FORMATER LA DATE =================
   const formatDate = (dateString) => {
@@ -383,6 +401,14 @@ export default function HomeScreen({ route, navigation }) {
         contentContainerStyle={{ paddingBottom: 160, paddingTop: 10 }}
         showsVerticalScrollIndicator={false}
         nestedScrollEnabled={true}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor="#FFF"
+            colors={["#426EBC"]}
+          />
+        }
       >
         {/* GREETING SECTION */}
         <TouchableOpacity
