@@ -12,7 +12,6 @@ import { useNavigation, useRoute } from "@react-navigation/native";
 import { LinearGradient } from "expo-linear-gradient";
 import { BlurView } from "expo-blur";
 import { useNavbarContext } from "../context/NavbarContext";
-import { useThemeContext } from "../context/ThemeContext";
 
 const AnimatedLinearGradient = Animated.createAnimatedComponent(LinearGradient);
 
@@ -33,7 +32,7 @@ const TABS = [
 ];
 
 const OrganizerNavbar = ({ id, nom }) => {
-    const { isDarkMode } = useThemeContext();
+    const isDarkMode = false; // Forced light mode for Organizer
     const navigation = useNavigation();
     const route = useRoute();
     const { orgLastIndex, setOrgLastIndex } = useNavbarContext();
@@ -75,7 +74,7 @@ const OrganizerNavbar = ({ id, nom }) => {
         <View style={styles.wrapper}>
             {/* Shadow container (PAS de overflow ici) */}
             <View style={styles.glassShadow}>
-                
+
                 {/* Glass container (overflow + radius ici) */}
                 <View
                     style={[
@@ -141,8 +140,8 @@ const OrganizerNavbar = ({ id, nom }) => {
                                         isTabActive
                                             ? "#FFF"
                                             : isDarkMode
-                                            ? "rgba(255, 255, 255, 1)"
-                                            : "rgba(0, 0, 0, 1)"
+                                                ? "rgba(255, 255, 255, 1)"
+                                                : "rgba(0, 0, 0, 1)"
                                     }
                                 />
                             </TouchableOpacity>

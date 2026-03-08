@@ -16,14 +16,13 @@ import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import * as ImagePicker from "expo-image-picker";
 import OrganizerBackground from "../components/OrganizerBackground";
-import { useThemeContext } from "../context/ThemeContext";
 import { API_URL } from "../config";
 
 const { width } = Dimensions.get("window");
 
 export default function OrganizerProfile({ route, navigation }) {
     const { id } = route.params;
-    const { isDarkMode } = useThemeContext();
+    const isDarkMode = false;
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [profile, setProfile] = useState({

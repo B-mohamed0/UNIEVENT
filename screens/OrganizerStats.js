@@ -12,16 +12,14 @@ import {
 import { BlurView } from "expo-blur";
 import { Ionicons } from "@expo/vector-icons";
 import OrganizerNavbar from "../components/OrganizerNavbar";
-import { useThemeContext } from "../context/ThemeContext";
 import OrganizerBackground from "../components/OrganizerBackground";
-import ThemeToggle from "../components/ThemeToggle";
 import { API_URL } from "../config";
 
 const { width } = Dimensions.get("window");
 
 export default function OrganizerStats({ route, navigation }) {
     const { id, nom } = route.params;
-    const { isDarkMode } = useThemeContext();
+    const isDarkMode = false;
 
     const themeColors = {
         text: isDarkMode ? "#FFF" : "#0A0A1A",
@@ -67,7 +65,9 @@ export default function OrganizerStats({ route, navigation }) {
                 <View style={styles.titleContainer}>
                     <Text style={[styles.headerTitle, { color: themeColors.headerTitle }]}>Statistiques Globales</Text>
                 </View>
-                <ThemeToggle color={themeColors.text} />
+                <View style={styles.actionIcon}>
+                    <Ionicons name="sunny-outline" size={20} color={themeColors.text} />
+                </View>
             </View>
 
             <ScrollView contentContainerStyle={styles.scrollContent}>

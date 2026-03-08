@@ -17,16 +17,14 @@ import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import OrganizerNavbar from "../components/OrganizerNavbar";
-import { useThemeContext } from "../context/ThemeContext";
 import OrganizerBackground from "../components/OrganizerBackground";
-import ThemeToggle from "../components/ThemeToggle";
 import { API_URL } from "../config";
 
 const { width } = Dimensions.get("window");
 
 export default function CreateEvent({ route, navigation }) {
   const { id, nom, editEvent } = route.params;
-  const { isDarkMode } = useThemeContext();
+  const isDarkMode = false;
 
   const themeColors = {
     text: isDarkMode ? "#FFF" : "#0A0A1A",
@@ -206,7 +204,9 @@ export default function CreateEvent({ route, navigation }) {
         <View style={styles.titleContainer}>
           <Text style={[styles.headerTitle, { color: themeColors.headerTitle }]}>{editEvent ? "Modifier" : "Créer"} Événement</Text>
         </View>
-        <ThemeToggle color={themeColors.text} />
+        <View style={styles.actionIcon}>
+          <Ionicons name="sunny-outline" size={20} color={themeColors.text} />
+        </View>
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContent}>

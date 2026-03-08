@@ -15,6 +15,9 @@ import { LinearGradient } from "expo-linear-gradient";
 import Svg, { Circle } from "react-native-svg";
 import BottomNav from "../components/navbar";
 import { API_URL } from "../config";
+import { useThemeContext } from "../context/ThemeContext";
+import estwh from "../assets/project/organizer_bg_light.png";
+import estblack from "../assets/project/organizer_bg.png";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
@@ -75,6 +78,15 @@ const CircularProgress = ({ percentage, size = 180, strokeWidth = 15 }) => {
 
 export default function StudentStats({ route, navigation }) {
     const { id, nom } = route.params;
+    const { isDarkMode } = useThemeContext();
+
+    const theme = {
+        background: isDarkMode ? "#0f172a31" : "#F1F5F9",
+        card: isDarkMode ? "rgba(0, 0, 0, 0.2)" : "rgba(255, 255, 255, 0.2)",
+        text: isDarkMode ? "#F8FAFC" : "#0F172A",
+        textSecondary: isDarkMode ? "#94A3B8" : "rgba(67, 67, 67, 0.6)",
+        border: isDarkMode ? "rgba(255, 255, 255, 0.1)" : "rgba(0, 74, 143, 0.1)",
+    };
     const [stats, setStats] = useState(null);
     const [loading, setLoading] = useState(true);
 
@@ -112,45 +124,45 @@ export default function StudentStats({ route, navigation }) {
     }
 
     return (
-        <View style={styles.container}>
-            <StatusBar barStyle="light-content" />
+        <View style={[styles.container, { backgroundColor: theme.background }]}>
+            <StatusBar barStyle={isDarkMode ? "light-content" : "dark-content"} />
             <ImageBackground
-                source={require("../assets/project/est.png")}
+                source={isDarkMode ? estblack : estwh}
                 style={StyleSheet.absoluteFillObject}
                 resizeMode="cover"
             />
-            <View style={[StyleSheet.absoluteFillObject, { backgroundColor: "rgba(0, 0, 0, 0.22)" }]} />
+            {!isDarkMode && <View style={[StyleSheet.absoluteFillObject, { backgroundColor: "rgba(0, 0, 0, 0.22)" }]} />}
 
             <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
                 {/* Header */}
                 <View style={styles.header}>
-                    <Text style={styles.greeting}>Mes Statistiques</Text>
-                    <Text style={styles.name}>{nom}</Text>
+                    <Text style={[styles.greeting, { color: theme.textSecondary }]}>Mes Statistiques</Text>
+                    <Text style={[styles.name, { color: theme.text }]}>{nom}</Text>
                 </View>
 
                 {/* Circular Progress Card */}
-                <BlurView intensity={20} tint="light" style={styles.statsCard}>
+                <BlurView intensity={20} tint={isDarkMode ? "dark" : "light"} style={[styles.statsCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
                     <CircularProgress percentage={stats?.attendancePercentage || 0} />
 
                     <View style={styles.summaryContainer}>
                         <View style={styles.summaryItem}>
-                            <Text style={styles.summaryValue}>{stats?.totalEnrolled || 0}</Text>
-                            <Text style={styles.summaryLabel}>Inscriptions</Text>
+                            <Text style={[styles.summaryValue, { color: theme.text }]}>{stats?.totalEnrolled || 0}</Text>
+                            <Text style={[styles.summaryLabel, { color: theme.textSecondary }]}>Inscriptions</Text>
                         </View>
-                        <View style={[styles.summaryItem, styles.summaryDivider]}>
-                            <Text style={styles.summaryValue}>{stats?.totalAttended || 0}</Text>
-                            <Text style={styles.summaryLabel}>Présences</Text>
+                        <View style={[styles.summaryItem, styles.summaryDivider, { borderLeftColor: theme.border }]}>
+                            <Text style={[styles.summaryValue, { color: theme.text }]}>{stats?.totalAttended || 0}</Text>
+                            <Text style={[styles.summaryLabel, { color: theme.textSecondary }]}>Présences</Text>
                         </View>
                     </View>
                 </BlurView>
 
                 {/* History Title */}
-                <Text style={styles.sectionTitle}>Historique des événements</Text>
+                <Text style={[styles.sectionTitle, { color: theme.text }]}>Historique des événements</Text>
 
                 {/* Events List */}
                 {stats?.enrolledEvents.length > 0 ? (
                     stats.enrolledEvents.map((event, index) => (
-                        <BlurView key={`${event.id}-${index}`} intensity={20} style={styles.eventItem}>
+                        <BlurView key={`${event.id}-${index}`} intensity={20} tint={isDarkMode ? "dark" : "light"} style={[styles.eventItem, { backgroundColor: theme.card, borderColor: theme.border }]}>
                             <LinearGradient
                                 colors={THEME_GRADIENTS[event.theme_color] || THEME_GRADIENTS.default}
                                 style={styles.themeBar}
@@ -159,7 +171,7 @@ export default function StudentStats({ route, navigation }) {
                             />
                             <View style={styles.eventContent}>
                                 <View style={styles.eventHeader}>
-                                    <Text style={styles.eventTitle} numberOfLines={1}>{event.title}</Text>
+                                    <Text style={[styles.eventTitle, { color: theme.text }]} numberOfLines={1}>{event.title}</Text>
                                     <View style={[
                                         styles.statusBadge,
                                         { backgroundColor: event.participation_status === 'PRESENT' ? '#10b981' : 'rgba(255,255,255,0.2)' }
@@ -169,15 +181,15 @@ export default function StudentStats({ route, navigation }) {
                                         </Text>
                                     </View>
                                 </View>
-                                <Text style={styles.eventAnimator}>{event.animator}</Text>
+                                <Text style={[styles.eventAnimator, { color: theme.textSecondary }]}>{event.animator}</Text>
                                 <View style={styles.eventFooter}>
                                     <View style={styles.footerItem}>
-                                        <Ionicons name="calendar-outline" size={12} color="rgba(255,255,255,0.6)" />
-                                        <Text style={styles.footerText}>{formatDate(event.date)}</Text>
+                                        <Ionicons name="calendar-outline" size={12} color={theme.textSecondary} />
+                                        <Text style={[styles.footerText, { color: theme.textSecondary }]}>{formatDate(event.date)}</Text>
                                     </View>
                                     <View style={styles.footerItem}>
-                                        <Ionicons name="time-outline" size={12} color="rgba(255,255,255,0.6)" />
-                                        <Text style={styles.footerText}>{event.heure_debut?.slice(0, 5)}</Text>
+                                        <Ionicons name="time-outline" size={12} color={theme.textSecondary} />
+                                        <Text style={[styles.footerText, { color: theme.textSecondary }]}>{event.heure_debut?.slice(0, 5)}</Text>
                                     </View>
                                 </View>
                             </View>

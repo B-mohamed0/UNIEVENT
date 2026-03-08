@@ -18,6 +18,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import BottomNav from "../components/navbar";
 import { API_URL } from "../config";
+import { useThemeContext } from "../context/ThemeContext";
 
 const { width, height: SCREEN_HEIGHT } = Dimensions.get("window");
 
@@ -30,7 +31,18 @@ export default function StudentProfile({ route, navigation }) {
         photo: null,
         id: id,
     });
-    const [darkMode, setDarkMode] = useState(false);
+    const { isDarkMode: darkMode, toggleDarkMode } = useThemeContext();
+
+    // 🎨 Couleurs locales pour le Profil
+    const theme = {
+        background: darkMode ? "#0f172aff" : "#F1F5F9",
+        card: darkMode ? "#1E293B" : "#FFFFFF",
+        text: darkMode ? "#F8FAFC" : "#0F172A",
+        textSecondary: darkMode ? "#94A3B8" : "#64748B",
+        border: darkMode ? "rgba(255, 255, 255, 0.1)" : "#E2E8F0",
+        accent: darkMode ? "#334155" : "#E2E8F0",
+        headerGradient: darkMode ? ["#0F172A", "rgba(15, 23, 42, 0)"] : ["#FFFFFF", "rgba(255, 255, 255, 0)"],
+    };
 
     // Animation de défilement
     const scrollY = useRef(new Animated.Value(0)).current;
@@ -112,17 +124,17 @@ export default function StudentProfile({ route, navigation }) {
     }
 
     return (
-        <View style={styles.container} >
-            <StatusBar barStyle="dark-content" translucent backgroundColor="transparent" />
+        <View style={[styles.container, { backgroundColor: theme.background }]} >
+            <StatusBar barStyle={darkMode ? "light-content" : "dark-content"} translucent backgroundColor="transparent" />
 
-            {/* BACKGROUND CLAIR */}
-            <View style={[StyleSheet.absoluteFillObject, { backgroundColor: "#F1F5F9" }]} />
+            {/* BACKGROUND DYNAMIQUE */}
+            <View style={[StyleSheet.absoluteFillObject, { backgroundColor: theme.background }]} />
 
-            {/* HEADER FIXE AVEC DÉGRADÉ TRANSPARENT EN BAS */}
+            {/* HEADER FIXE AVEC DÉGRADÉ DYNAMIQUE */}
             <Animated.View style={[styles.header, { zIndex: 100 }]}>
                 <Animated.View style={[StyleSheet.absoluteFillObject, { opacity: headerOpacity }]}>
                     <LinearGradient
-                        colors={["#FFFFFF", "rgba(255, 255, 255, 0)"]}
+                        colors={theme.headerGradient}
                         style={StyleSheet.absoluteFillObject}
                         start={{ x: 0, y: 0 }}
                         end={{ x: 0, y: 1 }}
@@ -130,14 +142,14 @@ export default function StudentProfile({ route, navigation }) {
                 </Animated.View>
 
                 <View style={styles.headerContent}>
-                    <TouchableOpacity onPress={() => navigation.goBack()} style={styles.iconButtonGlass}>
-                        <BlurView intensity={20} tint="light" style={styles.iconBlur}>
-                            <Ionicons name="chevron-back" size={24} color="#000" />
+                    <TouchableOpacity onPress={() => navigation.goBack()} style={[styles.iconButtonGlass, { backgroundColor: darkMode ? "rgba(255,255,255,0.1)" : "rgba(255,255,255,0.29)" }]}>
+                        <BlurView intensity={20} tint={darkMode ? "dark" : "light"} style={styles.iconBlur}>
+                            <Ionicons name="chevron-back" size={24} color={theme.text} />
                         </BlurView>
                     </TouchableOpacity>
-                    <Animated.Text style={[styles.headerTitle, { opacity: titleOpacity }]}>PROFILE</Animated.Text>
-                    <TouchableOpacity onPress={handleLogout} style={styles.iconButtonGlass}>
-                        <BlurView intensity={20} tint="light" style={styles.iconBlur}>
+                    <Animated.Text style={[styles.headerTitle, { color: theme.text, opacity: titleOpacity }]}>PROFILE</Animated.Text>
+                    <TouchableOpacity onPress={handleLogout} style={[styles.iconButtonGlass, { backgroundColor: darkMode ? "rgba(255,255,255,0.1)" : "rgba(255,255,255,0.29)" }]}>
+                        <BlurView intensity={20} tint={darkMode ? "dark" : "light"} style={styles.iconBlur}>
                             <Ionicons name="log-out-outline" size={24} color="#FF3B30" />
                         </BlurView>
                     </TouchableOpacity>
@@ -158,9 +170,9 @@ export default function StudentProfile({ route, navigation }) {
                     {profile.photo ? (
                         <Image source={{ uri: profile.photo }} style={styles.blurredBackground} blurRadius={15} />
                     ) : (
-                        <View style={[styles.blurredBackground, { backgroundColor: "#E2E8F0" }]} />
+                        <View style={[styles.blurredBackground, { backgroundColor: theme.accent }]} />
                     )}
-                    <BlurView intensity={30} tint="light" style={StyleSheet.absoluteFillObject} />
+                    <BlurView intensity={30} tint={darkMode ? "dark" : "light"} style={StyleSheet.absoluteFillObject} />
                 </View>
 
                 {/* PROFILE PHOTO OVERLAP & INFO */}
@@ -170,23 +182,23 @@ export default function StudentProfile({ route, navigation }) {
                         { transform: [{ scale: imageScale }, { translateY: imageTranslateY }] }
                     ]}>
                         {profile.photo ? (
-                            <Image source={{ uri: profile.photo }} style={styles.photo} />
+                            <Image source={{ uri: profile.photo }} style={[styles.photo, { borderColor: theme.card }]} />
                         ) : (
-                            <View style={styles.photoPlaceholder}>
-                                <Ionicons name="person" size={50} color="#94A3B8" />
+                            <View style={[styles.photoPlaceholder, { backgroundColor: theme.accent, borderColor: theme.card }]}>
+                                <Ionicons name="person" size={50} color={theme.textSecondary} />
                             </View>
                         )}
                     </Animated.View>
 
                     <View style={{ alignItems: "center" }}>
-                        <Text style={styles.nameText}>{profile.nom}</Text>
-                        <Text style={styles.emailText}>{profile.email}</Text>
+                        <Text style={[styles.nameText, { color: theme.text }]}>{profile.nom}</Text>
+                        <Text style={[styles.emailText, { color: theme.textSecondary }]}>{profile.email}</Text>
                     </View>
                 </View>
 
                 {/* SECTION QR CODE (SANS FOND) */}
                 <View style={styles.qrSection}>
-                    <View style={styles.qrContainer}>
+                    <View style={[styles.qrContainer, { backgroundColor: darkMode ? "#FFF" : theme.card }]}>
                         <QRCode
                             value={profile.id ? profile.id.toString() : "no-id"}
                             size={160}
@@ -194,11 +206,11 @@ export default function StudentProfile({ route, navigation }) {
                             backgroundColor="transparent"
                         />
                     </View>
-                    <Text style={styles.qrTitle}>Mon Pass Digital</Text>
+                    <Text style={[styles.qrTitle, { color: theme.text }]}>Mon Pass Digital</Text>
                 </View>
 
                 {/* LISTE DES PARAMÈTRES */}
-                <View style={styles.settingsList}>
+                <View style={[styles.settingsList, { backgroundColor: theme.card }]}>
                     <TouchableOpacity
                         style={styles.settingsItem}
                         onPress={() => navigation.navigate("EditProfile", {
@@ -208,44 +220,44 @@ export default function StudentProfile({ route, navigation }) {
                         })}
                     >
                         <View style={styles.settingsIconLabel}>
-                            <View style={[styles.iconContainer, { backgroundColor: "#DBEAFE" }]}>
-                                <Ionicons name="person-outline" size={20} color="#2563EB" />
+                            <View style={[styles.iconContainer, { backgroundColor: darkMode ? "#1E293B" : "#DBEAFE" }]}>
+                                <Ionicons name="person-outline" size={20} color={darkMode ? "#3B82F6" : "#2563EB"} />
                             </View>
-                            <Text style={styles.settingsText}>Modifier le profil</Text>
+                            <Text style={[styles.settingsText, { color: theme.text }]}>Modifier le profil</Text>
                         </View>
-                        <Ionicons name="chevron-forward" size={20} color="#94A3B8" />
+                        <Ionicons name="chevron-forward" size={20} color={theme.textSecondary} />
                     </TouchableOpacity>
 
                     <TouchableOpacity style={styles.settingsItem}>
                         <View style={styles.settingsIconLabel}>
-                            <View style={[styles.iconContainer, { backgroundColor: "#E0E7FF" }]}>
-                                <Ionicons name="lock-closed-outline" size={20} color="#4F46E5" />
+                            <View style={[styles.iconContainer, { backgroundColor: darkMode ? "#1E293B" : "#E0E7FF" }]}>
+                                <Ionicons name="lock-closed-outline" size={20} color={darkMode ? "#818CF8" : "#4F46E5"} />
                             </View>
-                            <Text style={styles.settingsText}>Changer le mot de passe</Text>
+                            <Text style={[styles.settingsText, { color: theme.text }]}>Changer le mot de passe</Text>
                         </View>
-                        <Ionicons name="chevron-forward" size={20} color="#94A3B8" />
+                        <Ionicons name="chevron-forward" size={20} color={theme.textSecondary} />
                     </TouchableOpacity>
 
                     <TouchableOpacity style={styles.settingsItem}>
                         <View style={styles.settingsIconLabel}>
-                            <View style={[styles.iconContainer, { backgroundColor: "#FEF3C7" }]}>
-                                <Ionicons name="notifications-outline" size={20} color="#D97706" />
+                            <View style={[styles.iconContainer, { backgroundColor: darkMode ? "#1E293B" : "#FEF3C7" }]}>
+                                <Ionicons name="notifications-outline" size={20} color={darkMode ? "#FBBF24" : "#D97706"} />
                             </View>
-                            <Text style={styles.settingsText}>Notification</Text>
+                            <Text style={[styles.settingsText, { color: theme.text }]}>Notification</Text>
                         </View>
-                        <Ionicons name="chevron-forward" size={20} color="#94A3B8" />
+                        <Ionicons name="chevron-forward" size={20} color={theme.textSecondary} />
                     </TouchableOpacity>
 
                     <View style={styles.settingsItem}>
                         <View style={styles.settingsIconLabel}>
-                            <View style={[styles.iconContainer, { backgroundColor: "#F1F5F9" }]}>
-                                <Ionicons name="moon-outline" size={20} color="#475569" />
+                            <View style={[styles.iconContainer, { backgroundColor: darkMode ? "#334155" : "#F1F5F9" }]}>
+                                <Ionicons name={darkMode ? "sunny-outline" : "moon-outline"} size={20} color={darkMode ? "#FBBF24" : "#475569"} />
                             </View>
-                            <Text style={styles.settingsText}>Dark mode</Text>
+                            <Text style={[styles.settingsText, { color: theme.text }]}>Dark mode</Text>
                         </View>
                         <Switch
                             value={darkMode}
-                            onValueChange={setDarkMode}
+                            onValueChange={toggleDarkMode}
                             trackColor={{ false: "#CBD5E1", true: "#143287" }}
                             thumbColor={darkMode ? "#FFF" : "#F4F3F4"}
                         />
@@ -253,12 +265,12 @@ export default function StudentProfile({ route, navigation }) {
 
                     <TouchableOpacity style={styles.settingsItem}>
                         <View style={styles.settingsIconLabel}>
-                            <View style={[styles.iconContainer, { backgroundColor: "#DCFCE7" }]}>
-                                <Ionicons name="help-circle-outline" size={20} color="#16A34A" />
+                            <View style={[styles.iconContainer, { backgroundColor: darkMode ? "#1E293B" : "#DCFCE7" }]}>
+                                <Ionicons name="help-circle-outline" size={20} color={darkMode ? "#34D399" : "#16A34A"} />
                             </View>
-                            <Text style={styles.settingsText}>Help</Text>
+                            <Text style={[styles.settingsText, { color: theme.text }]}>Help</Text>
                         </View>
-                        <Ionicons name="chevron-forward" size={20} color="#94A3B8" />
+                        <Ionicons name="chevron-forward" size={20} color={theme.textSecondary} />
                     </TouchableOpacity>
                 </View>
             </Animated.ScrollView>

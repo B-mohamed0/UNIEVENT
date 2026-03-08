@@ -18,11 +18,24 @@ import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import * as ImagePicker from "expo-image-picker";
 import { API_URL } from "../config";
+import { useThemeContext } from "../context/ThemeContext";
+import estwh from "../assets/project/estwh.png";
+import estblack from "../assets/project/estblack.png";
 
 const { width } = Dimensions.get("window");
 
 export default function EditProfile({ route, navigation }) {
     const { id, nom: initialNom, photo: initialPhoto } = route.params;
+    const { isDarkMode } = useThemeContext();
+
+    const theme = {
+        background: isDarkMode ? "#0f172aff" : "#F1F5F9",
+        card: isDarkMode ? "rgba(30, 41, 59, 0.7)" : "#FFFFFF",
+        text: isDarkMode ? "#F8FAFC" : "#000",
+        textSecondary: isDarkMode ? "#94A3B8" : "#64748B",
+        inputBg: isDarkMode ? "rgba(255, 255, 255, 0.05)" : "#F8FAFC",
+        border: isDarkMode ? "rgba(255, 255, 255, 0.1)" : "rgba(0, 0, 0, 0.05)",
+    };
     const [nom, setNom] = useState(initialNom || "");
     const [photo, setPhoto] = useState(initialPhoto || null);
     const [saving, setSaving] = useState(false);
@@ -88,18 +101,23 @@ export default function EditProfile({ route, navigation }) {
     };
 
     return (
-        <View style={styles.container}>
-            <StatusBar barStyle="dark-content" translucent backgroundColor="transparent" />
+        <View style={[styles.container, { backgroundColor: theme.background }]}>
+            <StatusBar barStyle={isDarkMode ? "light-content" : "dark-content"} translucent backgroundColor="transparent" />
 
-            <View style={[StyleSheet.absoluteFillObject, { backgroundColor: "#F8F9FA" }]} />
+            <ImageBackground
+                source={isDarkMode ? estblack : estwh}
+                style={StyleSheet.absoluteFillObject}
+                resizeMode="cover"
+            />
+            {!isDarkMode && <View style={[StyleSheet.absoluteFillObject, { backgroundColor: "#F8F9FA" }]} />}
 
             <View style={styles.header}>
-                <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-                    <BlurView intensity={20} tint="light" style={styles.iconBlur}>
-                        <Ionicons name="chevron-back" size={24} color="#000" />
+                <TouchableOpacity onPress={() => navigation.goBack()} style={[styles.backButton, { backgroundColor: isDarkMode ? "rgba(255, 255, 255, 0.1)" : "rgba(255, 255, 255, 0.8)" }]}>
+                    <BlurView intensity={20} tint={isDarkMode ? "dark" : "light"} style={styles.iconBlur}>
+                        <Ionicons name="chevron-back" size={24} color={theme.text} />
                     </BlurView>
                 </TouchableOpacity>
-                <Text style={styles.headerTitle}>MODIFIER</Text>
+                <Text style={[styles.headerTitle, { color: theme.text }]}>MODIFIER</Text>
                 <View style={{ width: 50 }} />
             </View>
 
@@ -109,24 +127,24 @@ export default function EditProfile({ route, navigation }) {
                         {photo ? (
                             <Image source={{ uri: photo }} style={styles.photo} />
                         ) : (
-                            <View style={styles.photoPlaceholder}>
-                                <Ionicons name="person" size={50} color="#94A3B8" />
+                            <View style={[styles.photoPlaceholder, { backgroundColor: theme.inputBg, borderColor: isDarkMode ? theme.border : "#FFF" }]}>
+                                <Ionicons name="person" size={50} color={theme.textSecondary} />
                             </View>
                         )}
-                        <View style={styles.editIconContainer}>
+                        <View style={[styles.editIconContainer, { borderColor: isDarkMode ? theme.border : "#FFF" }]}>
                             <Ionicons name="camera" size={20} color="#FFF" />
                         </View>
                     </TouchableOpacity>
                 </View>
 
-                <View style={styles.formCard}>
-                    <Text style={styles.label}>NOM COMPLET</Text>
+                <View style={[styles.formCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
+                    <Text style={[styles.label, { color: theme.textSecondary }]}>NOM COMPLET</Text>
                     <TextInput
-                        style={styles.input}
+                        style={[styles.input, { backgroundColor: theme.inputBg, color: theme.text }]}
                         value={nom}
                         onChangeText={setNom}
                         placeholder="Votre nom"
-                        placeholderTextColor="rgba(0,0,0,0.3)"
+                        placeholderTextColor={isDarkMode ? "rgba(255,255,255,0.3)" : "rgba(0,0,0,0.3)"}
                     />
 
                     <TouchableOpacity

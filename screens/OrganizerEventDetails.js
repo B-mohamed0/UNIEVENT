@@ -16,11 +16,10 @@ import BackButton from "../components/BackButton";
 import conference from "../assets/project/conference.png";
 import estwhite from "../assets/project/estwhite.png";
 import OrganizerBackground from "../components/OrganizerBackground";
-import { useThemeContext } from "../context/ThemeContext";
 
 const OrganizerEventDetails = ({ route, navigation }) => {
     const { event, organizerId, nom } = route.params;
-    const { isDarkMode } = useThemeContext();
+    const isDarkMode = false;
     const [eventData, setEventData] = useState(event);
     const [loading, setLoading] = useState(false);
 

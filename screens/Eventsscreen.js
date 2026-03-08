@@ -18,6 +18,7 @@ import { BlurView } from "expo-blur";
 import { LinearGradient } from "expo-linear-gradient";
 import BottomNav from "../components/navbar";
 import { API_URL } from "../config";
+import { useThemeContext } from "../context/ThemeContext";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
@@ -39,6 +40,18 @@ const API_URL_EVENTS = `${API_URL}/events`;
 
 export default function EventsScreen({ route, navigation }) {
   const { nom, id } = route.params;
+  const { isDarkMode } = useThemeContext();
+
+  const theme = {
+    background: isDarkMode ? "#0f172aff" : "#F1F5F9",
+    card: isDarkMode ? "#1E293B" : "#FFFFFF",
+    text: isDarkMode ? "#F8FAFC" : "#0F172A",
+    textSecondary: isDarkMode ? "#94A3B8" : "#64748B",
+    iconBg: isDarkMode ? "rgba(255, 255, 255, 0.1)" : "rgba(255, 255, 255, 0.22)",
+    iconBorder: isDarkMode ? "rgba(255, 255, 255, 0.2)" : "rgba(255, 255, 255, 0.38)",
+    searchBg: isDarkMode ? "rgba(255, 255, 255, 0.05)" : "rgba(255, 255, 255, 0.15)",
+    sidebarBg: isDarkMode ? "rgba(15, 23, 42, 0.95)" : "rgba(142, 142, 142, 0.12)",
+  };
 
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -163,35 +176,35 @@ export default function EventsScreen({ route, navigation }) {
 
   return (
     <ImageBackground
-      source={require("../assets/project/organizer_bg_light.png")}
-      style={{ flex: 1 }}
+      source={isDarkMode ? require("../assets/project/organizer_bg.png") : require("../assets/project/organizer_bg_light.png")}
+      style={{ flex: 1, backgroundColor: theme.background }}
       resizeMode="cover"
     >
-      <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent />
+      <StatusBar barStyle={isDarkMode ? "light-content" : "dark-content"} backgroundColor="transparent" translucent />
 
       {/* HEADER */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.iconButtonGlass}>
-          <BlurView intensity={20} tint="light" style={styles.iconBlur}>
-            <Ionicons name="chevron-back" size={24} color="#FFF" />
+        <TouchableOpacity onPress={() => navigation.goBack()} style={[styles.iconButtonGlass, { backgroundColor: theme.iconBg, borderColor: theme.iconBorder }]}>
+          <BlurView intensity={20} tint={isDarkMode ? "dark" : "light"} style={styles.iconBlur}>
+            <Ionicons name="chevron-back" size={24} color={isDarkMode ? "#FFF" : "#000"} />
           </BlurView>
         </TouchableOpacity>
-        <Text style={styles.pageTitle}>ÉVÉNEMENTS</Text>
-        <TouchableOpacity onPress={toggleFilter} style={styles.iconButtonGlass}>
-          <BlurView intensity={20} tint="light" style={styles.iconBlur}>
-            <Ionicons name="filter" size={24} color="#FFF" />
+        <Text style={[styles.pageTitle, { color: isDarkMode ? "#FFF" : "#143287" }]}>ÉVÉNEMENTS</Text>
+        <TouchableOpacity onPress={toggleFilter} style={[styles.iconButtonGlass, { backgroundColor: theme.iconBg, borderColor: theme.iconBorder }]}>
+          <BlurView intensity={20} tint={isDarkMode ? "dark" : "light"} style={styles.iconBlur}>
+            <Ionicons name="filter" size={24} color={isDarkMode ? "#FFF" : "#000"} />
           </BlurView>
         </TouchableOpacity>
       </View>
 
       {/* SEARCH & FILTERS */}
       <View style={styles.searchSection}>
-        <BlurView intensity={20} tint="light" style={styles.searchBar}>
-          <Ionicons name="search" size={20} color="rgba(3, 3, 3, 0.6)" />
+        <BlurView intensity={20} tint={isDarkMode ? "dark" : "light"} style={[styles.searchBar, { backgroundColor: theme.searchBg }]}>
+          <Ionicons name="search" size={20} color={isDarkMode ? "rgba(255, 255, 255, 0.6)" : "rgba(3, 3, 3, 0.6)"} />
           <TextInput
             placeholder="Rechercher un événement..."
-            placeholderTextColor="rgba(0, 0, 0, 1)"
-            style={styles.searchInput}
+            placeholderTextColor={isDarkMode ? "rgba(255, 255, 255, 0.5)" : "rgba(0, 0, 0, 0.6)"}
+            style={[styles.searchInput, { color: theme.text }]}
             value={searchQuery}
             onChangeText={setSearchQuery}
           />
@@ -307,8 +320,8 @@ export default function EventsScreen({ route, navigation }) {
       )}
 
       <Animated.View style={[styles.sidebar, { transform: [{ translateX: sidebarAnim }] }]}>
-        <BlurView intensity={40} tint="light" style={styles.sidebarBlur}>
-          <Text style={styles.sidebarTitle}>FILTRES</Text>
+        <BlurView intensity={40} tint={isDarkMode ? "dark" : "light"} style={[styles.sidebarBlur, { backgroundColor: theme.sidebarBg }]}>
+          <Text style={[styles.sidebarTitle, { color: theme.text }]}>FILTRES</Text>
 
           <Text style={styles.sidebarLabel}>CATÉGORIES</Text>
           <View style={styles.sidebarFilterList}>
@@ -316,9 +329,17 @@ export default function EventsScreen({ route, navigation }) {
               <TouchableOpacity
                 key={c}
                 onPress={() => setSelectedCategory(c)}
-                style={[styles.sidebarFilterBtn, selectedCategory === c && styles.sidebarFilterBtnActive]}
+                style={[
+                  styles.sidebarFilterBtn,
+                  { backgroundColor: isDarkMode ? "rgba(255,255,255,0.05)" : "rgba(255,255,255,0.1)" },
+                  selectedCategory === c && (isDarkMode ? { backgroundColor: "#FFF" } : styles.sidebarFilterBtnActive)
+                ]}
               >
-                <Text style={[styles.sidebarFilterText, selectedCategory === c && styles.sidebarFilterTextActive]}>{c}</Text>
+                <Text style={[
+                  styles.sidebarFilterText,
+                  { color: isDarkMode ? "rgba(255,255,255,0.8)" : "rgba(255,255,255,0.8)" },
+                  selectedCategory === c && { color: "#000" }
+                ]}>{c}</Text>
               </TouchableOpacity>
             ))}
           </View>
@@ -331,9 +352,17 @@ export default function EventsScreen({ route, navigation }) {
               <TouchableOpacity
                 key={f}
                 onPress={() => setSelectedFilter(f)}
-                style={[styles.sidebarFilterBtn, selectedFilter === f && styles.sidebarFilterBtnActive]}
+                style={[
+                  styles.sidebarFilterBtn,
+                  { backgroundColor: isDarkMode ? "rgba(255,255,255,0.05)" : "rgba(255,255,255,0.1)" },
+                  selectedFilter === f && (isDarkMode ? { backgroundColor: "#FFF" } : styles.sidebarFilterBtnActive)
+                ]}
               >
-                <Text style={[styles.sidebarFilterText, selectedFilter === f && styles.sidebarFilterTextActive]}>{f}</Text>
+                <Text style={[
+                  styles.sidebarFilterText,
+                  { color: isDarkMode ? "rgba(255,255,255,0.8)" : "rgba(255,255,255,0.8)" },
+                  selectedFilter === f && { color: "#000" }
+                ]}>{f}</Text>
               </TouchableOpacity>
             ))}
           </View>

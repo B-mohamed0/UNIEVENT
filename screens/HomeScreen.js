@@ -17,6 +17,7 @@ import { BlurView } from "expo-blur";
 import { LinearGradient } from "expo-linear-gradient";
 import BottomNav from "../components/navbar";
 import { API_URL } from "../config";
+import { useThemeContext } from "../context/ThemeContext";
 
 
 
@@ -44,6 +45,17 @@ const API_URL_EVENTS = `${API_URL}/events`;
 
 export default function HomeScreen({ route, navigation }) {
   const { nom, id } = route.params;
+  const { isDarkMode } = useThemeContext();
+
+  const theme = {
+    background: isDarkMode ? "#0f172aff" : "#F1F5F9",
+    text: isDarkMode ? "#F8FAFC" : "#0F172A",
+    textSecondary: isDarkMode ? "#838383ff" : "rgba(67, 67, 67, 0.6)",
+    card: isDarkMode ? "#1E293B" : "#FFFFFF",
+    iconBg: isDarkMode ? "rgba(255, 255, 255, 0.13)" : "rgba(0, 74, 143, 0.46)",
+    iconBorder: isDarkMode ? "rgba(255, 255, 255, 0.09)" : "rgba(255, 255, 255, 0.13)",
+    statCardBg: isDarkMode ? "rgba(139, 139, 139, 0.08)" : "rgba(255, 255, 255, 0.2)",
+  };
 
   const [openEventId, setOpenEventId] = useState(null);
 
@@ -330,7 +342,7 @@ export default function HomeScreen({ route, navigation }) {
     if (upcomingEvents.length === 0) {
       return (
         <BlurView intensity={10} tint="light" style={styles.noEventCard}>
-          <Ionicons name="calendar-outline" size={40} color="#0050acff" />
+          <Ionicons name="calendar-outline" size={40} color="#88c6ffff" />
           <Text style={styles.noEventText}>Aucun événement à venir</Text>
         </BlurView>
       );
@@ -356,12 +368,12 @@ export default function HomeScreen({ route, navigation }) {
 
   return (
     <ImageBackground
-      source={require("../assets/project/estwh.png")}
-      style={{ flex: 1 }}
+      source={isDarkMode ? require("../assets/project/estblack.png") : require("../assets/project/estwh.png")}
+      style={{ flex: 1, backgroundColor: theme.background }}
       resizeMode="cover"
     >
       <StatusBar
-        barStyle="dark-content"
+        barStyle={isDarkMode ? "light-content" : "dark-content"}
         backgroundColor="transparent"
         translucent
       />
@@ -369,27 +381,27 @@ export default function HomeScreen({ route, navigation }) {
       {/* HEADER FIXE */}
       <View style={styles.header}>
         <TouchableOpacity
-          style={styles.iconButtonGlass}
+          style={[styles.iconButtonGlass, { backgroundColor: theme.iconBg, borderColor: theme.iconBorder }]}
           onPress={() => console.log("Notifs")}
         >
-          <BlurView intensity={20} tint="light" style={styles.iconBlur}>
-            <Ionicons name="notifications" size={20} color="#ffffffff" />
+          <BlurView intensity={20} tint={isDarkMode ? "dark" : "light"} style={styles.iconBlur}>
+            <Ionicons name="notifications" size={20} color={isDarkMode ? "#FFF" : "#ffffffff"} />
           </BlurView>
         </TouchableOpacity>
 
         <View style={styles.userInfo}>
-          <Text style={styles.dateText}>{userData.dateInfo}</Text>
+          <Text style={[styles.dateText, { color: theme.text }]}>{userData.dateInfo}</Text>
         </View>
 
         <TouchableOpacity
-          style={styles.iconButtonGlass}
+          style={[styles.iconButtonGlass, { backgroundColor: theme.iconBg, borderColor: theme.iconBorder }]}
           onPress={() => navigation.navigate("StudentProfile", { id, nom: userData.name })}
         >
-          <BlurView intensity={20} tint="light" style={styles.iconBlur}>
+          <BlurView intensity={20} tint={isDarkMode ? "dark" : "light"} style={styles.iconBlur}>
             {userData.photo ? (
               <Image source={{ uri: userData.photo }} style={styles.headerProfilePhoto} />
             ) : (
-              <Ionicons name="person" size={20} color="#ffffffff" />
+              <Ionicons name="person" size={20} color={isDarkMode ? "#FFF" : "#ffffffff"} />
             )}
           </BlurView>
         </TouchableOpacity>
@@ -417,8 +429,8 @@ export default function HomeScreen({ route, navigation }) {
           activeOpacity={0.7}
         >
           <View>
-            <Text style={styles.greetingText}>{userData.greeting}</Text>
-            <Text style={styles.nameText}>{userData.name}</Text>
+            <Text style={[styles.greetingText, { color: theme.textSecondary }]}>{userData.greeting}</Text>
+            <Text style={[styles.nameText, { color: theme.text }]}>{userData.name}</Text>
           </View>
         </TouchableOpacity>
         {/* CAROUSEL */}
@@ -426,24 +438,24 @@ export default function HomeScreen({ route, navigation }) {
 
         {/* STATS */}
         <View style={styles.statsContainer}>
-          <BlurView intensity={10} tint="light" style={styles.statCard}>
-            <Ionicons name="calendar" size={40} color="#000" />
-            <Text style={styles.statLabel}>Événements à venir</Text>
-            <Text style={styles.statNumber}>
+          <BlurView intensity={20} tint={isDarkMode ? "dark" : "light"} style={[styles.statCard, { backgroundColor: theme.statCardBg }]}>
+            <Ionicons name="calendar" size={40} color="#878787ff" />
+            <Text style={[styles.statLabel, { color: theme.textSecondary }]}>Événements à venir</Text>
+            <Text style={[styles.statNumber, { color: theme.text }]}>
               {userData.stats.upcomingEvents}
             </Text>
           </BlurView>
 
-          <BlurView intensity={10} tint="light" style={styles.statCard}>
-            <Ionicons name="time" size={40} color="#000" />
-            <Text style={styles.statLabel}>Événements d'aujourd'hui</Text>
-            <Text style={styles.statNumber}>{userData.stats.todayEvents}</Text>
+          <BlurView intensity={20} tint={isDarkMode ? "dark" : "light"} style={[styles.statCard, { backgroundColor: theme.statCardBg }]}>
+            <Ionicons name="time" size={40} color="#dfb600ff" />
+            <Text style={[styles.statLabel, { color: theme.textSecondary }]}>Événements d'aujourd'hui</Text>
+            <Text style={[styles.statNumber, { color: theme.text }]}>{userData.stats.todayEvents}</Text>
           </BlurView>
 
-          <BlurView intensity={10} tint="light" style={styles.statCard}>
-            <Ionicons name="checkmark-circle" size={40} color="#000" />
-            <Text style={styles.statLabel}>Présences validées</Text>
-            <Text style={styles.statNumber}>
+          <BlurView intensity={20} tint={isDarkMode ? "dark" : "light"} style={[styles.statCard, { backgroundColor: theme.statCardBg }]}>
+            <Ionicons name="checkmark-circle" size={40} color="#34D399" />
+            <Text style={[styles.statLabel, { color: theme.textSecondary }]}>Présences validées</Text>
+            <Text style={[styles.statNumber, { color: theme.text }]}>
               {userData.stats.completedEvents}
             </Text>
           </BlurView>
@@ -498,12 +510,12 @@ export default function HomeScreen({ route, navigation }) {
             <TouchableOpacity
               style={styles.actionButtonWrapper}
               onPress={() =>
-                navigation.navigate("StudentProfile", { id, nom: userData.name })
+                navigation.navigate("StudentStats", { id, nom })
               }
             >
-              <View style={styles.actionButtonOutline}>
-                <Text style={styles.actionButtonOutlineText}>
-                  Modifier le Profil
+              <View style={[styles.actionButtonOutline, { borderColor: isDarkMode ? "rgba(255, 255, 255, 0.2)" : "#01419aff" }]}>
+                <Text style={[styles.actionButtonOutlineText, { color: isDarkMode ? "#F8FAFC" : "#01419aff" }]}>
+                  Statistiques
                 </Text>
               </View>
             </TouchableOpacity>
@@ -567,7 +579,7 @@ const styles = StyleSheet.create({
   userInfo: { alignItems: "center" },
   dateText: {
     fontSize: 25,
-    color: "#333",
+    color: "#000000ff",
     fontWeight: "500",
     marginTop: 15,
     fontFamily: "jokeyone",
@@ -819,13 +831,13 @@ const styles = StyleSheet.create({
     marginHorizontal: 20,
     marginVertical: 15,
     alignItems: "center",
-    backgroundColor: "rgba(255, 255, 255, 0.2)",
+    backgroundColor: "rgba(255, 255, 255, 0.03)",
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.3)",
+    borderColor: "rgba(255, 255, 255, 0.16)",
     overflow: "hidden",
   },
   noEventText: {
-    color: "#0050acff",
+    color: "#b3b3b3ff",
     fontSize: 14,
     marginTop: 10,
     fontWeight: "600",
@@ -900,7 +912,7 @@ const styles = StyleSheet.create({
   },
 
   actionButtonOutlineText: {
-    color: "#000000ff",
+    color: "#eff1f3ff",
     fontSize: 17,
     fontWeight: "600",
     fontFamily: "jokeyone",
