@@ -4,6 +4,10 @@ const bcrypt = require("bcrypt");
 const cors = require("cors");
 const helmet = require("helmet");
 const nodemailer = require("nodemailer");
+const jwt = require("jsonwebtoken");
+require("dotenv").config();
+
+const JWT_SECRET = process.env.JWT_SECRET || "fallback_secret";
 
 const app = express();
 
@@ -141,7 +145,13 @@ app.post("/api/auth/inscription", async (req, res) => {
       [nom, email, cne, passwordhasher]
     );
 
-    res.json({ message: "Inscription réussie ✅", user: { nom, cne } });
+    const token = jwt.sign(
+      { id: cne, role: "STUDENT", nom },
+      JWT_SECRET,
+      { expiresIn: "30d" }
+    );
+
+    res.json({ message: "Inscription réussie ✅", user: { nom, id: cne, role: "STUDENT" }, token });
   } catch (error) {
     console.error("ERREUR SQL DÉTAILLÉE :", error.message);
     res.status(500).json({ message: "Erreur lors de l'enregistrement", dev_detail: error.message });
@@ -192,9 +202,16 @@ app.post("/api/auth/login", async (req, res) => {
       });
     }
 
+    const token = jwt.sign(
+      { id: user.id, role: user.role, nom: user.nom },
+      JWT_SECRET,
+      { expiresIn: "30d" }
+    );
+
     res.json({
       message: "Connexion réussie ✅",
       user: { nom: user.nom, id: user.id, role: user.role, photo: user.photo },
+      token
     });
   } catch (error) {
     console.error("BACKEND ERROR:", error);
@@ -325,7 +342,12 @@ app.get("/api/organizer/events-week/:id", async (req, res) => {
       [id, startOfWeek, endOfWeek]
     );
 
-    res.json(result.rows);
+    const events = result.rows.map(event => ({
+      ...event,
+      event_status: formatEventStatus(event.status, event.date, event.heure_debut, event.heure_fin)
+    }));
+
+    res.json(events);
   } catch (error) {
     console.error("Error fetching events of the week:", error);
     res.status(500).json({ error: "Erreur serveur" });
@@ -380,8 +402,14 @@ app.get("/api/organizer/manage/:eventId", async (req, res) => {
       [eventId]
     );
 
+    const event = eventResult.rows[0];
+    const eventWithStatus = {
+      ...event,
+      event_status: formatEventStatus(event.status, event.date, event.heure_debut, event.heure_fin)
+    };
+
     res.json({
-      event: eventResult.rows[0],
+      event: eventWithStatus,
       participants: participantsResult.rows
     });
   } catch (error) {

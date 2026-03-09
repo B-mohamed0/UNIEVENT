@@ -19,6 +19,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import BottomNav from "../components/navbar";
 import { API_URL } from "../config";
 import { useThemeContext } from "../context/ThemeContext";
+import { useAuth } from "../context/AuthContext";
 
 const { width, height: SCREEN_HEIGHT } = Dimensions.get("window");
 
@@ -32,6 +33,7 @@ export default function StudentProfile({ route, navigation }) {
         id: id,
     });
     const { isDarkMode: darkMode, toggleDarkMode } = useThemeContext();
+    const { logout } = useAuth();
 
     // 🎨 Couleurs locales pour le Profil
     const theme = {
@@ -78,11 +80,8 @@ export default function StudentProfile({ route, navigation }) {
                 {
                     text: "Se déconnecter",
                     style: "destructive",
-                    onPress: () => {
-                        navigation.reset({
-                            index: 0,
-                            routes: [{ name: "QuiSuisJe" }],
-                        });
+                    onPress: async () => {
+                        await logout();
                     },
                 },
             ]

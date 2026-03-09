@@ -8,6 +8,7 @@ import {
   StatusBar,
   ScrollView,
   TextInput,
+  ImageBackground,
 } from "react-native";
 import { BlurView } from "expo-blur";
 import { Ionicons } from "@expo/vector-icons";

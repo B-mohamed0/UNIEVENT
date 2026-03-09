@@ -9,6 +9,7 @@ import { BlurView } from "expo-blur";
 import { useNavigation } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 import { API_URL } from "../config";
+import { useAuth } from "../context/AuthContext";
 
 const { width, height } = Dimensions.get("window");
 
@@ -17,6 +18,7 @@ const API_BASE = `${API_URL}/auth`;
 
 export default function Studentinscription() {
   const navigation = useNavigation();
+  const { login } = useAuth();
   // Passage à 5 étapes : 1:Nom, 2:Email, 3:Vérification OTP, 4:CNE, 5:Password
   const [step, setStep] = useState(1);
   const [showPassword, setShowPassword] = useState(false);
@@ -146,7 +148,7 @@ export default function Studentinscription() {
       const data = await response.json();
       if (response.ok) {
         Alert.alert("Succès", `Bienvenue ${data.user.nom} !`);
-        navigation.navigate("Home", { nom: data.user.nom, id: data.user.cne });
+        await login(data.user, data.token);
       } else {
         setError(data.message);
       }

@@ -50,7 +50,7 @@ export default function EventsScreen({ route, navigation }) {
     iconBg: isDarkMode ? "rgba(255, 255, 255, 0.1)" : "rgba(255, 255, 255, 0.22)",
     iconBorder: isDarkMode ? "rgba(255, 255, 255, 0.2)" : "rgba(255, 255, 255, 0.38)",
     searchBg: isDarkMode ? "rgba(255, 255, 255, 0.05)" : "rgba(255, 255, 255, 0.15)",
-    sidebarBg: isDarkMode ? "rgba(15, 23, 42, 0.95)" : "rgba(142, 142, 142, 0.12)",
+    sidebarBg: isDarkMode ? "rgba(0, 0, 0, 0)" : "rgba(255, 255, 255, 0)",
   };
 
   const [events, setEvents] = useState([]);

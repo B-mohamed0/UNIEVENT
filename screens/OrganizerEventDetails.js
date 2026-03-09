@@ -79,15 +79,17 @@ const OrganizerEventDetails = ({ route, navigation }) => {
                 imageStyle={styles.bodyImage}
             >
                 <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-                    <TouchableOpacity
-                        style={styles.scanButton}
-                        onPress={() => navigation.navigate("Scanner", { eventId: eventData.id })}
-                    >
-                        <Ionicons name="qr-code-outline" size={25} color="#FFF" />
-                        <Text style={{ color: "#FFF", marginLeft: 8, marginTop: 10, marginBottom: 10, fontFamily: "Insignia" }}>
-                            Scanner un étudiant
-                        </Text>
-                    </TouchableOpacity>
+                    {eventData.event_status === "En cours" && (
+                        <TouchableOpacity
+                            style={styles.scanButton}
+                            onPress={() => navigation.navigate("Scanner", { eventId: eventData.id })}
+                        >
+                            <Ionicons name="qr-code-outline" size={25} color="#FFF" />
+                            <Text style={{ color: "#FFF", marginLeft: 8, marginTop: 10, marginBottom: 10, fontFamily: "Insignia" }}>
+                                Scanner un étudiant
+                            </Text>
+                        </TouchableOpacity>
+                    )}
                     <BlurView intensity={20} tint={themeColors.blurTint} style={[styles.card, { backgroundColor: themeColors.cardBg }]}>
                         <Text style={[styles.sectionTitle, { color: themeColors.text }]}>Description</Text>
                         <Text style={[styles.descriptionText, { color: themeColors.text }]}>{eventData.description || "Aucune description fournie."}</Text>

@@ -17,6 +17,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import * as ImagePicker from "expo-image-picker";
 import OrganizerBackground from "../components/OrganizerBackground";
 import { API_URL } from "../config";
+import { useAuth } from "../context/AuthContext";
 
 const { width } = Dimensions.get("window");
 
@@ -30,6 +31,7 @@ export default function OrganizerProfile({ route, navigation }) {
         email: "",
         photo: null,
     });
+    const { logout } = useAuth();
 
     const API_URL_ORG = `${API_URL}/organizer`;
 
@@ -128,11 +130,8 @@ export default function OrganizerProfile({ route, navigation }) {
                 {
                     text: "Se déconnecter",
                     style: "destructive",
-                    onPress: () => {
-                        navigation.reset({
-                            index: 0,
-                            routes: [{ name: "QuiSuisJe" }],
-                        });
+                    onPress: async () => {
+                        await logout();
                     },
                 },
             ]

@@ -149,7 +149,7 @@ const EventInfo = ({ route, navigation }) => {
                 <View style={[styles.glassButton, { borderColor: "#00F908" }]}>
                   <Ionicons name="checkmark-circle" size={24} color="#00F908" />
                 </View>
-              ) : (
+              ) : event.event_status !== "Terminé" ? (
                 <TouchableOpacity
                   style={styles.glassButton}
                   onPress={() =>
@@ -163,7 +163,7 @@ const EventInfo = ({ route, navigation }) => {
                 >
                   <Text style={styles.glassText}>S’inscrire</Text>
                 </TouchableOpacity>
-              )}
+              ) : null}
             </BlurView>
           </View>
 
