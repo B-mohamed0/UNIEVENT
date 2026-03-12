@@ -13,16 +13,14 @@ import {
 import { BlurView } from "expo-blur";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
-import { useThemeContext } from "../context/ThemeContext";
 import OrganizerBackground from "../components/OrganizerBackground";
-import ThemeToggle from "../components/ThemeToggle";
 import { API_URL } from "../config";
 
 const { width } = Dimensions.get("window");
 
 export default function ManageEvent({ route, navigation }) {
   const { event, organizerId, nom } = route.params;
-  const { isDarkMode } = useThemeContext();
+  const isDarkMode = false;
   const [data, setData] = useState({ event: event, participants: [] });
   const [stats, setStats] = useState({
     totalInscrit: 0,
@@ -107,7 +105,9 @@ export default function ManageEvent({ route, navigation }) {
           <Text style={[styles.headerTitle, { color: themeColors.headerTitle }]}>{event.nom_evenement}</Text>
           <Text style={[styles.headerSubTitle, { color: themeColors.subText }]}>Aujourd'hui, {new Date(event.date).toLocaleDateString()}</Text>
         </View>
-        <ThemeToggle color={themeColors.text} />
+        <View style={styles.actionIcon}>
+          <Ionicons name="sunny-outline" size={20} color={themeColors.text} />
+        </View>
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContent}>

@@ -12,6 +12,7 @@ import { useNavigation, useRoute } from "@react-navigation/native";
 import { LinearGradient } from "expo-linear-gradient";
 import { BlurView } from "expo-blur";
 import { useNavbarContext } from "../context/NavbarContext";
+import { useThemeContext } from "../context/ThemeContext";
 
 const AnimatedLinearGradient = Animated.createAnimatedComponent(LinearGradient);
 
@@ -35,6 +36,7 @@ const BottomNav = ({ id, nom }) => {
   const navigation = useNavigation();
   const route = useRoute();
   const { lastIndex, setLastIndex } = useNavbarContext();
+  const { isDarkMode } = useThemeContext();
 
   const getActiveIndex = () => {
     for (let i = 0; i < TABS.length; i++) {
@@ -80,12 +82,12 @@ const BottomNav = ({ id, nom }) => {
 
   return (
     <View style={styles.wrapper}>
-      <View style={styles.glassContainer}>
+      <View style={[styles.glassContainer, { borderColor: isDarkMode ? "rgba(255,255,255,0.1)" : "rgba(255,255,255,0.3)" }]}>
         {/* Blur background */}
-        <BlurView intensity={10} tint="light" style={styles.blur} />
+        <BlurView intensity={isDarkMode ? 25 : 10} tint={isDarkMode ? "dark" : "light"} style={styles.blur} />
 
         {/* Border overlay */}
-        <View style={styles.glassOverlay} />
+        <View style={[styles.glassOverlay, { backgroundColor: isDarkMode ? "rgba(0, 0, 0, 0.06)" : "rgba(255, 255, 255, 0.22)" }]} />
 
         {/* ── Sliding Indicator ── */}
         {activeIndex !== -1 && (
@@ -116,7 +118,7 @@ const BottomNav = ({ id, nom }) => {
               <Ionicons
                 name={isTabActive ? tab.icon : tab.iconOutline}
                 size={24}
-                color={isTabActive ? "#ffffffff" : "#000000ff"}
+                color={isTabActive ? "#ffffffff" : (isDarkMode ? "rgba(255, 255, 255, 0.85)" : "#000000ff")}
               />
             </TouchableOpacity>
           );

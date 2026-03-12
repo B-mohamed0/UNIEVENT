@@ -14,11 +14,13 @@ import { BlurView } from "expo-blur";
 import { useNavigation } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 import { API_URL } from "../config";
+import { useAuth } from "../context/AuthContext";
 
 const { width, height } = Dimensions.get("window");
 
 export default function OrganizerScreen() {
   const navigation = useNavigation();
+  const { login } = useAuth();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -35,10 +37,7 @@ export default function OrganizerScreen() {
       const data = await response.json();
 
       if (response.ok) {
-        navigation.navigate("OrganizerDashboard", {
-          id: data.user.id,
-          nom: data.user.nom
-        });
+        await login(data.user, data.token);
       } else {
         alert(data.message || "Erreur de connexion");
       }

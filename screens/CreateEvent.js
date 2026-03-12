@@ -17,16 +17,14 @@ import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import OrganizerNavbar from "../components/OrganizerNavbar";
-import { useThemeContext } from "../context/ThemeContext";
 import OrganizerBackground from "../components/OrganizerBackground";
-import ThemeToggle from "../components/ThemeToggle";
 import { API_URL } from "../config";
 
 const { width } = Dimensions.get("window");
 
 export default function CreateEvent({ route, navigation }) {
   const { id, nom, editEvent } = route.params;
-  const { isDarkMode } = useThemeContext();
+  const isDarkMode = false;
 
   const themeColors = {
     text: isDarkMode ? "#FFF" : "#0A0A1A",
@@ -100,6 +98,17 @@ export default function CreateEvent({ route, navigation }) {
     // Validation des heures (Heure de fin après l'heure de début)
     if (form.heureFin <= form.heureDebut) {
       alert("L'heure de fin doit être strictement supérieure à l'heure de début.");
+      return;
+    }
+
+    // Validation capacité max
+    const capacity = parseInt(form.capaciteMax);
+    if (isNaN(capacity) || capacity <= 0) {
+      alert("La capacité doit être un nombre valide supérieur à 0.");
+      return;
+    }
+    if (capacity > 500) {
+      alert("La capacité maximale autorisée est de 500 personnes.");
       return;
     }
 
@@ -195,7 +204,9 @@ export default function CreateEvent({ route, navigation }) {
         <View style={styles.titleContainer}>
           <Text style={[styles.headerTitle, { color: themeColors.headerTitle }]}>{editEvent ? "Modifier" : "Créer"} Événement</Text>
         </View>
-        <ThemeToggle color={themeColors.text} />
+        <View style={styles.actionIcon}>
+          <Ionicons name="sunny-outline" size={20} color={themeColors.text} />
+        </View>
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
@@ -290,9 +301,23 @@ export default function CreateEvent({ route, navigation }) {
               <Ionicons name="people-outline" size={20} color={themeColors.text} />
               <TextInput
                 style={[styles.input, { flex: 1, textAlign: 'center', borderBottomWidth: 0, color: themeColors.text }]}
-                keyboardType="numeric"
+                keyboardType="number-pad"
                 value={form.capaciteMax}
-                onChangeText={(text) => setForm({ ...form, capaciteMax: text })}
+                placeholder="Max 500"
+                placeholderTextColor={themeColors.placeholder}
+                maxLength={3}
+                onChangeText={(text) => {
+                  // Ne garder que les chiffres
+                  const cleaned = text.replace(/[^0-9]/g, '');
+
+                  // Si le nombre est supérieur à 500, on le limite à 500
+                  const numericValue = parseInt(cleaned, 10);
+                  if (numericValue > 500) {
+                    setForm({ ...form, capaciteMax: "500" });
+                  } else {
+                    setForm({ ...form, capaciteMax: cleaned });
+                  }
+                }}
               />
             </View>
           </View>

@@ -8,15 +8,29 @@ import {
   StatusBar,
   ScrollView,
   TextInput,
+  ImageBackground,
 } from "react-native";
 import { BlurView } from "expo-blur";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import OrganizerBackground from "../components/OrganizerBackground";
 import { API_URL } from "../config";
+import { useThemeContext } from "../context/ThemeContext";
+import estwh from "../assets/project/estwh.png";
+import estblack from "../assets/project/estblack.png";
 
 const Inscription = ({ route, navigation }) => {
   const { eventId, studentId, nom, eventName } = route.params;
+  const { isDarkMode } = useThemeContext();
+
+  const theme = {
+    background: isDarkMode ? "#0f172aff" : "#F1F5F9",
+    text: isDarkMode ? "#F8FAFC" : "#FFF",
+    textSecondary: isDarkMode ? "#94A3B8" : "rgba(255,255,255,0.6)",
+    card: isDarkMode ? "rgba(30, 41, 59, 0.7)" : "rgba(0, 0, 0, 0.3)",
+    inputBg: isDarkMode ? "rgba(255, 255, 255, 0.05)" : "rgba(255,255,255,0.1)",
+    border: isDarkMode ? "rgba(255, 255, 255, 0.1)" : "rgba(255,255,255,0.05)",
+  };
 
   const [participantName, setParticipantName] = useState(nom || "");
   const [filiere, setFiliere] = useState("GI");
@@ -64,26 +78,32 @@ const Inscription = ({ route, navigation }) => {
   };
 
   return (
-    <OrganizerBackground>
-      <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
+    <View style={[styles.container, { backgroundColor: theme.background }]}>
+      <StatusBar barStyle={isDarkMode ? "light-content" : "light-content"} translucent backgroundColor="transparent" />
+      <ImageBackground
+        source={isDarkMode ? estblack : estwh}
+        style={StyleSheet.absoluteFillObject}
+        resizeMode="cover"
+      />
+      {!isDarkMode && <View style={[StyleSheet.absoluteFillObject, { backgroundColor: "rgba(0, 0, 0, 0.3)" }]} />}
 
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <Ionicons name="chevron-back" size={28} color="#FFF" />
+          <Ionicons name="chevron-back" size={28} color={theme.text} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Inscription</Text>
+        <Text style={[styles.headerTitle, { color: theme.text }]}>Inscription</Text>
         <View style={{ width: 40 }} />
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        <BlurView intensity={30} tint="dark" style={styles.formCard}>
-          <Text style={styles.eventLabel}>Événement :</Text>
-          <Text style={styles.eventName}>{eventName}</Text>
+        <BlurView intensity={30} tint={isDarkMode ? "dark" : "dark"} style={[styles.formCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
+          <Text style={[styles.eventLabel, { color: theme.textSecondary }]}>Événement :</Text>
+          <Text style={[styles.eventName, { color: theme.text }]}>{eventName}</Text>
 
           <View style={styles.section}>
-            <Text style={styles.label}>Nom complet</Text>
+            <Text style={[styles.label, { color: theme.text }]}>Nom complet</Text>
             <TextInput
-              style={styles.nameInput}
+              style={[styles.nameInput, { backgroundColor: theme.inputBg, borderColor: theme.border, color: theme.text }]}
               placeholder="Votre nom..."
               placeholderTextColor="rgba(255,255,255,0.4)"
               value={participantName}
@@ -92,13 +112,14 @@ const Inscription = ({ route, navigation }) => {
           </View>
 
           <View style={styles.section}>
-            <Text style={styles.label}>Votre Filière</Text>
+            <Text style={[styles.label, { color: theme.text }]}>Votre Filière</Text>
             <View style={styles.optionsContainer}>
               {filieres.map((item) => (
                 <TouchableOpacity
                   key={item}
                   style={[
                     styles.optionButton,
+                    { backgroundColor: theme.inputBg, borderColor: theme.border },
                     filiere === item && styles.optionButtonActive,
                   ]}
                   onPress={() => setFiliere(item)}
@@ -113,13 +134,14 @@ const Inscription = ({ route, navigation }) => {
           </View>
 
           <View style={styles.section}>
-            <Text style={styles.label}>Année d'étude</Text>
+            <Text style={[styles.label, { color: theme.text }]}>Année d'étude</Text>
             <View style={styles.optionsContainer}>
               {annees.map((item) => (
                 <TouchableOpacity
                   key={item}
                   style={[
                     styles.optionButton,
+                    { backgroundColor: theme.inputBg, borderColor: theme.border },
                     annee === item && styles.optionButtonActive,
                   ]}
                   onPress={() => setAnnee(item)}
@@ -145,7 +167,7 @@ const Inscription = ({ route, navigation }) => {
           </TouchableOpacity>
         </BlurView>
       </ScrollView>
-    </OrganizerBackground>
+    </View>
   );
 };
 

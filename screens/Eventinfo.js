@@ -15,10 +15,12 @@ import BackButton from "../components/BackButton";
 import BottomNav from "../components/navbar";
 import { useFocusEffect } from "@react-navigation/native";
 import { API_URL } from "../config";
+import { useThemeContext } from "../context/ThemeContext";
 
 
 import conference from "../assets/project/conference.png";
 import estwhite from "../assets/project/estwhite.png";
+import estblack from "../assets/project/estblack.png";
 import { LinearGradient } from "expo-linear-gradient";
 
 const THEME_GRADIENTS = {
@@ -77,6 +79,14 @@ const PulsingDot = () => {
 
 const EventInfo = ({ route, navigation }) => {
   const { eventId, studentId, nom } = route.params;
+  const { isDarkMode } = useThemeContext();
+
+  const theme = {
+    background: isDarkMode ? "#414141ff" : "#F1F5F9",
+    card: isDarkMode ? "rgba(162, 162, 162, 0.12)" : "rgba(56, 57, 57, 0.14)",
+    text: isDarkMode ? "#ffffffff" : "#0F172A",
+    textSecondary: isDarkMode ? "#94A3B8" : "#64748B",
+  };
 
   const [event, setEvent] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -139,7 +149,7 @@ const EventInfo = ({ route, navigation }) => {
                 <View style={[styles.glassButton, { borderColor: "#00F908" }]}>
                   <Ionicons name="checkmark-circle" size={24} color="#00F908" />
                 </View>
-              ) : (
+              ) : event.event_status !== "Terminé" ? (
                 <TouchableOpacity
                   style={styles.glassButton}
                   onPress={() =>
@@ -153,7 +163,7 @@ const EventInfo = ({ route, navigation }) => {
                 >
                   <Text style={styles.glassText}>S’inscrire</Text>
                 </TouchableOpacity>
-              )}
+              ) : null}
             </BlurView>
           </View>
 
@@ -181,56 +191,55 @@ const EventInfo = ({ route, navigation }) => {
       </ImageBackground >
 
       {/* BACKGROUND ESTWH FIXE */}
-      < ImageBackground
-        source={estwhite}
-        style={styles.estBackground}
-        imageStyle={styles.estImage}
+      <ImageBackground
+        source={isDarkMode ? estblack : estwhite} // Use a dark version if you have one, or just background color
+        style={[styles.estBackground, { backgroundColor: theme.background }]}
+        imageStyle={[styles.estImage]}
       >
         {/* SEULE PARTIE SCROLLABLE */}
-        < ScrollView
+        <ScrollView
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
         >
           {/* DESCRIPTION */}
-          < BlurView intensity={20} tint="light" style={styles.card} >
-            <Text style={styles.sectionTitle}>Description</Text>
-            <Text>{event.description}</Text>
-          </BlurView >
+          <BlurView intensity={20} tint={isDarkMode ? "dark" : "light"} style={[styles.card, { backgroundColor: theme.card }]}>
+            <Text style={[styles.sectionTitle, { color: theme.text }]}>Description</Text>
+            <Text style={{ color: theme.text }}>{event.description}</Text>
+          </BlurView>
 
           {/* INFORMATIONS */}
-          < BlurView intensity={20} tint="light" style={styles.card} >
-            <Text style={styles.sectionTitle}>Informations</Text>
+          <BlurView intensity={20} tint={isDarkMode ? "dark" : "light"} style={[styles.card, { backgroundColor: theme.card }]}>
+            <Text style={[styles.sectionTitle, { color: theme.text }]}>Informations</Text>
 
             <View style={styles.row}>
-              <Ionicons name="calendar-outline" size={25} />
-              <Text style={styles.infoText}>
+              <Ionicons name="calendar-outline" size={25} color={theme.text} />
+              <Text style={[styles.infoText, { color: theme.text }]}>
                 {new Date(event.date).toLocaleDateString()}
               </Text>
             </View>
 
             <View style={styles.row}>
-              <Ionicons name="time-outline" size={25} />
-              <Text style={styles.infoText}>
+              <Ionicons name="time-outline" size={25} color={theme.text} />
+              <Text style={[styles.infoText, { color: theme.text }]}>
                 {event.heure_debut?.slice(0, 5)} - {event.heure_fin?.slice(0, 5)}
               </Text>
             </View>
 
             <View style={styles.row}>
-              <Ionicons name="location-outline" size={25} />
-              <Text style={styles.infoText}>{event.lieu}</Text>
+              <Ionicons name="location-outline" size={25} color={theme.text} />
+              <Text style={[styles.infoText, { color: theme.text }]}>{event.lieu}</Text>
             </View>
-          </BlurView >
+          </BlurView>
 
           {/* ORGANISATION */}
-          < BlurView intensity={20} tint="light" style={styles.card} >
-            <Text style={styles.sectionTitle}>Organisation</Text>
+          <BlurView intensity={20} tint={isDarkMode ? "dark" : "light"} style={[styles.card, { backgroundColor: theme.card }]}>
+            <Text style={[styles.sectionTitle, { color: theme.text }]}>Organisation</Text>
             <View style={styles.inforga}>
-              <Text><Text style={{ fontWeight: 'bold' }}>Organisateur :</Text> {event.organisateur_nom}</Text>
-              <Text><Text style={{ fontWeight: 'bold' }}>Animateur :</Text> {event.nom_animateur}</Text>
-              <Text><Text style={{ fontWeight: 'bold' }}>Catégorie :</Text> {event.categorie}</Text>
-
+              <Text style={{ color: theme.text }}><Text style={{ fontWeight: 'bold' }}>Organisateur :</Text> {event.organisateur_nom}</Text>
+              <Text style={{ color: theme.text }}><Text style={{ fontWeight: 'bold' }}>Animateur :</Text> {event.nom_animateur}</Text>
+              <Text style={{ color: theme.text }}><Text style={{ fontWeight: 'bold' }}>Catégorie :</Text> {event.categorie}</Text>
             </View>
-          </BlurView >
+          </BlurView>
 
           <View style={{ height: 120 }} />
         </ScrollView >

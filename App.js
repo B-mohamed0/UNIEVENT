@@ -1,6 +1,7 @@
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { useFonts } from "expo-font";
+import { View, ActivityIndicator } from "react-native";
 
 import SplashScreen from "./screens/SplashScreen";
 import QuiSuisJeScreen from "./screens/QuiSuisJeScreen";
@@ -22,12 +23,79 @@ import OrganizerStats from "./screens/OrganizerStats";
 import OrganizerProfile from "./screens/OrganizerProfile";
 import StudentStats from "./screens/StudentStats";
 import StudentProfile from "./screens/StudentProfile";
+import EditProfile from "./screens/EditProfile";
 import { NavbarProvider } from "./context/NavbarContext";
 import { ThemeProvider } from "./context/ThemeContext";
+import { AuthProvider, useAuth } from "./context/AuthContext";
 import inscription from "./screens/inscription";
 import Scanner from "./screens/Scanner";
 
 const Stack = createNativeStackNavigator();
+
+function RootNavigator() {
+  const { user, token, isLoading } = useAuth();
+
+  if (isLoading) {
+    return (
+      <View style={{ flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "#0f172aff" }}>
+        <ActivityIndicator size="large" color="#143287" />
+      </View>
+    );
+  }
+
+  return (
+    <Stack.Navigator screenOptions={{ headerShown: false, animation: "fade" }}>
+      {!token ? (
+        // Auth Stack
+        <>
+          <Stack.Screen name="Splash" component={SplashScreen} />
+          <Stack.Screen name="QuiSuisJe" component={QuiSuisJeScreen} />
+          <Stack.Screen name="Student" component={StudentScreen} />
+          <Stack.Screen name="Teacher" component={TeacherScreen} />
+          <Stack.Screen name="Organizer" component={OrganizerScreen} />
+          <Stack.Screen name="Admin" component={AdminScreen} />
+          <Stack.Screen name="Studentinscription" component={Studentinscription} />
+          <Stack.Screen name="Verificationemail" component={Verificationemail} />
+          <Stack.Screen name="inscription" component={inscription} />
+        </>
+      ) : (
+        // App Stack
+        <>
+          {user?.role === "ORGANIZER" ? (
+            <>
+              <Stack.Screen
+                name="OrganizerDashboard"
+                component={OrganizerDashboard}
+                initialParams={{ id: user.id, nom: user.nom }}
+              />
+              <Stack.Screen name="OrganizerEvents" component={OrganizerEvents} />
+              <Stack.Screen name="CreateEvent" component={CreateEvent} />
+              <Stack.Screen name="ManageEvent" component={ManageEvent} options={{ headerShown: false }} />
+              <Stack.Screen name="OrganizerEventDetails" component={OrganizerEventDetails} options={{ headerShown: false }} />
+              <Stack.Screen name="OrganizerStats" component={OrganizerStats} />
+              <Stack.Screen name="OrganizerProfile" component={OrganizerProfile} />
+            </>
+          ) : (
+            <>
+              <Stack.Screen
+                name="Home"
+                component={HomeScreen}
+                initialParams={{ id: user.id, nom: user.nom }}
+              />
+              <Stack.Screen name="Eventinfo" component={Eventinfo} />
+              <Stack.Screen name="Eventsscreen" component={Eventsscreen} />
+              <Stack.Screen name="StudentStats" component={StudentStats} />
+              <Stack.Screen name="StudentProfile" component={StudentProfile} />
+              <Stack.Screen name="EditProfile" component={EditProfile} />
+              <Stack.Screen name="Scanner" component={Scanner} />
+              <Stack.Screen name="inscription" component={inscription} />
+            </>
+          )}
+        </>
+      )}
+    </Stack.Navigator>
+  );
+}
 
 export default function App() {
   const [fontsLoaded] = useFonts({
@@ -42,41 +110,19 @@ export default function App() {
     daretro: require("./fonts/Daretro Mandra.ttf"),
   });
 
-  // attendre que la font soit chargée
   if (!fontsLoaded) {
     return null;
   }
 
   return (
     <ThemeProvider>
-      <NavbarProvider>
-        <NavigationContainer>
-          <Stack.Navigator screenOptions={{ headerShown: false, animation: "fade" }}>
-            <Stack.Screen name="Splash" component={SplashScreen} />
-            <Stack.Screen name="QuiSuisJe" component={QuiSuisJeScreen} />
-            <Stack.Screen name="Student" component={StudentScreen} />
-            <Stack.Screen name="Teacher" component={TeacherScreen} />
-            <Stack.Screen name="Organizer" component={OrganizerScreen} />
-            <Stack.Screen name="Admin" component={AdminScreen} />
-            <Stack.Screen name="Studentinscription" component={Studentinscription} />
-            <Stack.Screen name="Home" component={HomeScreen} />
-            <Stack.Screen name="Eventinfo" component={Eventinfo} />
-            <Stack.Screen name="Eventsscreen" component={Eventsscreen} />
-            <Stack.Screen name="Verificationemail" component={Verificationemail} />
-            <Stack.Screen name="OrganizerDashboard" component={OrganizerDashboard} />
-            <Stack.Screen name="OrganizerEvents" component={OrganizerEvents} />
-            <Stack.Screen name="CreateEvent" component={CreateEvent} />
-            <Stack.Screen name="ManageEvent" component={ManageEvent} options={{ headerShown: false }} />
-            <Stack.Screen name="OrganizerEventDetails" component={OrganizerEventDetails} options={{ headerShown: false }} />
-            <Stack.Screen name="OrganizerStats" component={OrganizerStats} />
-            <Stack.Screen name="OrganizerProfile" component={OrganizerProfile} />
-            <Stack.Screen name="StudentStats" component={StudentStats} />
-            <Stack.Screen name="StudentProfile" component={StudentProfile} />
-            <Stack.Screen name="inscription" component={inscription} />
-            <Stack.Screen name="Scanner" component={Scanner} />
-          </Stack.Navigator>
-        </NavigationContainer>
-      </NavbarProvider>
+      <AuthProvider>
+        <NavbarProvider>
+          <NavigationContainer>
+            <RootNavigator />
+          </NavigationContainer>
+        </NavbarProvider>
+      </AuthProvider>
     </ThemeProvider>
   );
 }

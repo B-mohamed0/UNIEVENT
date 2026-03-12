@@ -16,9 +16,7 @@ import { BlurView } from "expo-blur";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import OrganizerNavbar from "../components/OrganizerNavbar";
-import { useThemeContext } from "../context/ThemeContext";
 import OrganizerBackground from "../components/OrganizerBackground";
-import ThemeToggle from "../components/ThemeToggle";
 import { API_URL } from "../config";
 
 const { width } = Dimensions.get("window");
@@ -33,7 +31,7 @@ export default function OrganizerDashboard({ route, navigation }) {
     totalAttendances: 0,
     avgAttendance: 0,
   });
-  const { isDarkMode } = useThemeContext();
+  const isDarkMode = false;
   const [weekEvents, setWeekEvents] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -139,7 +137,7 @@ export default function OrganizerDashboard({ route, navigation }) {
             <View style={styles.actionBarDivider} />
 
             <View style={styles.actionIcon}>
-              <ThemeToggle color={themeColors.text} size={20} />
+              <Ionicons name="sunny-outline" size={20} color={themeColors.text} />
             </View>
 
             <View style={styles.actionBarDivider} />
@@ -237,7 +235,7 @@ export default function OrganizerDashboard({ route, navigation }) {
         </View>
       </ScrollView>
 
-      <OrganizerNavbar id={id} nom={nom} isDarkMode={isDarkMode} />
+      <OrganizerNavbar id={id} nom={nom} />
     </OrganizerBackground>
   );
 }

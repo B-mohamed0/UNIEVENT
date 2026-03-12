@@ -16,14 +16,14 @@ import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import * as ImagePicker from "expo-image-picker";
 import OrganizerBackground from "../components/OrganizerBackground";
-import { useThemeContext } from "../context/ThemeContext";
 import { API_URL } from "../config";
+import { useAuth } from "../context/AuthContext";
 
 const { width } = Dimensions.get("window");
 
 export default function OrganizerProfile({ route, navigation }) {
     const { id } = route.params;
-    const { isDarkMode } = useThemeContext();
+    const isDarkMode = false;
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [profile, setProfile] = useState({
@@ -31,6 +31,7 @@ export default function OrganizerProfile({ route, navigation }) {
         email: "",
         photo: null,
     });
+    const { logout } = useAuth();
 
     const API_URL_ORG = `${API_URL}/organizer`;
 
@@ -129,11 +130,8 @@ export default function OrganizerProfile({ route, navigation }) {
                 {
                     text: "Se déconnecter",
                     style: "destructive",
-                    onPress: () => {
-                        navigation.reset({
-                            index: 0,
-                            routes: [{ name: "QuiSuisJe" }],
-                        });
+                    onPress: async () => {
+                        await logout();
                     },
                 },
             ]
