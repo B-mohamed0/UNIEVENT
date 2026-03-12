@@ -72,6 +72,7 @@ function RootNavigator() {
               <Stack.Screen name="CreateEvent" component={CreateEvent} />
               <Stack.Screen name="ManageEvent" component={ManageEvent} options={{ headerShown: false }} />
               <Stack.Screen name="OrganizerEventDetails" component={OrganizerEventDetails} options={{ headerShown: false }} />
+              <Stack.Screen name="Scanner" component={Scanner} />
               <Stack.Screen name="OrganizerStats" component={OrganizerStats} />
               <Stack.Screen name="OrganizerProfile" component={OrganizerProfile} />
             </>

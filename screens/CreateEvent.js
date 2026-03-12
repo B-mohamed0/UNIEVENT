@@ -19,12 +19,13 @@ import DateTimePicker from "@react-native-community/datetimepicker";
 import OrganizerNavbar from "../components/OrganizerNavbar";
 import OrganizerBackground from "../components/OrganizerBackground";
 import { API_URL } from "../config";
+import { useThemeContext } from "../context/ThemeContext";
 
 const { width } = Dimensions.get("window");
 
 export default function CreateEvent({ route, navigation }) {
   const { id, nom, editEvent } = route.params;
-  const isDarkMode = false;
+  const { isDarkMode, toggleDarkMode } = useThemeContext();
 
   const themeColors = {
     text: isDarkMode ? "#FFF" : "#0A0A1A",
@@ -204,9 +205,9 @@ export default function CreateEvent({ route, navigation }) {
         <View style={styles.titleContainer}>
           <Text style={[styles.headerTitle, { color: themeColors.headerTitle }]}>{editEvent ? "Modifier" : "Créer"} Événement</Text>
         </View>
-        <View style={styles.actionIcon}>
-          <Ionicons name="sunny-outline" size={20} color={themeColors.text} />
-        </View>
+        <TouchableOpacity style={styles.actionIcon} onPress={toggleDarkMode}>
+          <Ionicons name={isDarkMode ? "moon-outline" : "sunny-outline"} size={20} color={themeColors.text} />
+        </TouchableOpacity>
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContent}>

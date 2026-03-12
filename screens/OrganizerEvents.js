@@ -16,11 +16,12 @@ import { Ionicons } from "@expo/vector-icons";
 import OrganizerNavbar from "../components/OrganizerNavbar";
 import OrganizerBackground from "../components/OrganizerBackground";
 import { API_URL } from "../config";
+import { useThemeContext } from "../context/ThemeContext";
 const { width } = Dimensions.get("window");
 
 export default function OrganizerEvents({ route, navigation }) {
   const { id, nom } = route.params;
-  const isDarkMode = false;
+  const { isDarkMode } = useThemeContext();
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState("Toutes");
