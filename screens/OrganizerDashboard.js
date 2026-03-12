@@ -11,6 +11,7 @@ import {
   ScrollView,
   FlatList,
   Animated,
+  TouchableWithoutFeedback,
 } from "react-native";
 import { BlurView } from "expo-blur";
 import { Ionicons } from "@expo/vector-icons";
@@ -18,6 +19,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import OrganizerNavbar from "../components/OrganizerNavbar";
 import OrganizerBackground from "../components/OrganizerBackground";
 import { API_URL } from "../config";
+import { useThemeContext } from "../context/ThemeContext";
 
 const { width } = Dimensions.get("window");
 
@@ -31,7 +33,7 @@ export default function OrganizerDashboard({ route, navigation }) {
     totalAttendances: 0,
     avgAttendance: 0,
   });
-  const isDarkMode = false;
+  const { isDarkMode, toggleDarkMode } = useThemeContext();
   const [weekEvents, setWeekEvents] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -44,6 +46,41 @@ export default function OrganizerDashboard({ route, navigation }) {
       useNativeDriver: true,
     }).start();
   }, [isDarkMode]);
+
+  const scaleAnimProfile = useRef(new Animated.Value(1)).current;
+  const scaleAnimTheme = useRef(new Animated.Value(1)).current;
+  const scaleAnimNotif = useRef(new Animated.Value(1)).current;
+  const rotateAnimTheme = useRef(new Animated.Value(isDarkMode ? 1 : 0)).current;
+
+  // Animation de rotation lors du changement de thème
+  useEffect(() => {
+    Animated.timing(rotateAnimTheme, {
+      toValue: isDarkMode ? 1 : 0,
+      duration: 500, // 500ms pour voir la rotation
+      useNativeDriver: true,
+    }).start();
+  }, [isDarkMode]);
+
+  const spin = rotateAnimTheme.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0deg', '360deg'] // Tournera de 360 degrés
+  });
+
+  const handlePressIn = (anim) => {
+    Animated.spring(anim, {
+      toValue: 0.9,
+      useNativeDriver: true,
+    }).start();
+  };
+
+  const handlePressOut = (anim) => {
+    Animated.spring(anim, {
+      toValue: 1,
+      friction: 3,
+      tension: 40,
+      useNativeDriver: true,
+    }).start();
+  };
 
   const themeColors = {
     text: isDarkMode ? "#FFF" : "#0A0A1A",
@@ -120,34 +157,48 @@ export default function OrganizerDashboard({ route, navigation }) {
               <Text style={[styles.headerSubTitle, { color: themeColors.text }]}>{nom}</Text>
             </View>
           </View>
-          <BlurView intensity={30} tint={isDarkMode ? "dark" : "light"} style={styles.glassActionBar}>
-            <TouchableOpacity
-              style={[styles.profileButton, { borderColor: isDarkMode ? "rgba(255,255,255,0.2)" : "rgba(0,0,0,0.1)" }]}
+          <BlurView intensity={isDarkMode ? 40 : 60} tint={isDarkMode ? "dark" : "light"} style={styles.glassActionBar}>
+            <TouchableWithoutFeedback
+              onPressIn={() => handlePressIn(scaleAnimProfile)}
+              onPressOut={() => handlePressOut(scaleAnimProfile)}
               onPress={() => navigation.navigate("OrganizerProfile", { id })}
             >
-              <View style={[styles.avatarPlaceholder, { backgroundColor: isDarkMode ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.05)" }]}>
-                {photo ? (
-                  <Image source={{ uri: photo }} style={styles.avatarImage} />
-                ) : (
-                  <Ionicons name="person" size={16} color={themeColors.text} />
-                )}
-              </View>
-            </TouchableOpacity>
+              <Animated.View style={[styles.profileButton, { transform: [{ scale: scaleAnimProfile }], borderColor: isDarkMode ? "rgba(255,255,255,0.2)" : "rgba(0,0,0,0.1)" }]}>
+                <View style={[styles.avatarPlaceholder, { backgroundColor: isDarkMode ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.05)" }]}>
+                  {photo ? (
+                    <Image source={{ uri: photo }} style={styles.avatarImage} />
+                  ) : (
+                    <Ionicons name="person" size={16} color={themeColors.text} />
+                  )}
+                </View>
+              </Animated.View>
+            </TouchableWithoutFeedback>
 
-            <View style={styles.actionBarDivider} />
+            <View style={[styles.actionBarDivider, { backgroundColor: isDarkMode ? "rgba(255, 255, 255, 0.41)" : "rgba(0,0,0,0.1)" }]} />
 
-            <View style={styles.actionIcon}>
-              <Ionicons name="sunny-outline" size={20} color={themeColors.text} />
-            </View>
+            <TouchableWithoutFeedback
+              onPressIn={() => handlePressIn(scaleAnimTheme)}
+              onPressOut={() => handlePressOut(scaleAnimTheme)}
+              onPress={toggleDarkMode}
+            >
+              <Animated.View style={[styles.actionIcon, { transform: [{ scale: scaleAnimTheme }, { rotate: spin }] }]}>
+                <Ionicons name={isDarkMode ? "moon-outline" : "sunny-outline"} size={22} color={themeColors.text} />
+              </Animated.View>
+            </TouchableWithoutFeedback>
 
-            <View style={styles.actionBarDivider} />
+            <View style={[styles.actionBarDivider, { backgroundColor: isDarkMode ? "rgba(255, 255, 255, 0.41)" : "rgba(0,0,0,0.1)" }]} />
 
-            <TouchableOpacity style={styles.actionIcon}>
-              <View style={styles.notificationCircle}>
-                <Ionicons name="notifications-outline" size={20} color={themeColors.text} />
-                <View style={styles.notificationBadge} />
-              </View>
-            </TouchableOpacity>
+            <TouchableWithoutFeedback
+              onPressIn={() => handlePressIn(scaleAnimNotif)}
+              onPressOut={() => handlePressOut(scaleAnimNotif)}
+            >
+              <Animated.View style={[styles.actionIcon, { transform: [{ scale: scaleAnimNotif }] }]}>
+                <View style={styles.notificationCircle}>
+                  <Ionicons name="notifications-outline" size={22} color={themeColors.text} />
+                  <View style={styles.notificationBadge} />
+                </View>
+              </Animated.View>
+            </TouchableWithoutFeedback>
           </BlurView>
         </View>
       </LinearGradient>
@@ -263,7 +314,7 @@ const styles = StyleSheet.create({
   headerLeft: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 12,
+    gap: 10,
   },
   titleContainer: {
     flexDirection: "column",
@@ -272,32 +323,45 @@ const styles = StyleSheet.create({
   glassActionBar: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "rgba(255, 255, 255, 0.03)",
-    borderRadius: 30,
-    paddingHorizontal: 15,
-    paddingVertical: 4,
+    backgroundColor: "rgba(255, 255, 255, 0.08)",
+    borderRadius: 40,
+    paddingHorizontal: 8,
+    paddingVertical: 8,
     borderWidth: 1,
-    borderColor: "rgba(116, 116, 116, 0.2)",
+    borderColor: "rgba(255, 255, 255, 0.15)",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.15,
+    shadowRadius: 20,
+    elevation: 10,
     overflow: "hidden",
   },
   actionIcon: {
-    padding: 6,
+    padding: 8,
     justifyContent: "center",
     alignItems: "center",
+    backgroundColor: "rgba(255, 255, 255, 0.)",
+    borderRadius: 20,
+    marginHorizontal: 2,
   },
   actionBarDivider: {
-    width: 1,
-    height: 20,
-    backgroundColor: "rgba(255, 255, 255, 0.2)",
+    width: 2,
+    height: 25,
+    backgroundColor: "rgba(255, 255, 255, 0.1)",
     marginHorizontal: 4,
   },
+  profileButton: {
+    paddingHorizontal: 7,
+  },
   avatarPlaceholder: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: 36,
+    height: 36,
+    borderRadius: 20,
     justifyContent: "center",
     alignItems: "center",
     overflow: "hidden",
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.2)",
   },
   avatarImage: {
     width: "100%",
@@ -324,7 +388,6 @@ const styles = StyleSheet.create({
     backgroundColor: "#2E5BFF",
     justifyContent: "center",
     alignItems: "center",
-    marginRight: 8,
   },
   headerTitle: {
     color: "#FFF",
@@ -337,7 +400,7 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: "700",
     fontFamily: "Insignia",
-    marginTop: -4,
+    marginTop: 0,
   },
   scrollContent: {
     paddingHorizontal: 20,

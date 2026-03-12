@@ -15,12 +15,13 @@ import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import OrganizerBackground from "../components/OrganizerBackground";
 import { API_URL } from "../config";
+import { useThemeContext } from "../context/ThemeContext";
 
 const { width } = Dimensions.get("window");
 
 export default function ManageEvent({ route, navigation }) {
   const { event, organizerId, nom } = route.params;
-  const isDarkMode = false;
+  const { isDarkMode, toggleDarkMode } = useThemeContext();
   const [data, setData] = useState({ event: event, participants: [] });
   const [stats, setStats] = useState({
     totalInscrit: 0,
@@ -105,9 +106,9 @@ export default function ManageEvent({ route, navigation }) {
           <Text style={[styles.headerTitle, { color: themeColors.headerTitle }]}>{event.nom_evenement}</Text>
           <Text style={[styles.headerSubTitle, { color: themeColors.subText }]}>Aujourd'hui, {new Date(event.date).toLocaleDateString()}</Text>
         </View>
-        <View style={styles.actionIcon}>
-          <Ionicons name="sunny-outline" size={20} color={themeColors.text} />
-        </View>
+        <TouchableOpacity style={styles.actionIcon} onPress={toggleDarkMode}>
+          <Ionicons name={isDarkMode ? "moon-outline" : "sunny-outline"} size={20} color={themeColors.text} />
+        </TouchableOpacity>
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContent}>

@@ -18,12 +18,13 @@ import * as ImagePicker from "expo-image-picker";
 import OrganizerBackground from "../components/OrganizerBackground";
 import { API_URL } from "../config";
 import { useAuth } from "../context/AuthContext";
+import { useThemeContext } from "../context/ThemeContext";
 
 const { width } = Dimensions.get("window");
 
 export default function OrganizerProfile({ route, navigation }) {
     const { id } = route.params;
-    const isDarkMode = false;
+    const { isDarkMode } = useThemeContext();
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [profile, setProfile] = useState({

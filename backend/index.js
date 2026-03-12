@@ -325,12 +325,21 @@ app.get("/api/organizer/stats/:id", async (req, res) => {
 app.get("/api/organizer/events-week/:id", async (req, res) => {
   try {
     const { id } = req.params;
-    const now = new Date();
-    const startOfWeek = now.toISOString().split("T")[0];
 
-    const end = new Date();
-    end.setDate(now.getDate() + 7);
-    const endOfWeek = end.toISOString().split("T")[0];
+    // Obtenir la date actuelle
+    const now = new Date();
+
+    // Ajuster pour avoir le Lundi de la semaine courante
+    const dayOfWeek = now.getDay();
+    const diffToMonday = now.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1);
+
+    const startOfWeekDate = new Date(now.setDate(diffToMonday));
+    const startOfWeek = startOfWeekDate.toISOString().split("T")[0];
+
+    // Ajuster pour avoir le Dimanche de la semaine courante
+    const endOfWeekDate = new Date(startOfWeekDate);
+    endOfWeekDate.setDate(endOfWeekDate.getDate() + 6);
+    const endOfWeek = endOfWeekDate.toISOString().split("T")[0];
 
     console.log(`📅 Fetching weekly events for ${id} between ${startOfWeek} and ${endOfWeek}`);
 
