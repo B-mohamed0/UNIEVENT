@@ -15,6 +15,7 @@ import OrganizerNavbar from "../components/OrganizerNavbar";
 import OrganizerBackground from "../components/OrganizerBackground";
 import { API_URL } from "../config";
 import { useThemeContext } from "../context/ThemeContext";
+import ThemeToggle from "../components/ThemeToggle";
 
 const { width } = Dimensions.get("window");
 
@@ -66,9 +67,7 @@ export default function OrganizerStats({ route, navigation }) {
                 <View style={styles.titleContainer}>
                     <Text style={[styles.headerTitle, { color: themeColors.headerTitle }]}>Statistiques Globales</Text>
                 </View>
-                <TouchableOpacity style={styles.actionIcon} onPress={toggleDarkMode}>
-                    <Ionicons name={isDarkMode ? "moon-outline" : "sunny-outline"} size={20} color={themeColors.text} />
-                </TouchableOpacity>
+                <ThemeToggle />
             </View>
 
             <ScrollView contentContainerStyle={styles.scrollContent}>

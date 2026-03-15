@@ -340,8 +340,10 @@ const styles = StyleSheet.create({
     padding: 8,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "rgba(255, 255, 255, 0.)",
-    borderRadius: 20,
+    backgroundColor: "rgba(255, 255, 255, 0.05)",
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.2)",
+    borderRadius: 10,
     marginHorizontal: 2,
   },
   actionBarDivider: {
@@ -360,7 +362,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     overflow: "hidden",
-    borderWidth: 1,
     borderColor: "rgba(255, 255, 255, 0.2)",
   },
   avatarImage: {

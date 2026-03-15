@@ -16,6 +16,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import OrganizerBackground from "../components/OrganizerBackground";
 import { API_URL } from "../config";
 import { useThemeContext } from "../context/ThemeContext";
+import ThemeToggle from "../components/ThemeToggle";
 
 const { width } = Dimensions.get("window");
 
@@ -106,9 +107,7 @@ export default function ManageEvent({ route, navigation }) {
           <Text style={[styles.headerTitle, { color: themeColors.headerTitle }]}>{event.nom_evenement}</Text>
           <Text style={[styles.headerSubTitle, { color: themeColors.subText }]}>Aujourd'hui, {new Date(event.date).toLocaleDateString()}</Text>
         </View>
-        <TouchableOpacity style={styles.actionIcon} onPress={toggleDarkMode}>
-          <Ionicons name={isDarkMode ? "moon-outline" : "sunny-outline"} size={20} color={themeColors.text} />
-        </TouchableOpacity>
+        <ThemeToggle />
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
