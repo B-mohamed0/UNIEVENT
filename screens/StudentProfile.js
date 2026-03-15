@@ -214,6 +214,7 @@ export default function StudentProfile({ route, navigation }) {
                         </LinearGradient>
                     </TouchableOpacity>
 
+<<<<<<< Updated upstream
                     <TouchableOpacity
                         style={styles.logoutButton}
                         onPress={handleLogout}
@@ -221,10 +222,58 @@ export default function StudentProfile({ route, navigation }) {
                         <View style={styles.logoutContent}>
                             <Ionicons name="log-out-outline" size={22} color="#FF3B30" />
                             <Text style={styles.logoutText}>Se déconnecter</Text>
+=======
+                    <TouchableOpacity style={styles.settingsItem} onPress={() => navigation.navigate("ChangePasswordScreen", { email: profile.email })}>
+                        <View style={styles.settingsIconLabel}>
+                            <View style={[styles.iconContainer, { backgroundColor: darkMode ? "#1E293B" : "#E0E7FF" }]}>
+                                <Ionicons name="lock-closed-outline" size={20} color={darkMode ? "#818CF8" : "#4F46E5"} />
+                            </View>
+                            <Text style={[styles.settingsText, { color: theme.text }]}>Changer le mot de passe</Text>
+>>>>>>> Stashed changes
                         </View>
                     </TouchableOpacity>
+<<<<<<< Updated upstream
                 </BlurView>
             </ScrollView>
+=======
+
+                    <TouchableOpacity style={styles.settingsItem}>
+                        <View style={styles.settingsIconLabel}>
+                            <View style={[styles.iconContainer, { backgroundColor: darkMode ? "#1E293B" : "#FEF3C7" }]}>
+                                <Ionicons name="notifications-outline" size={20} color={darkMode ? "#FBBF24" : "#D97706"} />
+                            </View>
+                            <Text style={[styles.settingsText, { color: theme.text }]}>Notification</Text>
+                        </View>
+                        <Ionicons name="chevron-forward" size={20} color={theme.textSecondary} />
+                    </TouchableOpacity>
+
+                    <View style={styles.settingsItem}>
+                        <View style={styles.settingsIconLabel}>
+                            <View style={[styles.iconContainer, { backgroundColor: darkMode ? "#334155" : "#F1F5F9" }]}>
+                                <Ionicons name={darkMode ? "sunny-outline" : "moon-outline"} size={20} color={darkMode ? "#FBBF24" : "#475569"} />
+                            </View>
+                            <Text style={[styles.settingsText, { color: theme.text }]}>Dark mode</Text>
+                        </View>
+                        <Switch
+                            value={darkMode}
+                            onValueChange={toggleDarkMode}
+                            trackColor={{ false: "#CBD5E1", true: "#143287" }}
+                            thumbColor={darkMode ? "#FFF" : "#F4F3F4"}
+                        />
+                    </View>
+
+                    <TouchableOpacity style={styles.settingsItem} onPress={() => navigation.navigate("HelpSupportScreen", { email: profile.email, nom: profile.nom })}>
+                        <View style={styles.settingsIconLabel}>
+                            <View style={[styles.iconContainer, { backgroundColor: darkMode ? "#1E293B" : "#DCFCE7" }]}>
+                                <Ionicons name="help-circle-outline" size={20} color={darkMode ? "#34D399" : "#16A34A"} />
+                            </View>
+                            <Text style={[styles.settingsText, { color: theme.text }]}>Help</Text>
+                        </View>
+                        <Ionicons name="chevron-forward" size={20} color={theme.textSecondary} />
+                    </TouchableOpacity>
+                </View>
+            </Animated.ScrollView>
+>>>>>>> Stashed changes
 
             <BottomNav id={id} nom={profile.nom} />
         </View>

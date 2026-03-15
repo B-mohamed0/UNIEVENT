@@ -10,18 +10,26 @@ import {
   Alert,
   Animated,
   Easing,
+  ActivityIndicator,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { BlurView } from "expo-blur";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useRoute } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 import { useState, useRef, useEffect } from "react";
+import { API_URL } from "../config";
 
 const { width, height } = Dimensions.get("window");
 
+const API_BASE = `${API_URL}/auth`;
+
 export default function Verificationemail() {
   const navigation = useNavigation();
+  const route = useRoute();
+  const { email, context } = route.params || {};
+
   const [code, setCode] = useState(["", "", "", "", "", ""]);
+  const [loading, setLoading] = useState(false);
   const fadeAnim = useRef(new Animated.Value(50)).current;
   const inputsRef = useRef([]);
 
@@ -34,7 +42,7 @@ export default function Verificationemail() {
     }).start();
   }, []);
 
-  const handleVerify = () => {
+  const handleVerify = async () => {
     const finalCode = code.join("");
 
     if (finalCode.length !== 6) {
@@ -42,8 +50,36 @@ export default function Verificationemail() {
       return;
     }
 
-    Alert.alert("Succès", "Code vérifié !");
-    navigation.navigate("ResetPassword");
+    setLoading(true);
+    try {
+      const response = await fetch(`${API_BASE}/verify-otp`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email, otp: finalCode }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        // Succès !
+        if (context === "reset-password") {
+          navigation.navigate("ResetPassword", { email, otp: finalCode });
+        } else {
+          // Inscription classique
+          Alert.alert("Succès", "Code vérifié !");
+          navigation.navigate("inscription", { email }); // À ajuster selon le flow d'inscription
+        }
+      } else {
+        Alert.alert("Erreur", data.message || "Code invalide.");
+      }
+    } catch (error) {
+      console.error(error);
+      Alert.alert("Erreur", "Problème de connexion au serveur.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleChange = (text, index) => {
@@ -130,12 +166,17 @@ export default function Verificationemail() {
             <TouchableOpacity
               style={styles.verifyButton}
               onPress={handleVerify}
+              disabled={loading}
             >
               <LinearGradient
                 colors={["#183282", "rgba(74, 94, 175, 0.82)"]}
                 style={styles.verifyGradient}
               >
-                <Text style={styles.verifyText}>Vérifier</Text>
+                {loading ? (
+                  <ActivityIndicator color="#FFFFFF" />
+                ) : (
+                  <Text style={styles.verifyText}>Vérifier</Text>
+                )}
               </LinearGradient>
             </TouchableOpacity>
 

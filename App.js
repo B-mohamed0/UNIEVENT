@@ -26,9 +26,86 @@ import { NavbarProvider } from "./context/NavbarContext";
 import { ThemeProvider } from "./context/ThemeContext";
 import inscription from "./screens/inscription";
 import Scanner from "./screens/Scanner";
+import ForgotPasswordScreen from "./screens/ForgotPasswordScreen";
+import ResetPasswordScreen from "./screens/ResetPasswordScreen";
+import ChangePasswordScreen from "./screens/ChangePasswordScreen";
+import HelpSupportScreen from "./screens/HelpSupportScreen";
 
 const Stack = createNativeStackNavigator();
 
+<<<<<<< Updated upstream
+=======
+function RootNavigator() {
+  const { user, token, isLoading } = useAuth();
+
+  if (isLoading) {
+    return (
+      <View style={{ flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "#0f172aff" }}>
+        <ActivityIndicator size="large" color="#143287" />
+      </View>
+    );
+  }
+
+  return (
+    <Stack.Navigator screenOptions={{ headerShown: false, animation: "fade" }}>
+      {!token ? (
+        // Auth Stack
+        <>
+          <Stack.Screen name="Splash" component={SplashScreen} />
+          <Stack.Screen name="QuiSuisJe" component={QuiSuisJeScreen} />
+          <Stack.Screen name="Student" component={StudentScreen} />
+          <Stack.Screen name="Teacher" component={TeacherScreen} />
+          <Stack.Screen name="Organizer" component={OrganizerScreen} />
+          <Stack.Screen name="Admin" component={AdminScreen} />
+          <Stack.Screen name="Studentinscription" component={Studentinscription} />
+          <Stack.Screen name="Verificationemail" component={Verificationemail} />
+          <Stack.Screen name="inscription" component={inscription} />
+          <Stack.Screen name="ForgotPasswordScreen" component={ForgotPasswordScreen} />
+          <Stack.Screen name="ResetPassword" component={ResetPasswordScreen} />
+        </>
+      ) : (
+        // App Stack
+        <>
+          {user?.role === "ORGANIZER" ? (
+            <>
+              <Stack.Screen
+                name="OrganizerDashboard"
+                component={OrganizerDashboard}
+                initialParams={{ id: user.id, nom: user.nom }}
+              />
+              <Stack.Screen name="OrganizerEvents" component={OrganizerEvents} />
+              <Stack.Screen name="CreateEvent" component={CreateEvent} />
+              <Stack.Screen name="ManageEvent" component={ManageEvent} options={{ headerShown: false }} />
+              <Stack.Screen name="OrganizerEventDetails" component={OrganizerEventDetails} options={{ headerShown: false }} />
+              <Stack.Screen name="Scanner" component={Scanner} />
+              <Stack.Screen name="OrganizerStats" component={OrganizerStats} />
+              <Stack.Screen name="OrganizerProfile" component={OrganizerProfile} />
+            </>
+          ) : (
+            <>
+              <Stack.Screen
+                name="Home"
+                component={HomeScreen}
+                initialParams={{ id: user.id, nom: user.nom }}
+              />
+              <Stack.Screen name="Eventinfo" component={Eventinfo} />
+              <Stack.Screen name="Eventsscreen" component={Eventsscreen} />
+              <Stack.Screen name="StudentStats" component={StudentStats} />
+              <Stack.Screen name="StudentProfile" component={StudentProfile} />
+              <Stack.Screen name="EditProfile" component={EditProfile} />
+              <Stack.Screen name="Scanner" component={Scanner} />
+              <Stack.Screen name="inscription" component={inscription} />
+              <Stack.Screen name="ChangePasswordScreen" component={ChangePasswordScreen} />
+              <Stack.Screen name="HelpSupportScreen" component={HelpSupportScreen} />
+            </>
+          )}
+        </>
+      )}
+    </Stack.Navigator>
+  );
+}
+
+>>>>>>> Stashed changes
 export default function App() {
   const [fontsLoaded] = useFonts({
     Lobster: require("./fonts/Lobster.ttf"),

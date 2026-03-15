@@ -115,7 +115,8 @@ app.post("/api/auth/verify-otp", (req, res) => {
   const data = otpStore.get(email);
 
   if (data && data.code === otp && Date.now() < data.expires) {
-    otpStore.delete(email);
+    // Ne pas supprimer ici pour le flux "reset-password" qui revérifiera après coup
+    // otpStore.delete(email);
     return res.json({ message: "Vérification réussie" });
   }
 
@@ -133,6 +134,9 @@ app.post("/api/auth/inscription", async (req, res) => {
   }
 
   try {
+    // Si l'OTP était stocké pour l'inscription, on le nettoie
+    otpStore.delete(email);
+
     const salt = await bcrypt.genSalt(10);
     const passwordhasher = await bcrypt.hash(password, salt);
 
@@ -201,6 +205,179 @@ app.post("/api/auth/login", async (req, res) => {
     res.status(500).json({
       message: "Erreur serveur",
     });
+  }
+});
+
+// ==========================================
+// 5. ROUTE : MOT DE PASSE OUBLIÉ (ENVOI OTP)
+// ==========================================
+app.post("/api/auth/forgot-password-otp", async (req, res) => {
+  const { email } = req.body;
+
+  if (!email) {
+    return res.status(400).json({ message: "L'email est requis" });
+  }
+
+  try {
+    // Vérifier si l'email existe dans la table etudiant
+    let result = await pool.query("SELECT email FROM etudiant WHERE email = $1", [email]);
+    let table = "etudiant";
+
+    // Fallback pour organisateur (optionnel mais robuste)
+    if (result.rowCount === 0) {
+      result = await pool.query("SELECT email FROM organisateur WHERE email = $1", [email]);
+      table = "organisateur";
+    }
+
+    if (result.rowCount === 0) {
+      return res.status(404).json({ message: "Cet email n'existe pas" });
+    }
+
+    const code = Math.floor(100000 + Math.random() * 900000).toString();
+
+    otpStore.set(email, {
+      code,
+      expires: Date.now() + 300000, // 5 minutes
+      table // on garde la table pour la réinitialisation plus tard
+    });
+
+    await transporter.sendMail({
+      from: '"Service EST" <aminezakhir8@gmail.com>',
+      to: email,
+      subject: "Réinitialisation de mot de passe",
+      html: `
+        <div style="font-family: Arial, sans-serif; text-align: center;">
+          <h2>Code de réinitialisation</h2>
+          <p>Utilisez le code suivant pour réinitialiser votre mot de passe :</p>
+          <h1 style="color: #143287;">${code}</h1>
+          <p>Ce code expirera dans 5 minutes.</p>
+        </div>
+      `,
+    });
+
+    console.log(`Code OTP de réinitialisation envoyé à ${email}`);
+    res.json({ message: "Code envoyé par mail" });
+  } catch (error) {
+    console.error("Erreur Nodemailer/DB:", error);
+    res.status(500).json({ message: "Erreur lors de l'envoi du mail" });
+  }
+});
+
+// ==========================================
+// 6. ROUTE : RÉINITIALISER LE MOT DE PASSE
+// ==========================================
+app.post("/api/auth/reset-password", async (req, res) => {
+  const { email, otp, newPassword } = req.body;
+
+  if (!email || !otp || !newPassword) {
+    return res.status(400).json({ message: "Tous les champs sont obligatoires" });
+  }
+
+  const data = otpStore.get(email);
+
+  if (!data || data.code !== otp || Date.now() > data.expires) {
+    return res.status(400).json({ message: "Code invalide ou expiré" });
+  }
+
+  try {
+    const salt = await bcrypt.genSalt(10);
+    const passwordhasher = await bcrypt.hash(newPassword, salt);
+
+    // Mettre à jour dans la bonne table stockée lors de la demande d'OTP
+    const table = data.table || "etudiant";
+    const query = `UPDATE ${table} SET password = $1 WHERE email = $2`;
+
+    const result = await pool.query(query, [passwordhasher, email]);
+
+    if (result.rowCount === 0) {
+      return res.status(404).json({ message: "Utilisateur introuvable" });
+    }
+
+    // Supprimer l'OTP après succès
+    otpStore.delete(email);
+
+    res.json({ message: "Mot de passe réinitialisé avec succès" });
+  } catch (error) {
+    console.error("Erreur de réinitialisation:", error);
+    res.status(500).json({ message: "Erreur lors de la réinitialisation" });
+  }
+});
+
+// ==========================================
+// 7. ROUTE : CHANGER LE MOT DE PASSE DEPUIS LE PROFIL
+// ==========================================
+app.post("/api/auth/change-password", async (req, res) => {
+  const { email, oldPassword, newPassword } = req.body;
+
+  if (!email || !oldPassword || !newPassword) {
+    return res.status(400).json({ message: "Tous les champs sont obligatoires" });
+  }
+
+  try {
+    // Vérifier si l'utilisateur est un étudiant ou organisateur
+    let result = await pool.query("SELECT * FROM etudiant WHERE email = $1", [email]);
+    let table = "etudiant";
+
+    if (result.rowCount === 0) {
+      result = await pool.query("SELECT * FROM organisateur WHERE email = $1", [email]);
+      table = "organisateur";
+    }
+
+    if (result.rowCount === 0) {
+      return res.status(404).json({ message: "Utilisateur introuvable" });
+    }
+
+    const user = result.rows[0];
+
+    // Vérifier l'ancien mot de passe
+    const validPassword = await bcrypt.compare(oldPassword, user.password);
+    if (!validPassword) {
+      return res.status(401).json({ message: "L'ancien mot de passe est incorrect" });
+    }
+
+    // Hasher et enregistrer le nouveau mot de passe
+    const salt = await bcrypt.genSalt(10);
+    const passwordhasher = await bcrypt.hash(newPassword, salt);
+
+    await pool.query(`UPDATE ${table} SET password = $1 WHERE email = $2`, [passwordhasher, email]);
+
+    res.json({ message: "Mot de passe modifié avec succès" });
+  } catch (error) {
+    console.error("Erreur change-password:", error);
+    res.status(500).json({ message: "Erreur serveur" });
+  }
+});
+
+// ==========================================
+// 8. ROUTE : ENVOYER UNE RÉCLAMATION (HELP)
+// ==========================================
+app.post("/api/support/send", async (req, res) => {
+  const { email, nom, subject, message } = req.body;
+
+  if (!email || !nom || !subject || !message) {
+    return res.status(400).json({ message: "Tous les champs sont obligatoires." });
+  }
+
+  try {
+    await transporter.sendMail({
+      from: '"Demande de Support App" <aminezakhir8@gmail.com>',
+      to: "aminezakhir8@gmail.com", // Send to admin email
+      subject: `[SUPPORT APP] ${subject} - par ${nom}`,
+      html: `
+        <div style="font-family: Arial, sans-serif;">
+          <h2 style="color: #143287;">Nouvelle réclamation / Demande d'aide</h2>
+          <p><strong>De:</strong> ${nom} (${email})</p>
+          <p><strong>Sujet:</strong> ${subject}</p>
+          <hr />
+          <p style="white-space: pre-wrap;">${message}</p>
+        </div>
+      `,
+    });
+
+    res.json({ message: "Réclamation envoyée avec succès." });
+  } catch (error) {
+    console.error("Erreur d'envoi de réclamation:", error);
+    res.status(500).json({ message: "Échec de l'envoi du message." });
   }
 });
 
