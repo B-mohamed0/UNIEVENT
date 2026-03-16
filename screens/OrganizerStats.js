@@ -130,7 +130,7 @@ export default function OrganizerStats({ route, navigation }) {
                 ) : (
                     <>
                         <BlurView intensity={30} tint={themeColors.blurTint} style={[styles.chartCard, { borderColor: themeColors.cardBorder }]}>
-                            <Text style={[styles.chartTitle, { color: themeColors.text }]}>Participants par mois (Année en cours)</Text>
+                            <Text style={[styles.chartTitle, { color: themeColors.text }]}>Participants par mois</Text>
                             <View style={[styles.chartContainer, { borderBottomColor: isDarkMode ? "rgba(255,255,255,0.2)" : "rgba(0,0,0,0.1)" }]}>
                                 {stats.participantsPerMonth.map((count, i) => {
                                     const maxCount = Math.max(...stats.participantsPerMonth, 1);
@@ -151,7 +151,7 @@ export default function OrganizerStats({ route, navigation }) {
                                     <Text style={[styles.gridLabel, { color: themeColors.subText }]}>Total Événements</Text>
                                     <Text style={[styles.gridValue, { color: themeColors.text }]}>{stats.totalEvenement}</Text>
                                 </View>
-                                <Ionicons name="calendar" size={32} color="#2E5BFF" opacity={0.6} />
+                                <Ionicons name="calendar" size={32} color="#7286efff" opacity={0.6} />
                             </BlurView>
 
                             <BlurView intensity={30} tint={themeColors.blurTint} style={[styles.gridItem, { borderColor: themeColors.cardBorder }]}>
@@ -321,6 +321,7 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontFamily: "Insignia",
         marginBottom: 20,
+        alignSelf: "center",
     },
     chartPlaceholder: {
         height: 120,

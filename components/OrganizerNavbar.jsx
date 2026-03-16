@@ -12,6 +12,7 @@ import { useNavigation, useRoute } from "@react-navigation/native";
 import { LinearGradient } from "expo-linear-gradient";
 import { BlurView } from "expo-blur";
 import { useNavbarContext } from "../context/NavbarContext";
+import { useThemeContext } from "../context/ThemeContext";
 
 const AnimatedLinearGradient = Animated.createAnimatedComponent(LinearGradient);
 
@@ -32,7 +33,7 @@ const TABS = [
 ];
 
 const OrganizerNavbar = ({ id, nom }) => {
-    const isDarkMode = false; // Forced light mode for Organizer
+    const { isDarkMode } = useThemeContext();
     const navigation = useNavigation();
     const route = useRoute();
     const { orgLastIndex, setOrgLastIndex } = useNavbarContext();
@@ -89,7 +90,7 @@ const OrganizerNavbar = ({ id, nom }) => {
                     {/* Blur */}
                     <BlurView
                         intensity={15}
-                        tint={isDarkMode ? "light" : "dark"}
+                        tint={isDarkMode ? "dark" : "light"}
                         style={styles.blur}
                     />
 
@@ -140,8 +141,8 @@ const OrganizerNavbar = ({ id, nom }) => {
                                         isTabActive
                                             ? "#FFF"
                                             : isDarkMode
-                                                ? "rgba(255, 255, 255, 1)"
-                                                : "rgba(0, 0, 0, 1)"
+                                                ? "#FFF"
+                                                : "#000"
                                     }
                                 />
                             </TouchableOpacity>
