@@ -37,10 +37,11 @@ const THEME_GRADIENTS = {
 
 const API_STATS = `${API_URL}/student/stats`;
 
-const CircularProgress = ({ percentage, size = 180, strokeWidth = 15 }) => {
+const CircularProgress = ({ percentage, size = 180, strokeWidth = 15, isDarkMode }) => {
     const radius = (size - strokeWidth) / 2;
     const circumference = radius * 2 * Math.PI;
     const strokeDashoffset = circumference - (percentage / 100) * circumference;
+    const textColor = isDarkMode ? "#FFFFFF" : "#000000";
 
     return (
         <View style={{ alignItems: "center", justifyContent: "center" }}>
@@ -50,7 +51,7 @@ const CircularProgress = ({ percentage, size = 180, strokeWidth = 15 }) => {
                     cx={size / 2}
                     cy={size / 2}
                     r={radius}
-                    stroke="rgba(255, 255, 255, 0.1)"
+                    stroke={isDarkMode ? "rgba(255, 255, 255, 0.1)" : "rgba(0, 0, 0, 0.1)"}
                     strokeWidth={strokeWidth}
                     fill="none"
                 />
@@ -59,7 +60,7 @@ const CircularProgress = ({ percentage, size = 180, strokeWidth = 15 }) => {
                     cx={size / 2}
                     cy={size / 2}
                     r={radius}
-                    stroke="#ffffffff"
+                    stroke={textColor}
                     strokeWidth={strokeWidth}
                     strokeDasharray={`${circumference} ${circumference}`}
                     strokeDashoffset={strokeDashoffset}
@@ -69,8 +70,8 @@ const CircularProgress = ({ percentage, size = 180, strokeWidth = 15 }) => {
                 />
             </Svg>
             <View style={styles.percentageContainer}>
-                <Text style={styles.percentageText}>{percentage}%</Text>
-                <Text style={styles.percentageLabel}>Présence</Text>
+                <Text style={[styles.percentageText, { color: textColor }]}>{percentage}%</Text>
+                <Text style={[styles.percentageLabel, { color: textColor }]}>Présence</Text>
             </View>
         </View>
     );
@@ -82,10 +83,10 @@ export default function StudentStats({ route, navigation }) {
 
     const theme = {
         background: isDarkMode ? "#0f172a31" : "#F1F5F9",
-        card: isDarkMode ? "rgba(0, 0, 0, 0.2)" : "rgba(255, 255, 255, 0.2)",
+        card: isDarkMode ? "rgba(0, 0, 0, 0.2)" : "rgba(255, 255, 255, 0.07)",
         text: isDarkMode ? "#F8FAFC" : "#0F172A",
-        textSecondary: isDarkMode ? "#94A3B8" : "rgba(67, 67, 67, 0.6)",
-        border: isDarkMode ? "rgba(255, 255, 255, 0.1)" : "rgba(0, 74, 143, 0.1)",
+        textSecondary: isDarkMode ? "#94A3B8" : "rgba(0, 0, 0, 1)",
+        border: isDarkMode ? "rgba(255, 255, 255, 0.12)" : "rgba(0, 74, 143, 0.13)",
     };
     const [stats, setStats] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -136,13 +137,13 @@ export default function StudentStats({ route, navigation }) {
             <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
                 {/* Header */}
                 <View style={styles.header}>
-                    <Text style={[styles.greeting, { color: theme.textSecondary }]}>Mes Statistiques</Text>
+                    <Text style={[styles.greeting, { color: theme.text }]}>Mes Statistiques</Text>
                     <Text style={[styles.name, { color: theme.text }]}>{nom}</Text>
                 </View>
 
                 {/* Circular Progress Card */}
                 <BlurView intensity={20} tint={isDarkMode ? "dark" : "light"} style={[styles.statsCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
-                    <CircularProgress percentage={stats?.attendancePercentage || 0} />
+                    <CircularProgress percentage={stats?.attendancePercentage || 0} isDarkMode={isDarkMode} />
 
                     <View style={styles.summaryContainer}>
                         <View style={styles.summaryItem}>
@@ -196,7 +197,7 @@ export default function StudentStats({ route, navigation }) {
                         </BlurView>
                     ))
                 ) : (
-                    <Text style={styles.noEvents}>Aucun événement enregistré.</Text>
+                    <Text style={[styles.noEvents, { color: theme.textSecondary }]}>Aucun événement enregistré.</Text>
                 )}
             </ScrollView>
 
@@ -225,7 +226,6 @@ const styles = StyleSheet.create({
         marginBottom: 30,
     },
     greeting: {
-        color: "rgba(255, 255, 255, 0.7)",
         fontSize: 25,
         fontFamily: "Insignia",
         textAlign: "center",
@@ -251,13 +251,11 @@ const styles = StyleSheet.create({
         alignItems: "center",
     },
     percentageText: {
-        color: "#FFF",
         fontSize: 42,
         fontWeight: "bold",
         fontFamily: "Comicy",
     },
     percentageLabel: {
-        color: "rgba(255, 255, 255, 0.7)",
         fontSize: 14,
         fontFamily: "Insignia",
         marginTop: 10,
@@ -355,7 +353,6 @@ const styles = StyleSheet.create({
         fontSize: 11,
     },
     noEvents: {
-        color: "rgba(255, 255, 255, 0.5)",
         textAlign: "center",
         marginTop: 20,
         fontFamily: "Insignia",

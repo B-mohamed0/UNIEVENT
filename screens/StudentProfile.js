@@ -24,7 +24,13 @@ import { useAuth } from "../context/AuthContext";
 const { width, height: SCREEN_HEIGHT } = Dimensions.get("window");
 
 export default function StudentProfile({ route, navigation }) {
-    const { id, nom: initialNom } = route.params;
+    const { user, logout } = useAuth();
+    const params = route.params || {};
+
+    // Priorité aux params de navigation, sinon utiliser les données de l'auth
+    const id = params.id || user?.id;
+    const initialNom = params.nom || user?.nom;
+
     const [loading, setLoading] = useState(true);
     const [profile, setProfile] = useState({
         nom: initialNom || "",
@@ -33,7 +39,6 @@ export default function StudentProfile({ route, navigation }) {
         id: id,
     });
     const { isDarkMode: darkMode, toggleDarkMode } = useThemeContext();
-    const { logout } = useAuth();
 
     // 🎨 Couleurs locales pour le Profil
     const theme = {
@@ -82,6 +87,11 @@ export default function StudentProfile({ route, navigation }) {
                     style: "destructive",
                     onPress: async () => {
                         await logout();
+                        // Reset navigation to a known screen in the auth stack to avoid glitched transitions
+                        navigation.reset({
+                            index: 0,
+                            routes: [{ name: "Splash" }],
+                        });
                     },
                 },
             ]
@@ -227,7 +237,10 @@ export default function StudentProfile({ route, navigation }) {
                         <Ionicons name="chevron-forward" size={20} color={theme.textSecondary} />
                     </TouchableOpacity>
 
-                    <TouchableOpacity style={styles.settingsItem}>
+                    <TouchableOpacity
+                        style={styles.settingsItem}
+                        onPress={() => navigation.navigate("ChangePassword")}
+                    >
                         <View style={styles.settingsIconLabel}>
                             <View style={[styles.iconContainer, { backgroundColor: darkMode ? "#1E293B" : "#E0E7FF" }]}>
                                 <Ionicons name="lock-closed-outline" size={20} color={darkMode ? "#818CF8" : "#4F46E5"} />
@@ -262,14 +275,28 @@ export default function StudentProfile({ route, navigation }) {
                         />
                     </View>
 
-                    <TouchableOpacity style={styles.settingsItem}>
+                    <TouchableOpacity
+                        style={styles.settingsItem}
+                        onPress={() => Alert.alert("Aide", "Pour toute assistance, veuillez contacter le support à support@unievent.com")}
+                    >
                         <View style={styles.settingsIconLabel}>
                             <View style={[styles.iconContainer, { backgroundColor: darkMode ? "#1E293B" : "#DCFCE7" }]}>
                                 <Ionicons name="help-circle-outline" size={20} color={darkMode ? "#34D399" : "#16A34A"} />
                             </View>
                             <Text style={[styles.settingsText, { color: theme.text }]}>Help</Text>
                         </View>
-                        <Ionicons name="chevron-forward" size={20} color={theme.textSecondary} />
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                        style={[styles.settingsItem, styles.logoutItem]}
+                        onPress={handleLogout}
+                    >
+                        <View style={styles.settingsIconLabel}>
+                            <View style={[styles.iconContainer, { backgroundColor: "rgba(255, 59, 48, 0.1)" }]}>
+                                <Ionicons name="log-out-outline" size={20} color="#FF3B30" />
+                            </View>
+                            <Text style={[styles.settingsText, { color: "#FF3B30" }]}>Se déconnecter</Text>
+                        </View>
                     </TouchableOpacity>
                 </View>
             </Animated.ScrollView>
@@ -469,5 +496,11 @@ const styles = StyleSheet.create({
         fontWeight: "600",
         color: "#1E293B",
         fontFamily: "Insignia",
+    },
+    logoutItem: {
+        marginTop: 10,
+        borderTopWidth: 1,
+        borderTopColor: "rgba(0, 0, 0, 0.05)",
+        paddingTop: 20,
     },
 });

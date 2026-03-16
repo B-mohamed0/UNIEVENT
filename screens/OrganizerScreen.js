@@ -110,6 +110,13 @@ export default function OrganizerScreen() {
               <Text style={styles.loginText}>se connecter</Text>
             </LinearGradient>
           </TouchableOpacity>
+
+          <TouchableOpacity
+            onPress={() => navigation.navigate("ForgotPassword")}
+            style={{ marginTop: 20 }}
+          >
+            <Text style={styles.forgot}>forget password ?</Text>
+          </TouchableOpacity>
         </BlurView>
       </View>
       <TouchableOpacity
@@ -259,5 +266,11 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "500",
     fontFamily: "Insignia",
+  },
+  forgot: {
+    textAlign: "center",
+    color: "#4d7ab8ff",
+    fontSize: 14,
+    fontFamily: "HeyComic",
   },
 });

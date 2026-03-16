@@ -342,8 +342,8 @@ export default function HomeScreen({ route, navigation }) {
     if (upcomingEvents.length === 0) {
       return (
         <BlurView intensity={10} tint="light" style={styles.noEventCard}>
-          <Ionicons name="calendar-outline" size={40} color="#88c6ffff" />
-          <Text style={styles.noEventText}>Aucun événement à venir</Text>
+          <Ionicons name="calendar-outline" size={40} color={theme.textSecondary} />
+          <Text style={[styles.noEventText, { color: theme.textSecondary }]}>Aucun événement à venir</Text>
         </BlurView>
       );
     }
@@ -591,7 +591,6 @@ const styles = StyleSheet.create({
   },
   greetingText: {
     fontSize: 20,
-    color: "#ffffffff",
     paddingBottom: 10,
     fontFamily: "jokeyone",
   },
@@ -837,7 +836,6 @@ const styles = StyleSheet.create({
     overflow: "hidden",
   },
   noEventText: {
-    color: "#b3b3b3ff",
     fontSize: 14,
     marginTop: 10,
     fontWeight: "600",

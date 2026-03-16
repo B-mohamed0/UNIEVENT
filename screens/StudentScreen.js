@@ -221,7 +221,7 @@ export default function StudentScreen() {
 
           {step === 2 && (
             <TouchableOpacity
-              onPress={() => navigation.navigate("Studentinscription")}
+              onPress={() => navigation.navigate("ForgotPassword")}
             >
               <Text style={styles.forgot}>forget password ?</Text>
             </TouchableOpacity>

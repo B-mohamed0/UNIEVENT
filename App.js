@@ -30,6 +30,10 @@ import { AuthProvider, useAuth } from "./context/AuthContext";
 import inscription from "./screens/inscription";
 import Scanner from "./screens/Scanner";
 
+import ForgotPasswordScreen from "./screens/ForgotPasswordScreen";
+import ResetPasswordScreen from "./screens/ResetPasswordScreen";
+import ChangePasswordScreen from "./screens/ChangePasswordScreen";
+
 const Stack = createNativeStackNavigator();
 
 function RootNavigator() {
@@ -57,6 +61,8 @@ function RootNavigator() {
           <Stack.Screen name="Studentinscription" component={Studentinscription} />
           <Stack.Screen name="Verificationemail" component={Verificationemail} />
           <Stack.Screen name="inscription" component={inscription} />
+          <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
+          <Stack.Screen name="ResetPassword" component={ResetPasswordScreen} />
         </>
       ) : (
         // App Stack
@@ -92,12 +98,14 @@ function RootNavigator() {
               <Stack.Screen name="inscription" component={inscription} />
             </>
           )}
+          <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
+          <Stack.Screen name="ResetPassword" component={ResetPasswordScreen} />
+          <Stack.Screen name="ChangePassword" component={ChangePasswordScreen} />
         </>
       )}
     </Stack.Navigator>
   );
 }
-
 export default function App() {
   const [fontsLoaded] = useFonts({
     Lobster: require("./fonts/Lobster.ttf"),

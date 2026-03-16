@@ -13,7 +13,7 @@ import {
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { BlurView } from "expo-blur";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useRoute } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 import { useState, useRef, useEffect } from "react";
 
@@ -24,6 +24,8 @@ export default function Verificationemail() {
   const [code, setCode] = useState(["", "", "", "", "", ""]);
   const fadeAnim = useRef(new Animated.Value(50)).current;
   const inputsRef = useRef([]);
+  const route = useRoute();
+  const { email, context } = route.params || {};
 
   useEffect(() => {
     Animated.timing(fadeAnim, {
@@ -42,8 +44,12 @@ export default function Verificationemail() {
       return;
     }
 
-    Alert.alert("Succès", "Code vérifié !");
-    navigation.navigate("ResetPassword");
+    if (context === "reset-password") {
+      navigation.navigate("ResetPassword", { email, otp: finalCode });
+    } else {
+      Alert.alert("Succès", "Code vérifié !");
+      navigation.navigate("ResetPassword");
+    }
   };
 
   const handleChange = (text, index) => {
@@ -204,7 +210,7 @@ const styles = StyleSheet.create({
   logo: {
     position: "absolute",
     width: 550,
-    height: 500,
+    height: 400,
     marginLeft: 120,
     zIndex: 10,
     pointerEvents: "none",
@@ -216,6 +222,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.5,
     shadowRadius: 8,
     elevation: 8,
+    marginTop: 70,
   },
 
   glassCard: {

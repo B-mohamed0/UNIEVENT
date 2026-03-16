@@ -221,6 +221,144 @@ app.post("/api/auth/login", async (req, res) => {
   }
 });
 
+/**
+ * 🆕 ROUTE : ENVOYER OTP POUR RÉINITIALISATION (FORGOT PASSWORD)
+ */
+app.post("/api/auth/forgot-password-otp", async (req, res) => {
+  const { email } = req.body;
+
+  if (!email) {
+    return res.status(400).json({ message: "L'email est requis" });
+  }
+
+  try {
+    // Vérifier si l'utilisateur existe (étudiant ou organisateur)
+    let userResult = await pool.query("SELECT id FROM etudiant WHERE email = $1", [email]);
+    if (userResult.rowCount === 0) {
+      userResult = await pool.query("SELECT id FROM organisateur WHERE email = $1", [email]);
+    }
+
+    if (userResult.rowCount === 0) {
+      return res.status(404).json({ message: "Cet email n'est pas enregistré" });
+    }
+
+    // Générer OTP (6 chiffres)
+    const code = Math.floor(100000 + Math.random() * 900000).toString();
+
+    // Stocker dans otpStore
+    otpStore.set(email, {
+      code,
+      expires: Date.now() + 300000, // 5 minutes
+    });
+
+    // Envoyer le mail
+    await transporter.sendMail({
+      from: '"Service EST" <aminezakhir8@gmail.com>',
+      to: email,
+      subject: "Réinitialisation de votre mot de passe",
+      html: `
+        <div style="font-family: Arial, sans-serif; text-align: center;">
+          <h2>Réinitialisation de mot de passe</h2>
+          <p>Utilisez le code suivant pour réinitialiser votre mot de passe :</p>
+          <h1 style="color: #143287;">${code}</h1>
+          <p>Ce code expirera dans 5 minutes.</p>
+        </div>
+      `,
+    });
+
+    console.log(`Code OTP de récupération envoyé à ${email}`);
+    res.json({ message: "Code de récupération envoyé par mail" });
+  } catch (error) {
+    console.error("Erreur Forgot Password OTP:", error);
+    res.status(500).json({ message: "Erreur lors de l'envoi du mail" });
+  }
+});
+
+/**
+ * 🆕 ROUTE : RÉINITIALISER LE MOT DE PASSE (RESET PASSWORD)
+ */
+app.post("/api/auth/reset-password", async (req, res) => {
+  const { email, otp, newPassword } = req.body;
+
+  if (!email || !otp || !newPassword) {
+    return res.status(400).json({ message: "Tous les champs sont requis" });
+  }
+
+  // Vérifier OTP
+  const data = otpStore.get(email);
+  if (!data || data.code !== otp || Date.now() > data.expires) {
+    return res.status(400).json({ message: "Code invalide ou expiré" });
+  }
+
+  try {
+    const salt = await bcrypt.genSalt(10);
+    const passwordhasher = await bcrypt.hash(newPassword, salt);
+
+    // Tenter de mettre à jour dans etudiant d'abord
+    let result = await pool.query(
+      "UPDATE etudiant SET password = $1 WHERE email = $2 RETURNING id",
+      [passwordhasher, email]
+    );
+
+    // Si pas trouvé dans etudiant, tenter dans organisateur
+    if (result.rowCount === 0) {
+      result = await pool.query(
+        "UPDATE organisateur SET password = $1 WHERE email = $2 RETURNING id",
+        [passwordhasher, email]
+      );
+    }
+
+    if (result.rowCount === 0) {
+      return res.status(404).json({ message: "Utilisateur non trouvé" });
+    }
+
+    // Effacer l'OTP
+    otpStore.delete(email);
+
+    res.json({ message: "Mot de passe mis à jour avec succès ✅" });
+  } catch (error) {
+    console.error("Erreur Reset Password:", error);
+    res.status(500).json({ message: "Erreur lors de la réinitialisation" });
+  }
+});
+
+// Route pour changer le mot de passe (si connecté)
+app.post("/api/auth/change-password", async (req, res) => {
+  const { userId, role, currentPassword, newPassword } = req.body;
+
+  if (!userId || !role || !currentPassword || !newPassword) {
+    return res.status(400).json({ message: "Tous les champs sont requis" });
+  }
+
+  try {
+    const table = role === "ORGANIZER" ? "organisateur" : "etudiant";
+
+    // 1. Récupérer l'utilisateur
+    const userRes = await pool.query(`SELECT password FROM ${table} WHERE id = $1`, [userId]);
+
+    if (userRes.rowCount === 0) {
+      return res.status(404).json({ message: "Utilisateur non trouvé" });
+    }
+
+    // 2. Vérifier l'ancien mot de passe
+    const isMatch = await bcrypt.compare(currentPassword, userRes.rows[0].password);
+    if (!isMatch) {
+      return res.status(401).json({ message: "Ancien mot de passe incorrect" });
+    }
+
+    // 3. Hasher le nouveau mot de passe
+    const hashedPass = await bcrypt.hash(newPassword, 10);
+
+    // 4. Mettre à jour
+    await pool.query(`UPDATE ${table} SET password = $1 WHERE id = $2`, [hashedPass, userId]);
+
+    res.json({ message: "Mot de passe changé avec succès ✅" });
+  } catch (error) {
+    console.error(" Erreur change-password:", error);
+    res.status(500).json({ message: "Erreur serveur" });
+  }
+});
+
 // ==========================================
 // 🆕 ROUTES ORGANISATEUR
 // ==========================================
