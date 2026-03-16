@@ -1,104 +1,349 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="fr">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard - ESTC Admin</title>
+    <title>Dashboard - UNIEVENT Admin</title>
+    <meta name="description" content="UNIEVENT Admin Dashboard - Manage events, students, professors, and organizers">
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/dashboard.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
-    <!-- Phosphor Icons for modern UI -->
+    <!-- Phosphor Icons -->
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
     <!-- CryptoJS for Password Hashing -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+    <!-- Chart.js for Dynamic Charts -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 </head>
 
 <body class="dashboard-body">
-    <!-- Removed display: none for now to allow styling, will re-enable in final check if needed -->
     <div class="dashboard-layout">
-        <!-- Sidebar -->
-        <aside class="sidebar">
+        <!-- ============ SIDEBAR ============ -->
+        <aside class="sidebar" id="sidebar">
             <div class="sidebar-header">
-                <h2>ESTC <span class="text-blue">Admin</span></h2>
+                <div class="sidebar-logo">
+                    <div class="logo-icon">
+                        <i class="ph-fill ph-calendar-star"></i>
+                    </div>
+                    <h2>UniEvent</h2>
+                </div>
+                <div class="sidebar-avatar">
+                    <div class="avatar-img">
+                        <i class="ph-fill ph-user"></i>
+                    </div>
+                </div>
             </div>
-            <nav class="sidebar-nav">
-                <a href="#" class="nav-item active" data-target="overview">
-                    <i class="ph ph-squares-four"></i> Overview
-                </a>
-                <a href="#" class="nav-item" data-target="students">
-                    <i class="ph ph-users"></i> Students
-                </a>
-                <a href="#" class="nav-item" data-target="professors">
-                    <i class="ph ph-chalkboard-teacher"></i> Professors
-                </a>
-                <a href="#" class="nav-item" data-target="organizers">
-                    <i class="ph ph-briefcase"></i> Organizers
-                </a>
-            </nav>
+
+            <!-- Quick Actions -->
+            <div class="sidebar-section">
+                <div class="sidebar-section-header">
+                    <span>Actions rapides</span>
+                    <span class="section-link">Détails</span>
+                </div>
+                <div class="toggle-item">
+                    <div class="toggle-icon"><i class="ph-fill ph-lightning"></i></div>
+                    <span>Auto Approbation</span>
+                    <label class="switch">
+                        <input type="checkbox" id="toggle-auto-approve">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <div class="toggle-item">
+                    <div class="toggle-icon"><i class="ph-fill ph-bell-ringing"></i></div>
+                    <span>Notifications</span>
+                    <label class="switch">
+                        <input type="checkbox" id="toggle-notifications" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Shortcuts -->
+            <div class="sidebar-section">
+                <div class="sidebar-section-header">
+                    <span>Raccourcis</span>
+                    <span class="section-link">Détails</span>
+                </div>
+                <div class="shortcut-grid">
+                    <div class="shortcut-card" data-target="overview">
+                        <i class="ph-fill ph-chart-pie"></i>
+                        <span>Alertes</span>
+                        <small id="shortcut-alerts">UPD 12:08</small>
+                    </div>
+                    <div class="shortcut-card" data-target="students">
+                        <i class="ph-fill ph-calendar-check"></i>
+                        <span>Événements</span>
+                        <small id="shortcut-events">UPD 10:02</small>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Extra Shortcuts -->
+            <div class="sidebar-section">
+                <div class="sidebar-extra">
+                    <div class="shortcut-card-wide" data-target="professors">
+                        <i class="ph-fill ph-users-three"></i>
+                        <span>Utilisateurs</span>
+                        <small id="shortcut-users">UPD 13:04</small>
+                    </div>
+                </div>
+            </div>
+
             <div class="sidebar-footer">
-                <button id="logout-btn" class="btn btn-logout btn-block">
-                    <i class="ph ph-sign-out"></i> Logout
+                <button class="sidebar-add-btn" id="logout-btn">
+                    <i class="ph ph-sign-out"></i>
+                    <span>Déconnexion</span>
                 </button>
             </div>
         </aside>
 
-        <!-- Main Content -->
+        <!-- ============ MAIN CONTENT ============ -->
         <main class="main-content">
+            <!-- Top Navigation Bar -->
             <header class="topbar">
-                <h1 id="page-title">Overview</h1>
-
-                <div class="search-box">
-                    <i class="ph ph-magnifying-glass"></i>
-                    <input type="text" id="global-search" placeholder="Rechercher...">
-                </div>
-
-                <div class="user-profile">
-                    <button id="theme-toggle-btn" class="theme-toggle" title="Toggle Theme">
+                <nav class="topbar-tabs">
+                    <a href="#" class="tab-item active" data-target="overview">Dashboard</a>
+                    <a href="#" class="tab-item" data-target="students">Étudiants</a>
+                    <a href="#" class="tab-item" data-target="professors">Professeurs</a>
+                    <a href="#" class="tab-item" data-target="organizers">Organisateurs</a>
+                </nav>
+                <div class="topbar-actions">
+                    <div class="search-box">
+                        <i class="ph ph-magnifying-glass"></i>
+                        <input type="text" id="global-search" placeholder="Rechercher...">
+                    </div>
+                    <button class="topbar-icon-btn" id="theme-toggle-btn" title="Toggle Theme">
                         <i class="ph ph-moon"></i>
                     </button>
-                    <span id="user-email">admin@estc.edu</span>
-                    <div class="avatar">
-                        <i class="ph ph-user"></i>
+                    <button class="topbar-icon-btn" title="Notifications">
+                        <i class="ph ph-bell"></i>
+                        <span class="notification-dot"></span>
+                    </button>
+                    <div class="topbar-user">
+                        <span id="user-email">admin@estc.edu</span>
+                        <div class="topbar-avatar">
+                            <i class="ph-fill ph-user"></i>
+                        </div>
                     </div>
                 </div>
             </header>
 
             <div class="content-area">
-                <!-- Overview Section -->
+                <!-- ========== OVERVIEW SECTION ========== -->
                 <section id="section-overview" class="content-section active">
-                    <div class="stats-grid">
-                        <div class="stat-card">
-                            <div class="stat-icon"><i class="ph ph-users"></i></div>
-                            <div class="stat-details">
-                                <h3>Total Students</h3>
-                                <p class="stat-number" id="stats-students">0</p>
+                    <!-- Top Row: Hero Card + Participation -->
+                    <div class="overview-top-row">
+                        <!-- Hero Analysis Card -->
+                        <div class="hero-card">
+                            <div class="hero-card-header">
+                                <div>
+                                    <h2 class="hero-title">Analyse des Événements</h2>
+                                    <p class="hero-subtitle" id="hero-date">Mars 2026</p>
+                                </div>
+                                <span class="hero-badge" id="hero-badge">+12%</span>
+                            </div>
+                            <div class="hero-stats-row">
+                                <div class="hero-stat">
+                                    <span class="hero-stat-value" id="hero-total-events">0</span>
+                                    <span class="hero-stat-label">Total Événements</span>
+                                </div>
+                                <div class="hero-stat">
+                                    <span class="hero-stat-value" id="hero-active-events">0</span>
+                                    <span class="hero-stat-label">Actifs</span>
+                                </div>
+                                <div class="hero-stat">
+                                    <span class="hero-stat-value" id="hero-total-participants">0</span>
+                                    <span class="hero-stat-label">Participants</span>
+                                </div>
+                            </div>
+                            <div class="hero-visual">
+                                <div class="hero-visual-bar">
+                                    <div class="hero-visual-fill" id="hero-fill" style="width: 0%"></div>
+                                </div>
+                                <div class="hero-visual-labels">
+                                    <span>0%</span><span>25%</span><span>50%</span><span>75%</span><span>100%</span>
+                                </div>
                             </div>
                         </div>
-                        <div class="stat-card">
-                            <div class="stat-icon"><i class="ph ph-chalkboard-teacher"></i></div>
-                            <div class="stat-details">
-                                <h3>Total Professors</h3>
-                                <p class="stat-number" id="stats-professors">0</p>
+
+                        <!-- Participation Rates -->
+                        <div class="participation-card">
+                            <div class="participation-header">
+                                <h3>Taux de participation</h3>
+                                <span class="section-link">Détails</span>
+                            </div>
+                            <div class="participation-bars">
+                                <div class="participation-bar-item">
+                                    <div class="bar-label">
+                                        <span>Présents</span>
+                                        <span id="bar-presents-pct">0%</span>
+                                    </div>
+                                    <div class="bar-track">
+                                        <div class="bar-fill bar-green" id="bar-presents" style="width: 0%"></div>
+                                    </div>
+                                </div>
+                                <div class="participation-bar-item">
+                                    <div class="bar-label">
+                                        <span>Inscrits</span>
+                                        <span id="bar-inscrits-pct">0%</span>
+                                    </div>
+                                    <div class="bar-track">
+                                        <div class="bar-fill bar-blue" id="bar-inscrits" style="width: 0%"></div>
+                                    </div>
+                                </div>
+                                <div class="participation-bar-item">
+                                    <div class="bar-label">
+                                        <span>Absents</span>
+                                        <span id="bar-absents-pct">0%</span>
+                                    </div>
+                                    <div class="bar-track">
+                                        <div class="bar-fill bar-red" id="bar-absents" style="width: 0%"></div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
-                        <div class="stat-card">
-                            <div class="stat-icon"><i class="ph ph-briefcase"></i></div>
-                            <div class="stat-details">
-                                <h3>Total Organizers</h3>
-                                <p class="stat-number" id="stats-organizers">0</p>
+                    </div>
+
+                    <!-- Gauge Cards Row -->
+                    <div class="gauge-row">
+                        <div class="gauge-card">
+                            <div class="gauge-ring" id="gauge-attendance" data-value="0">
+                                <svg viewBox="0 0 100 100">
+                                    <circle class="gauge-bg" cx="50" cy="50" r="40"/>
+                                    <circle class="gauge-fill gauge-coral" cx="50" cy="50" r="40" stroke-dasharray="251.2" stroke-dashoffset="251.2"/>
+                                </svg>
+                                <div class="gauge-value"><span id="gauge-attendance-val">0</span>%</div>
                             </div>
+                            <span class="gauge-label">Présence</span>
+                        </div>
+                        <div class="gauge-card">
+                            <div class="gauge-ring" id="gauge-active" data-value="0">
+                                <svg viewBox="0 0 100 100">
+                                    <circle class="gauge-bg" cx="50" cy="50" r="40"/>
+                                    <circle class="gauge-fill gauge-teal" cx="50" cy="50" r="40" stroke-dasharray="251.2" stroke-dashoffset="251.2"/>
+                                </svg>
+                                <div class="gauge-value"><span id="gauge-active-val">0</span></div>
+                            </div>
+                            <span class="gauge-label">Évén. Actifs</span>
+                        </div>
+                        <div class="gauge-card">
+                            <div class="gauge-ring" id="gauge-satisfaction" data-value="0">
+                                <svg viewBox="0 0 100 100">
+                                    <circle class="gauge-bg" cx="50" cy="50" r="40"/>
+                                    <circle class="gauge-fill gauge-cyan" cx="50" cy="50" r="40" stroke-dasharray="251.2" stroke-dashoffset="251.2"/>
+                                </svg>
+                                <div class="gauge-value"><span id="gauge-satisfaction-val">0</span>%</div>
+                            </div>
+                            <span class="gauge-label">Satisfaction</span>
+                        </div>
+                    </div>
+
+                    <!-- Bottom Row: User Stats + Monthly Chart -->
+                    <div class="overview-bottom-row">
+                        <!-- User Statistics List -->
+                        <div class="user-stats-card">
+                            <div class="user-stats-header">
+                                <h3>Statistiques Utilisateurs</h3>
+                                <span class="section-link">Voir tout</span>
+                            </div>
+                            <div class="user-stats-list">
+                                <div class="user-stat-item">
+                                    <div class="user-stat-icon icon-blue"><i class="ph-fill ph-student"></i></div>
+                                    <div class="user-stat-info">
+                                        <span class="user-stat-name">Étudiants</span>
+                                        <span class="user-stat-range">Inscrits sur la plateforme</span>
+                                    </div>
+                                    <div class="user-stat-bar">
+                                        <div class="mini-bar-track">
+                                            <div class="mini-bar-fill bg-blue" id="stat-bar-students" style="width: 0%"></div>
+                                        </div>
+                                    </div>
+                                    <span class="user-stat-value" id="stats-students">0</span>
+                                </div>
+                                <div class="user-stat-item">
+                                    <div class="user-stat-icon icon-coral"><i class="ph-fill ph-chalkboard-teacher"></i></div>
+                                    <div class="user-stat-info">
+                                        <span class="user-stat-name">Professeurs</span>
+                                        <span class="user-stat-range">Affiliés à l'établissement</span>
+                                    </div>
+                                    <div class="user-stat-bar">
+                                        <div class="mini-bar-track">
+                                            <div class="mini-bar-fill bg-coral" id="stat-bar-professors" style="width: 0%"></div>
+                                        </div>
+                                    </div>
+                                    <span class="user-stat-value" id="stats-professors">0</span>
+                                </div>
+                                <div class="user-stat-item">
+                                    <div class="user-stat-icon icon-teal"><i class="ph-fill ph-briefcase"></i></div>
+                                    <div class="user-stat-info">
+                                        <span class="user-stat-name">Organisateurs</span>
+                                        <span class="user-stat-range">Créateurs d'événements</span>
+                                    </div>
+                                    <div class="user-stat-bar">
+                                        <div class="mini-bar-track">
+                                            <div class="mini-bar-fill bg-teal" id="stat-bar-organizers" style="width: 0%"></div>
+                                        </div>
+                                    </div>
+                                    <span class="user-stat-value" id="stats-organizers">0</span>
+                                </div>
+                                <div class="user-stat-item">
+                                    <div class="user-stat-icon icon-amber"><i class="ph-fill ph-calendar-dots"></i></div>
+                                    <div class="user-stat-info">
+                                        <span class="user-stat-name">Événements</span>
+                                        <span class="user-stat-range">Total créés</span>
+                                    </div>
+                                    <div class="user-stat-bar">
+                                        <div class="mini-bar-track">
+                                            <div class="mini-bar-fill bg-amber" id="stat-bar-events" style="width: 0%"></div>
+                                        </div>
+                                    </div>
+                                    <span class="user-stat-value" id="stats-events">0</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Monthly Participation Chart -->
+                        <div class="chart-card">
+                            <div class="chart-header">
+                                <h3>Participation Mensuelle</h3>
+                                <span class="section-link">Détails</span>
+                            </div>
+                            <div class="chart-container">
+                                <canvas id="monthlyChart"></canvas>
+                            </div>
+                            <div class="chart-legend">
+                                <div class="legend-item">
+                                    <span class="legend-dot dot-teal"></span>
+                                    <span>Inscrits</span>
+                                </div>
+                                <div class="legend-item">
+                                    <span class="legend-dot dot-coral"></span>
+                                    <span>Présents</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Recent Events -->
+                    <div class="recent-events-card">
+                        <div class="recent-events-header">
+                            <h3>Événements Récents</h3>
+                            <span class="section-link">Voir tout</span>
+                        </div>
+                        <div class="recent-events-list" id="recent-events-list">
+                            <!-- Dynamic content -->
                         </div>
                     </div>
                 </section>
 
-                <!-- Students Section -->
+                <!-- ========== STUDENTS SECTION ========== -->
                 <section id="section-students" class="content-section" style="display: none;">
                     <div class="section-header">
-                        <h2>Manage Students</h2>
+                        <h2>Gestion des Étudiants</h2>
                         <button class="btn btn-primary" onclick="openModal('studentModal')">
-                            <i class="ph ph-plus"></i> Add Student
+                            <i class="ph ph-plus"></i> Ajouter un Étudiant
                         </button>
                     </div>
                     <div class="table-container">
@@ -118,12 +363,12 @@
                     </div>
                 </section>
 
-                <!-- Professors Section -->
+                <!-- ========== PROFESSORS SECTION ========== -->
                 <section id="section-professors" class="content-section" style="display: none;">
                     <div class="section-header">
-                        <h2>Manage Professors</h2>
+                        <h2>Gestion des Professeurs</h2>
                         <button class="btn btn-primary" onclick="openModal('professorModal')">
-                            <i class="ph ph-plus"></i> Add Professor
+                            <i class="ph ph-plus"></i> Ajouter un Professeur
                         </button>
                     </div>
                     <div class="table-container">
@@ -144,12 +389,12 @@
                     </div>
                 </section>
 
-                <!-- Organizers Section -->
+                <!-- ========== ORGANIZERS SECTION ========== -->
                 <section id="section-organizers" class="content-section" style="display: none;">
                     <div class="section-header">
-                        <h2>Manage Organizers</h2>
+                        <h2>Gestion des Organisateurs</h2>
                         <button class="btn btn-primary" onclick="openModal('organizerModal')">
-                            <i class="ph ph-plus"></i> Add Organizer
+                            <i class="ph ph-plus"></i> Ajouter un Organisateur
                         </button>
                     </div>
                     <div class="table-container">
@@ -172,12 +417,12 @@
         </main>
     </div>
 
-    <!-- Modals -->
+    <!-- ============ MODALS ============ -->
     <!-- Student Modal -->
     <div id="studentModal" class="modal">
         <div class="modal-content">
             <span class="close-modal" onclick="closeModal('studentModal')">×</span>
-            <h2>Add New Student</h2>
+            <h2>Ajouter un Étudiant</h2>
             <form id="student-form">
                 <div class="form-group">
                     <label for="student-id-input">ID</label>
@@ -195,7 +440,7 @@
                     <label for="student-pass">Mot de passe</label>
                     <input type="password" id="student-pass" required>
                 </div>
-                <button type="submit" class="btn btn-primary">Enregistrer l'étudiant</button>
+                <button type="submit" class="btn btn-primary btn-block">Enregistrer l'étudiant</button>
             </form>
         </div>
     </div>
@@ -204,7 +449,7 @@
     <div id="professorModal" class="modal">
         <div class="modal-content">
             <span class="close-modal" onclick="closeModal('professorModal')">×</span>
-            <h2>Add New Professor</h2>
+            <h2>Ajouter un Professeur</h2>
             <form id="professor-form">
                 <input type="hidden" id="professor-id">
                 <div class="form-group">
@@ -223,7 +468,7 @@
                     <label for="professor-pass">Mot de passe</label>
                     <input type="password" id="professor-pass" required>
                 </div>
-                <button type="submit" class="btn btn-primary">Enregistrer le professeur</button>
+                <button type="submit" class="btn btn-primary btn-block">Enregistrer le professeur</button>
             </form>
         </div>
     </div>
@@ -232,7 +477,7 @@
     <div id="organizerModal" class="modal">
         <div class="modal-content">
             <span class="close-modal" onclick="closeModal('organizerModal')">×</span>
-            <h2>Add New Organizer</h2>
+            <h2>Ajouter un Organisateur</h2>
             <form id="organizer-form">
                 <input type="hidden" id="organizer-id">
                 <div class="form-group">
@@ -247,7 +492,7 @@
                     <label for="organizer-pass">Mot de passe</label>
                     <input type="password" id="organizer-pass" required>
                 </div>
-                <button type="submit" class="btn btn-primary">Enregistrer l'organisateur</button>
+                <button type="submit" class="btn btn-primary btn-block">Enregistrer l'organisateur</button>
             </form>
         </div>
     </div>

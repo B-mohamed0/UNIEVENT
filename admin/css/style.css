@@ -1,33 +1,51 @@
 :root {
-    /* macOS Tahoe - Light Mode (Default) */
-    --bg-main: #f5f5f7;
-    --bg-glass: rgba(255, 255, 255, 0.7);
-    --bg-sidebar: rgba(245, 245, 247, 0.8);
-    --text-main: #1d1d1f;
-    --text-muted: #86868b;
-    --border-glass: rgba(0, 0, 0, 0.1);
-    --accent-blue: #0071e3;
-    --accent-blue-hover: #0077ed;
-    --glass-blur: blur(20px);
-    --shadow-main: 0 8px 32px 0 rgba(31, 38, 135, 0.1);
+    /* Warm Beige Theme (Default - matching screenshot) */
+    --bg-main: #f4f1ec;
+    --bg-glass: rgba(255, 255, 255, 0.82);
+    --bg-sidebar: #1a1d23;
+    --bg-sidebar-card: rgba(255, 255, 255, 0.06);
+    --text-main: #2c2c2e;
+    --text-muted: #8e8e93;
+    --text-sidebar: #e5e5ea;
+    --text-sidebar-muted: rgba(255, 255, 255, 0.45);
+    --border-glass: rgba(0, 0, 0, 0.08);
+    --border-sidebar: rgba(255, 255, 255, 0.08);
+
+    /* Accent Colors */
+    --accent-coral: #e74c5e;
+    --accent-teal: #2ec4b6;
+    --accent-cyan: #17c3e6;
+    --accent-blue: #3b82f6;
+    --accent-amber: #f4a261;
+    --accent-green: #34c759;
+
+    --glass-blur: blur(24px);
+    --shadow-main: 0 4px 24px rgba(0, 0, 0, 0.06);
+    --shadow-card: 0 2px 16px rgba(0, 0, 0, 0.04);
+    --shadow-hover: 0 8px 32px rgba(0, 0, 0, 0.1);
 
     --error: #ff3b30;
     --success: #34c759;
     --font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
     --transition: all 0.3s cubic-bezier(0.25, 0.1, 0.25, 1);
+    --transition-fast: all 0.2s cubic-bezier(0.25, 0.1, 0.25, 1);
+    --radius-sm: 10px;
+    --radius-md: 14px;
+    --radius-lg: 20px;
+    --radius-xl: 24px;
 }
 
 [data-theme='dark'] {
-    /* macOS Tahoe - Dark Mode */
-    --bg-main: #000000;
-    --bg-glass: rgba(28, 28, 30, 0.7);
-    --bg-sidebar: rgba(28, 28, 30, 0.82);
+    --bg-main: #0f1117;
+    --bg-glass: rgba(30, 32, 40, 0.85);
+    --bg-sidebar: #141620;
+    --bg-sidebar-card: rgba(255, 255, 255, 0.04);
     --text-main: #f5f5f7;
-    --text-muted: #86868b;
-    --border-glass: rgba(255, 255, 255, 0.1);
-    --accent-blue: #0a84ff;
-    --accent-blue-hover: #409fff;
-    --shadow-main: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
+    --text-muted: #8e8e93;
+    --border-glass: rgba(255, 255, 255, 0.06);
+    --shadow-main: 0 4px 24px rgba(0, 0, 0, 0.3);
+    --shadow-card: 0 2px 16px rgba(0, 0, 0, 0.2);
+    --shadow-hover: 0 8px 32px rgba(0, 0, 0, 0.4);
 }
 
 * {
@@ -41,7 +59,9 @@ body {
     background-color: var(--bg-main);
     color: var(--text-main);
     line-height: 1.6;
-    transition: background-color var(--transition), color var(--transition);
+    transition: background-color 0.4s ease, color 0.3s ease;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
 }
 
 h1, h2, h3, h4, h5, h6 {
@@ -56,43 +76,40 @@ a {
 }
 
 a:hover {
-    color: var(--accent-blue-hover);
+    color: var(--accent-teal);
 }
 
-/* Typography Utility */
-.text-blue {
-    color: var(--accent-blue);
-}
+.text-blue { color: var(--accent-blue); }
 
-/* Buttons */
+/* ====== Buttons ====== */
 .btn {
     display: inline-flex;
     align-items: center;
     justify-content: center;
     gap: 0.5rem;
-    padding: 0.75rem 1.5rem;
-    border-radius: 10px;
-    font-weight: 500;
-    font-size: 1rem;
+    padding: 0.7rem 1.4rem;
+    border-radius: var(--radius-sm);
+    font-weight: 600;
+    font-size: 0.875rem;
     cursor: pointer;
     border: none;
     transition: var(--transition);
+    font-family: var(--font-family);
+    letter-spacing: -0.01em;
 }
 
 .btn-primary {
-    background-color: var(--accent-blue);
+    background: linear-gradient(135deg, var(--accent-coral), #d63d58);
     color: white;
+    box-shadow: 0 2px 12px rgba(231, 76, 94, 0.3);
 }
 
 .btn-primary:hover {
-    background-color: var(--accent-blue-hover);
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(0, 113, 227, 0.3);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(231, 76, 94, 0.4);
 }
 
-.btn-block {
-    width: 100%;
-}
+.btn-block { width: 100%; }
 
 .btn-logout {
     background-color: transparent;
@@ -111,27 +128,31 @@ a:hover {
     color: var(--error);
     border: 1px solid transparent;
 }
+
 .btn-danger:hover {
     background-color: var(--error);
     color: white;
+    transform: translateY(-1px);
 }
 
 .btn-sm {
     padding: 0.4rem 0.8rem;
-    font-size: 0.875rem;
+    font-size: 0.8rem;
 }
 
-/* Forms */
+/* ====== Forms ====== */
 .form-group {
-    margin-bottom: 1.5rem;
+    margin-bottom: 1.25rem;
 }
 
 .form-group label {
     display: block;
-    margin-bottom: 0.5rem;
-    font-size: 0.875rem;
-    font-weight: 500;
+    margin-bottom: 0.4rem;
+    font-size: 0.8rem;
+    font-weight: 600;
     color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
 }
 
 .form-group input {
@@ -139,32 +160,32 @@ a:hover {
     padding: 0.75rem 1rem;
     background-color: var(--bg-glass);
     border: 1px solid var(--border-glass);
-    border-radius: 10px;
+    border-radius: var(--radius-sm);
     color: var(--text-main);
     font-family: var(--font-family);
+    font-size: 0.95rem;
     transition: var(--transition);
     backdrop-filter: var(--glass-blur);
 }
 
 .form-group input:focus {
     outline: none;
-    border-color: var(--accent-blue);
-    box-shadow: 0 0 0 3px rgba(0, 113, 227, 0.2);
+    border-color: var(--accent-coral);
+    box-shadow: 0 0 0 3px rgba(231, 76, 94, 0.15);
 }
 
 .error-message {
     color: var(--error);
-    font-size: 0.875rem;
+    font-size: 0.85rem;
     margin-bottom: 1rem;
     text-align: center;
-    padding: 0.5rem;
-    background-color: rgba(255, 59, 48, 0.1);
+    padding: 0.6rem;
+    background-color: rgba(255, 59, 48, 0.08);
     border-radius: 8px;
+    border: 1px solid rgba(255, 59, 48, 0.15);
 }
 
-/* -------------------------------------
-   LOGIN PAGE SPECIFIC
--------------------------------------- */
+/* ====== Login Page ====== */
 .login-body {
     display: flex;
     align-items: center;
@@ -180,12 +201,12 @@ a:hover {
 }
 
 .login-card {
-    background-color: var(--bg-card);
-    border: 1px solid var(--border-color);
-    border-radius: 16px;
+    background-color: rgba(30, 32, 40, 0.9);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: var(--radius-lg);
     padding: 2.5rem;
-    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.3);
-    backdrop-filter: blur(10px);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(20px);
 }
 
 .login-header {
@@ -195,10 +216,10 @@ a:hover {
 
 .login-header h2 {
     font-size: 1.875rem;
-    color: var(--text-main);
+    color: #f5f5f7;
     margin-bottom: 0.5rem;
 }
 
 .login-header p {
-    color: var(--text-muted);
+    color: #8e8e93;
 }

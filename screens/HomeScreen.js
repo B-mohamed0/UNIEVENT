@@ -10,6 +10,7 @@ import {
   Dimensions,
   Image,
   RefreshControl,
+  Easing,
 } from "react-native";
 import { ImageBackground } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
@@ -18,6 +19,8 @@ import { LinearGradient } from "expo-linear-gradient";
 import BottomNav from "../components/navbar";
 import { API_URL } from "../config";
 import { useThemeContext } from "../context/ThemeContext";
+import LiquidGlassButton from "../components/LiquidGlassButton";
+import LiquidGlassCard from "../components/LiquidGlassCard";
 
 
 
@@ -50,7 +53,7 @@ export default function HomeScreen({ route, navigation }) {
   const theme = {
     background: isDarkMode ? "#0f172aff" : "#F1F5F9",
     text: isDarkMode ? "#F8FAFC" : "#0F172A",
-    textSecondary: isDarkMode ? "#838383ff" : "rgba(67, 67, 67, 0.6)",
+    textSecondary: isDarkMode ? "#ffffffff" : "rgba(23, 22, 22, 0.8)",
     card: isDarkMode ? "#1E293B" : "#FFFFFF",
     iconBg: isDarkMode ? "rgba(255, 255, 255, 0.13)" : "rgba(0, 74, 143, 0.46)",
     iconBorder: isDarkMode ? "rgba(255, 255, 255, 0.09)" : "rgba(255, 255, 255, 0.13)",
@@ -288,18 +291,21 @@ export default function HomeScreen({ route, navigation }) {
               </View>
 
               {/* Bouton "Voir l'événement" */}
-              <TouchableOpacity
-                style={styles.viewButton}
-                onPress={() =>
-                  navigation.navigate("Eventinfo", {
-                    eventId: event.id,
-                    studentId: id,
-                    nom,
-                  })
-                }
-              >
-                <Text style={styles.viewButtonText}>voir l'évènement</Text>
-              </TouchableOpacity>
+              <View style={{ marginTop: 15 }}>
+                <LiquidGlassButton
+                  title="voir l'évènement"
+                  onPress={() =>
+                    navigation.navigate("Eventinfo", {
+                      eventId: event.id,
+                      studentId: id,
+                      nom,
+                    })
+                  }
+                  isDarkMode={isDarkMode}
+                  containerStyle={{ width: 145, height: 40, borderRadius: 25 }}
+                  textStyle={styles.viewButtonText}
+                />
+              </View>
             </View>
             {/* Date box */}
             <View style={styles.dateBox}>
@@ -438,27 +444,35 @@ export default function HomeScreen({ route, navigation }) {
 
         {/* STATS */}
         <View style={styles.statsContainer}>
-          <BlurView intensity={20} tint={isDarkMode ? "dark" : "light"} style={[styles.statCard, { backgroundColor: theme.statCardBg }]}>
+          <LiquidGlassCard isDarkMode={isDarkMode}>
             <Ionicons name="calendar" size={40} color="#878787ff" />
             <Text style={[styles.statLabel, { color: theme.textSecondary }]}>Événements à venir</Text>
             <Text style={[styles.statNumber, { color: theme.text }]}>
               {userData.stats.upcomingEvents}
             </Text>
-          </BlurView>
+          </LiquidGlassCard>
 
-          <BlurView intensity={20} tint={isDarkMode ? "dark" : "light"} style={[styles.statCard, { backgroundColor: theme.statCardBg }]}>
+          <LiquidGlassCard
+            isDarkMode={isDarkMode}
+            colors1={isDarkMode ? ["#f7c80033", "#ff8c00"] : ["#ffe259", "#ffa751"]}
+            colors2={isDarkMode ? ["#5a4a1a", "#7b6b2b"] : ["#ffcf67", "#d4a300"]}
+          >
             <Ionicons name="time" size={40} color="#dfb600ff" />
             <Text style={[styles.statLabel, { color: theme.textSecondary }]}>Événements d'aujourd'hui</Text>
             <Text style={[styles.statNumber, { color: theme.text }]}>{userData.stats.todayEvents}</Text>
-          </BlurView>
+          </LiquidGlassCard>
 
-          <BlurView intensity={20} tint={isDarkMode ? "dark" : "light"} style={[styles.statCard, { backgroundColor: theme.statCardBg }]}>
+          <LiquidGlassCard
+            isDarkMode={isDarkMode}
+            colors1={isDarkMode ? ["#00ff8833", "#00b84d"] : ["#43e97b", "#38f9d7"]}
+            colors2={isDarkMode ? ["#1a5a3a", "#2b7b5b"] : ["#56d98a", "#1abc6e"]}
+          >
             <Ionicons name="checkmark-circle" size={40} color="#34D399" />
             <Text style={[styles.statLabel, { color: theme.textSecondary }]}>Présences validées</Text>
             <Text style={[styles.statNumber, { color: theme.text }]}>
               {userData.stats.completedEvents}
             </Text>
-          </BlurView>
+          </LiquidGlassCard>
         </View>
 
         {/* EVENTS LIST */}
@@ -492,33 +506,20 @@ export default function HomeScreen({ route, navigation }) {
 
           {/* BUTTONS */}
           <View style={styles.actionButtonsContainer}>
-            <TouchableOpacity
-              style={styles.actionButtonWrapper}
-              onPress={() => navigation.navigate("Eventsscreen", { id, nom })}
-              activeOpacity={0.8}
-            >
-              <LinearGradient
-                colors={["rgba(124,154,225,0.8)", "#426EBC"]}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
-                style={styles.gradientActionButton}
-              >
-                <Text style={styles.actionButtonText}>Voir Évènements</Text>
-              </LinearGradient>
-            </TouchableOpacity>
+            <View style={styles.actionButtonWrapper}>
+              <LiquidGlassButton
+                title="Voir Évènements"
+                onPress={() => navigation.navigate("Eventsscreen", { id, nom })}
+                isDarkMode={isDarkMode}
+              />
+            </View>
 
-            <TouchableOpacity
-              style={styles.actionButtonWrapper}
-              onPress={() =>
-                navigation.navigate("StudentStats", { id, nom })
-              }
-            >
-              <View style={[styles.actionButtonOutline, { borderColor: isDarkMode ? "rgba(255, 255, 255, 0.2)" : "#01419aff" }]}>
-                <Text style={[styles.actionButtonOutlineText, { color: isDarkMode ? "#F8FAFC" : "#01419aff" }]}>
-                  Statistiques
-                </Text>
-              </View>
-            </TouchableOpacity>
+            <View style={styles.actionButtonWrapper}>
+              <LiquidGlassButton
+                onPress={() => navigation.navigate("StudentStats", { id, nom })}
+                isDarkMode={isDarkMode}
+              />
+            </View>
           </View>
         </View>
       </ScrollView>
@@ -615,7 +616,7 @@ const styles = StyleSheet.create({
 
   statLabel: {
     fontSize: 15,
-    paddingHorizontal: 10,
+    paddingHorizontal: 0,
     color: "#666",
     marginTop: 10,
     marginBottom: 15,
@@ -914,6 +915,64 @@ const styles = StyleSheet.create({
     fontSize: 17,
     fontWeight: "600",
     fontFamily: "jokeyone",
+  },
+
+  liquidButtonContainer: {
+    width: "100%",
+    height: 50,
+    borderRadius: 30,
+    overflow: "hidden",
+    backgroundColor: "transparent",
+    shadowColor: "#00c6ff",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.3,
+    shadowRadius: 15,
+    elevation: 10,
+  },
+  liquidBackgroundWrapper: {
+    ...StyleSheet.absoluteFillObject,
+    overflow: "hidden",
+    borderRadius: 30,
+    backgroundColor: "rgba(255,255,255,0.1)",
+  },
+  liquidShape1: {
+    position: "absolute",
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    top: -20,
+    left: -20,
+    opacity: 0.8,
+  },
+  liquidShape2: {
+    position: "absolute",
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    bottom: -30,
+    right: -20,
+    opacity: 0.8,
+  },
+  liquidGlassLayer: {
+    ...StyleSheet.absoluteFillObject,
+    justifyContent: "center",
+    alignItems: "center",
+    borderRadius: 30,
+  },
+  liquidInnerBorder: {
+    ...StyleSheet.absoluteFillObject,
+    borderRadius: 30,
+    borderWidth: 1.5,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  glossyHighlight: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    height: "50%",
+    borderRadius: 30,
   },
 
 });
