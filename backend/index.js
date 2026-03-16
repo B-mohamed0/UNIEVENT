@@ -368,42 +368,50 @@ app.post("/api/auth/change-password", async (req, res) => {
  * Retourne les stats du dashboard organisateur
  */
 // Route consolidée pour les statistiques d'un organisateur
+// Route consolidée pour les statistiques d'un organisateur avec filtres
 app.get("/api/organizer/stats/:id", async (req, res) => {
   try {
     const id = req.params.id;
-    console.log(`📊 Récupération des stats consolidées pour l'organisateur ID: ${id}`);
+    const { month, category } = req.query;
 
-    // 1️⃣ Total des événements
-    const totalEventsQuery = await pool.query(
-      'SELECT COUNT(*) FROM evenement WHERE idorganisateur = $1',
-      [id]
-    );
+    console.log(`📊 Récupération des stats filtrées pour l'organisateur ID: ${id} (Mois: ${month}, Cat: ${category})`);
 
-    // 2️⃣ Événements actifs (non expirés)
-    const activeEventsQuery = await pool.query(
-      "SELECT COUNT(*) FROM evenement WHERE idorganisateur = $1 AND status != 'EXPIRE' AND status != 'EXPIRER'",
-      [id]
-    );
+    // --- CONSTRUCTION DES FILTRES ---
+    let eventFilters = "WHERE idorganisateur = $1";
+    let filterParams = [id];
+    let pIdx = 2;
 
-    // 3️⃣ Total des inscriptions (participations totales)
+    if (month && month !== "all" && month !== "undefined") {
+      eventFilters += ` AND EXTRACT(MONTH FROM date) = $${pIdx}`;
+      filterParams.push(month);
+      pIdx++;
+    }
+    if (category && category !== "all" && category !== "undefined" && category !== "Toutes Catégories") {
+      eventFilters += ` AND categorie = $${pIdx}`;
+      filterParams.push(category);
+      pIdx++;
+    }
+
+    // 1️⃣ Total des événements (filtré)
+    const totalEventsQuery = await pool.query(`SELECT COUNT(*) FROM evenement ${eventFilters}`, filterParams);
+
+    // 2️⃣ Événements actifs (filtré)
+    let activeFilters = eventFilters + " AND status != 'EXPIRE' AND status != 'EXPIRER'";
+    const activeEventsQuery = await pool.query(`SELECT COUNT(*) FROM evenement ${activeFilters}`, filterParams);
+
+    // 3️⃣ Total des inscriptions (filtré)
     const totalRegistrationsQuery = await pool.query(
-      `SELECT COUNT(*) 
-       FROM participation p
-       INNER JOIN evenement e ON e.id = p.idevenement
-       WHERE e.idorganisateur = $1`,
-      [id]
+      `SELECT COUNT(*) FROM participation p INNER JOIN evenement e ON e.id = p.idevenement ${eventFilters.replace("WHERE", "WHERE e.")}`,
+      filterParams
     );
 
-    // 4️⃣ Présences validées (PRESENT)
+    // 4️⃣ Présences validées (filtré)
     const validatedAttendancesQuery = await pool.query(
-      `SELECT COUNT(*) 
-       FROM participation p
-       INNER JOIN evenement e ON e.id = p.idevenement
-       WHERE e.idorganisateur = $1 AND p.status = 'PRESENT'`,
-      [id]
+      `SELECT COUNT(*) FROM participation p INNER JOIN evenement e ON e.id = p.idevenement ${eventFilters.replace("WHERE", "WHERE e.")} AND p.status = 'PRESENT'`,
+      filterParams
     );
 
-    // 5️⃣ Taux de présence Moyen (Global)
+    // 5️⃣ Taux de présence Moyen (filtré)
     const avgAttendanceQuery = await pool.query(
       `SELECT 
          CASE 
@@ -413,45 +421,75 @@ app.get("/api/organizer/stats/:id", async (req, res) => {
          END as avg_rate
        FROM evenement e
        LEFT JOIN participation p ON e.id = p.idevenement
-       WHERE e.idorganisateur = $1`,
-      [id]
+       ${eventFilters.replace("WHERE", "WHERE e.")}`,
+      filterParams
     );
 
-    // 6️⃣ Meilleur taux de présence sur un seul événement
+    // 6️⃣ Meilleur taux de présence sur un seul événement (filtré)
     const bestRateQuery = await pool.query(
       `SELECT MAX(rate) AS best_rate
        FROM (
            SELECT 
              CASE 
                WHEN e.capacite_max > 0 THEN
-                 (COUNT(CASE WHEN p.status = 'PRESENT' OR p.status = 'EN_COURS' THEN 1 END)::float 
-                  / e.capacite_max) * 100
+                 (COUNT(CASE WHEN p.status = 'PRESENT' OR p.status = 'EN_COURS' THEN 1 END)::float / e.capacite_max) * 100
                ELSE 0
              END AS rate
            FROM evenement e
            LEFT JOIN participation p ON e.id = p.idevenement
-           WHERE e.idorganisateur = $1
+           ${eventFilters.replace("WHERE", "WHERE e.")}
            GROUP BY e.id, e.capacite_max
        ) sub`,
-      [id]
+      filterParams
     );
 
-    const data = {
-      // Pour le Dashboard
+    // 7️⃣ Participants par mois (Trend Graph) - Non filtré par mois pour voir l'année
+    // Mais filtré par catégorie si spécifié
+    let trendFilters = "WHERE e.idorganisateur = $1 AND EXTRACT(YEAR FROM e.date) = EXTRACT(YEAR FROM CURRENT_DATE)";
+    let trendParams = [id];
+    if (category && category !== "all" && category !== "undefined" && category !== "Toutes Catégories") {
+      trendFilters += " AND e.categorie = $2";
+      trendParams.push(category);
+    }
+
+    const trendQuery = await pool.query(
+      `SELECT EXTRACT(MONTH FROM e.date) as m, COUNT(p.id) as c
+       FROM evenement e
+       LEFT JOIN participation p ON e.id = p.idevenement
+       ${trendFilters}
+       GROUP BY m ORDER BY m`,
+      trendParams
+    );
+
+    // Formatter en tableau de 12 mois
+    const participantsPerMonth = new Array(12).fill(0);
+    trendQuery.rows.forEach(row => {
+      const monthIdx = parseInt(row.m) - 1;
+      if (monthIdx >= 0 && monthIdx < 12) {
+        participantsPerMonth[monthIdx] = parseInt(row.c);
+      }
+    });
+
+    // 8️⃣ Catégories disponibles pour cet organisateur
+    const categoriesQuery = await pool.query(
+      "SELECT DISTINCT categorie FROM evenement WHERE idorganisateur = $1 AND categorie IS NOT NULL",
+      [id]
+    );
+    const availableCategories = categoriesQuery.rows.map(r => r.categorie);
+
+    res.json({
       activeEvents: parseInt(activeEventsQuery.rows[0].count),
       totalRegistrations: parseInt(totalRegistrationsQuery.rows[0].count),
       totalAttendances: parseInt(validatedAttendancesQuery.rows[0].count),
       avgAttendance: parseFloat(avgAttendanceQuery.rows[0].avg_rate || 0).toFixed(1),
-
-      // Pour la page Stats détaillée
       totalEvenement: parseInt(totalEventsQuery.rows[0].count),
-      totalParticipants: parseInt(totalRegistrationsQuery.rows[0].count), // Alias pour cohérence
-      bestTauxPresence: parseFloat(bestRateQuery.rows[0].best_rate || 0).toFixed(2) + "%"
-    };
-
-    res.json(data);
+      totalParticipants: parseInt(totalRegistrationsQuery.rows[0].count),
+      bestTauxPresence: parseFloat(bestRateQuery.rows[0].best_rate || 0).toFixed(2) + "%",
+      participantsPerMonth,
+      availableCategories
+    });
   } catch (error) {
-    console.error("❌ Erreur stats organisateur:", error);
+    console.error("❌ Erreur stats organisateur avec filtres:", error);
     res.status(500).json({ error: "Erreur serveur" });
   }
 });

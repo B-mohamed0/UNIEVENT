@@ -8,6 +8,9 @@ import {
     ImageBackground,
     StatusBar,
     ScrollView,
+    Modal,
+    ActivityIndicator,
+    FlatList,
 } from "react-native";
 import { BlurView } from "expo-blur";
 import { Ionicons } from "@expo/vector-icons";
@@ -34,27 +37,52 @@ export default function OrganizerStats({ route, navigation }) {
     const [stats, setStats] = useState({
         totalEvenement: 0,
         totalParticipants: 0,
-        bestTauxPresence: "0%"
+        bestTauxPresence: "0%",
+        participantsPerMonth: new Array(12).fill(0),
+        availableCategories: []
     });
     const [loading, setLoading] = useState(true);
+    const [selectedMonth, setSelectedMonth] = useState("all");
+    const [selectedCategory, setSelectedCategory] = useState("all");
+    const [showMonthModal, setShowMonthModal] = useState(false);
+    const [showCategoryModal, setShowCategoryModal] = useState(false);
+
+    const months = [
+        { label: "Tous", value: "all" },
+        { label: "Janv", value: "1" },
+        { label: "Févr", value: "2" },
+        { label: "Mars", value: "3" },
+        { label: "Avril", value: "4" },
+        { label: "Mai", value: "5" },
+        { label: "Juin", value: "6" },
+        { label: "Juil", value: "7" },
+        { label: "Août", value: "8" },
+        { label: "Sept", value: "9" },
+        { label: "Oct", value: "10" },
+        { label: "Nov", value: "11" },
+        { label: "Déc", value: "12" },
+    ];
+
+    const fetchStats = async () => {
+        setLoading(true);
+        try {
+            const url = `${API_URL}/organizer/stats/${id}?month=${selectedMonth}&category=${selectedCategory}`;
+            console.log("Fetching stats from:", url);
+            const response = await fetch(url);
+            const data = await response.json();
+            if (response.ok) {
+                setStats(data);
+            }
+        } catch (error) {
+            console.error("Erreur lors de la récupération des stats:", error);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     useEffect(() => {
-        const fetchStats = async () => {
-            try {
-                const response = await fetch(`${API_URL}/organizer/stats/${id}`);
-                const data = await response.json();
-                if (response.ok) {
-                    setStats(data);
-                }
-            } catch (error) {
-                console.error("Erreur lors de la récupération des stats:", error);
-            } finally {
-                setLoading(false);
-            }
-        };
-
         fetchStats();
-    }, [id]);
+    }, [id, selectedMonth, selectedCategory]);
 
     return (
         <OrganizerBackground>
@@ -72,46 +100,149 @@ export default function OrganizerStats({ route, navigation }) {
 
             <ScrollView contentContainerStyle={styles.scrollContent}>
                 <View style={styles.filterRow}>
-                    <TouchableOpacity style={[styles.filterBtn, { backgroundColor: isDarkMode ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.05)", borderColor: themeColors.cardBorder }]}>
-                        <Ionicons name="checkmark" size={16} color={themeColors.text} />
-                        <Text style={[styles.filterText, { color: themeColors.text }]}>Avril</Text>
+                    <TouchableOpacity
+                        onPress={() => setShowMonthModal(true)}
+                        style={[styles.filterBtn, { backgroundColor: isDarkMode ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.05)", borderColor: themeColors.cardBorder }]}
+                    >
+                        <Ionicons name="calendar-outline" size={16} color={themeColors.text} />
+                        <Text style={[styles.filterText, { color: themeColors.text }]}>
+                            {months.find(m => m.value === selectedMonth)?.label || "Mois"}
+                        </Text>
+                        <Ionicons name="chevron-down" size={14} color={themeColors.text} />
                     </TouchableOpacity>
-                    <TouchableOpacity style={[styles.filterBtn, { backgroundColor: isDarkMode ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.05)", borderColor: themeColors.cardBorder }]}>
-                        <Text style={[styles.filterText, { color: themeColors.text }]}>Toutes Catégories</Text>
-                        <Ionicons name="chevron-down" size={16} color={themeColors.text} />
+
+                    <TouchableOpacity
+                        onPress={() => setShowCategoryModal(true)}
+                        style={[styles.filterBtn, { backgroundColor: isDarkMode ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.05)", borderColor: themeColors.cardBorder }]}
+                    >
+                        <Ionicons name="options-outline" size={16} color={themeColors.text} />
+                        <Text style={[styles.filterText, { color: themeColors.text }]} numberOfLines={1}>
+                            {selectedCategory === "all" ? "Toutes Catégories" : selectedCategory}
+                        </Text>
+                        <Ionicons name="chevron-down" size={14} color={themeColors.text} />
                     </TouchableOpacity>
                 </View>
 
-                <BlurView intensity={30} tint={themeColors.blurTint} style={[styles.chartCard, { borderColor: themeColors.cardBorder }]}>
-                    <Text style={[styles.chartTitle, { color: themeColors.text }]}>Participants par mois</Text>
-                    <View style={[styles.chartPlaceholder, { borderBottomColor: isDarkMode ? "rgba(255,255,255,0.2)" : "rgba(0,0,0,0.1)" }]}>
-                        {/* Simuler un graphique simple avec des barres */}
-                        {[40, 60, 45, 80, 55, 90, 70, 40, 60, 75, 50, 65].map((h, i) => (
-                            <View key={i} style={[styles.chartBar, { height: h }]} />
-                        ))}
+                {loading ? (
+                    <View style={styles.loadingContainer}>
+                        <ActivityIndicator size="large" color="#2E5BFF" />
                     </View>
-                    <View style={styles.chartLabels}>
-                        {['10', '20', '30'].map(l => <Text key={l} style={[styles.chartLabelText, { color: themeColors.subText }]}>{l}</Text>)}
-                    </View>
-                </BlurView>
+                ) : (
+                    <>
+                        <BlurView intensity={30} tint={themeColors.blurTint} style={[styles.chartCard, { borderColor: themeColors.cardBorder }]}>
+                            <Text style={[styles.chartTitle, { color: themeColors.text }]}>Participants par mois (Année en cours)</Text>
+                            <View style={[styles.chartContainer, { borderBottomColor: isDarkMode ? "rgba(255,255,255,0.2)" : "rgba(0,0,0,0.1)" }]}>
+                                {stats.participantsPerMonth.map((count, i) => {
+                                    const maxCount = Math.max(...stats.participantsPerMonth, 1);
+                                    const barHeight = (count / maxCount) * 120;
+                                    return (
+                                        <View key={i} style={styles.barGroup}>
+                                            <View style={[styles.chartBar, { height: Math.max(barHeight, 5) }]} />
+                                            <Text style={[styles.barMonth, { color: themeColors.subText }]}>{months[i + 1].label.substring(0, 1)}</Text>
+                                        </View>
+                                    );
+                                })}
+                            </View>
+                        </BlurView>
 
-                <View style={styles.statsGrid}>
-                    <BlurView intensity={30} tint={themeColors.blurTint} style={[styles.gridItem, { borderColor: themeColors.cardBorder }]}>
-                        <Text style={[styles.gridLabel, { color: themeColors.subText }]}>Total Événements</Text>
-                        <Text style={[styles.gridValue, { color: themeColors.text }]}>{stats.totalEvenement}</Text>
-                    </BlurView>
+                        <View style={styles.statsGrid}>
+                            <BlurView intensity={30} tint={themeColors.blurTint} style={[styles.gridItem, { borderColor: themeColors.cardBorder }]}>
+                                <View>
+                                    <Text style={[styles.gridLabel, { color: themeColors.subText }]}>Total Événements</Text>
+                                    <Text style={[styles.gridValue, { color: themeColors.text }]}>{stats.totalEvenement}</Text>
+                                </View>
+                                <Ionicons name="calendar" size={32} color="#2E5BFF" opacity={0.6} />
+                            </BlurView>
 
-                    <BlurView intensity={30} tint={themeColors.blurTint} style={[styles.gridItem, { borderColor: themeColors.cardBorder }]}>
-                        <Text style={[styles.gridLabel, { color: themeColors.subText }]}>Participants Uniques</Text>
-                        <Text style={[styles.gridValue, { color: themeColors.text }]}>{stats.totalParticipants}</Text>
-                    </BlurView>
+                            <BlurView intensity={30} tint={themeColors.blurTint} style={[styles.gridItem, { borderColor: themeColors.cardBorder }]}>
+                                <View>
+                                    <Text style={[styles.gridLabel, { color: themeColors.subText }]}>Participants Totaux</Text>
+                                    <Text style={[styles.gridValue, { color: themeColors.text }]}>{stats.totalParticipants}</Text>
+                                </View>
+                                <Ionicons name="people" size={32} color="#2D59D3" opacity={0.6} />
+                            </BlurView>
 
-                    <BlurView intensity={30} tint={themeColors.blurTint} style={[styles.gridItem, { borderColor: themeColors.cardBorder }]}>
-                        <Text style={[styles.gridLabel, { color: themeColors.subText }]}>Meilleur Taux Présence</Text>
-                        <Text style={[styles.gridValue, { color: themeColors.text }]}>{stats.bestTauxPresence}</Text>
-                    </BlurView>
-                </View>
+                            <BlurView intensity={30} tint={themeColors.blurTint} style={[styles.gridItem, { borderColor: themeColors.cardBorder }]}>
+                                <View>
+                                    <Text style={[styles.gridLabel, { color: themeColors.subText }]}>Meilleur Taux Présence</Text>
+                                    <Text style={[styles.gridValue, { color: themeColors.text }]}>{stats.bestTauxPresence}</Text>
+                                </View>
+                                <Ionicons name="trophy" size={32} color="#FFD700" opacity={0.6} />
+                            </BlurView>
+
+                            <BlurView intensity={30} tint={themeColors.blurTint} style={[styles.gridItem, { borderColor: themeColors.cardBorder }]}>
+                                <View>
+                                    <Text style={[styles.gridLabel, { color: themeColors.subText }]}>Taux de Présence Moyen</Text>
+                                    <Text style={[styles.gridValue, { color: themeColors.text }]}>{stats.avgAttendance}%</Text>
+                                </View>
+                                <Ionicons name="trending-up" size={32} color="#4CAF50" opacity={0.6} />
+                            </BlurView>
+                        </View>
+                    </>
+                )}
             </ScrollView>
+
+            {/* Modal de filtrage par Mois */}
+            <Modal visible={showMonthModal} transparent animationType="fade">
+                <TouchableOpacity
+                    style={styles.modalOverlay}
+                    activeOpacity={1}
+                    onPress={() => setShowMonthModal(false)}
+                >
+                    <BlurView intensity={80} tint="dark" style={styles.modalContent}>
+                        <Text style={styles.modalTitle}>SÉLECTIONNER UN MOIS</Text>
+                        <FlatList
+                            data={months}
+                            keyExtractor={(item) => item.value}
+                            renderItem={({ item }) => (
+                                <TouchableOpacity
+                                    style={[styles.modalItem, selectedMonth === item.value && styles.modalItemSelected]}
+                                    onPress={() => {
+                                        setSelectedMonth(item.value);
+                                        setShowMonthModal(false);
+                                    }}
+                                >
+                                    <Text style={[styles.modalItemText, selectedMonth === item.value && { color: "#FFF", fontWeight: "700" }]}>
+                                        {item.label === "Tous" ? "Tous les mois" : item.label}
+                                    </Text>
+                                    {selectedMonth === item.value && <Ionicons name="checkmark-circle" size={20} color="#2E5BFF" />}
+                                </TouchableOpacity>
+                            )}
+                        />
+                    </BlurView>
+                </TouchableOpacity>
+            </Modal>
+
+            {/* Modal de filtrage par Catégorie */}
+            <Modal visible={showCategoryModal} transparent animationType="fade">
+                <TouchableOpacity
+                    style={styles.modalOverlay}
+                    activeOpacity={1}
+                    onPress={() => setShowCategoryModal(false)}
+                >
+                    <BlurView intensity={80} tint="dark" style={styles.modalContent}>
+                        <Text style={styles.modalTitle}>SÉLECTIONNER UNE CATÉGORIE</Text>
+                        <FlatList
+                            data={["all", ...stats.availableCategories]}
+                            keyExtractor={(item) => item}
+                            renderItem={({ item }) => (
+                                <TouchableOpacity
+                                    style={[styles.modalItem, selectedCategory === item && styles.modalItemSelected]}
+                                    onPress={() => {
+                                        setSelectedCategory(item);
+                                        setShowCategoryModal(false);
+                                    }}
+                                >
+                                    <Text style={[styles.modalItemText, selectedCategory === item && { color: "#FFF", fontWeight: "700" }]}>
+                                        {item === "all" ? "Toutes Catégories" : item}
+                                    </Text>
+                                    {selectedCategory === item && <Ionicons name="checkmark-circle" size={20} color="#2E5BFF" />}
+                                </TouchableOpacity>
+                            )}
+                        />
+                    </BlurView>
+                </TouchableOpacity>
+            </Modal>
             <OrganizerNavbar id={id} nom={nom} />
         </OrganizerBackground>
     );
@@ -238,5 +369,71 @@ const styles = StyleSheet.create({
         fontSize: 24,
         fontWeight: "700",
         fontFamily: "jokeyone",
+    },
+    chartContainer: {
+        height: 160,
+        flexDirection: "row",
+        alignItems: "flex-end",
+        justifyContent: "space-between",
+        borderBottomWidth: 1,
+        borderBottomColor: "rgba(255,255,255,0.2)",
+        paddingBottom: 5,
+        paddingHorizontal: 5,
+    },
+    barGroup: {
+        alignItems: "center",
+        flex: 1,
+    },
+    barMonth: {
+        fontSize: 10,
+        marginTop: 5,
+        fontFamily: "Insignia",
+    },
+    loadingContainer: {
+        height: 300,
+        justifyContent: "center",
+        alignItems: "center",
+    },
+    modalOverlay: {
+        flex: 1,
+        backgroundColor: "rgba(0,0,0,0.6)",
+        justifyContent: "center",
+        alignItems: "center",
+        padding: 20,
+    },
+    modalContent: {
+        width: "90%",
+        maxHeight: "70%",
+        borderRadius: 30,
+        overflow: "hidden",
+        padding: 20,
+        borderWidth: 1,
+        borderColor: "rgba(255,255,255,0.1)",
+    },
+    modalTitle: {
+        color: "#FFF",
+        fontSize: 18,
+        fontWeight: "700",
+        fontFamily: "jokeyone",
+        textAlign: "center",
+        marginBottom: 20,
+        letterSpacing: 1,
+    },
+    modalItem: {
+        flexDirection: "row",
+        justifyContent: "space-between",
+        alignItems: "center",
+        paddingVertical: 15,
+        paddingHorizontal: 15,
+        borderRadius: 15,
+        marginBottom: 8,
+    },
+    modalItemSelected: {
+        backgroundColor: "rgba(46, 91, 255, 0.2)",
+    },
+    modalItemText: {
+        color: "rgba(255,255,255,0.8)",
+        fontSize: 16,
+        fontFamily: "Insignia",
     },
 });
