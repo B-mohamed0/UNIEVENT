@@ -87,11 +87,6 @@ export default function StudentProfile({ route, navigation }) {
                     style: "destructive",
                     onPress: async () => {
                         await logout();
-                        // Reset navigation to a known screen in the auth stack to avoid glitched transitions
-                        navigation.reset({
-                            index: 0,
-                            routes: [{ name: "Splash" }],
-                        });
                     },
                 },
             ]

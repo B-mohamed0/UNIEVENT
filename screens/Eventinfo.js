@@ -103,6 +103,24 @@ const EventInfo = ({ route, navigation }) => {
         .catch(() => setLoading(false));
     }, [eventId, studentId])
   );
+  const handleUnregister = async () => {
+    try {
+      const response = await fetch(`${API_URL}/events/unregister/${event.participation_id}`, {
+        method: "DELETE",
+      });
+      const data = await response.json();
+      if (response.ok) {
+        // Rafraîchir les données de l'événement
+        const res = await fetch(`${API_URL}/events/detail/${eventId}/${studentId}`);
+        const updatedData = await res.json();
+        setEvent(updatedData);
+      } else {
+        alert(data.message || "Erreur lors de la désinscription");
+      }
+    } catch (error) {
+      console.error("Error unregistering:", error);
+    }
+  };
 
   if (loading) {
     return (
@@ -145,7 +163,14 @@ const EventInfo = ({ route, navigation }) => {
             <Text style={styles.title}>{event.nom_evenement}</Text>
 
             <BlurView intensity={8} tint="light" style={styles.glassWrapper}>
-              {event.participation_status ? (
+              {event.participation_status === "INSCRIT" ? (
+                <TouchableOpacity
+                  style={[styles.glassButton, { borderColor: "#FF3B30", width: 140 }]}
+                  onPress={handleUnregister}
+                >
+                  <Text style={[styles.glassText, { color: "#ff3939ff", fontSize: 13 }]}>Se désinscrire</Text>
+                </TouchableOpacity>
+              ) : event.participation_status === "PRESENT" ? (
                 <View style={[styles.glassButton, { borderColor: "#00F908" }]}>
                   <Ionicons name="checkmark-circle" size={24} color="#00F908" />
                 </View>
@@ -283,7 +308,7 @@ const styles = StyleSheet.create({
 
   glassWrapper: {
     marginTop: 10,
-    width: 130,
+    width: 140,
     borderRadius: 25,
     overflow: "hidden",
   },

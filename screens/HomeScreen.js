@@ -292,8 +292,8 @@ export default function HomeScreen({ route, navigation }) {
 
               {/* Bouton "Voir l'événement" */}
               <View style={{ marginTop: 15 }}>
-                <LiquidGlassButton
-                  title="voir l'évènement"
+                <TouchableOpacity
+                  style={styles.simpleViewButton}
                   onPress={() =>
                     navigation.navigate("Eventinfo", {
                       eventId: event.id,
@@ -301,10 +301,9 @@ export default function HomeScreen({ route, navigation }) {
                       nom,
                     })
                   }
-                  isDarkMode={isDarkMode}
-                  containerStyle={{ width: 145, height: 40, borderRadius: 25 }}
-                  textStyle={styles.viewButtonText}
-                />
+                >
+                  <Text style={styles.viewButtonText}>voir l'évènement</Text>
+                </TouchableOpacity>
               </View>
             </View>
             {/* Date box */}
@@ -568,7 +567,6 @@ const styles = StyleSheet.create({
     height: 50,
     borderRadius: 25,
     overflow: "hidden",
-    backgroundColor: "rgba(0, 74, 143, 0.46)",
     borderWidth: 1,
     borderColor: "rgba(255, 255, 255, 0.13)",
   },
@@ -792,22 +790,22 @@ const styles = StyleSheet.create({
     fontFamily: "Comicy",
     lineHeight: 40,
   },
-  viewButton: {
-    flexDirection: "row",
+  simpleViewButton: {
+    width: 145,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "rgba(255, 255, 255, 0.25)",
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "rgba(255, 255, 255, 0.2)",
-    paddingVertical: 11,
-    paddingHorizontal: 20,
-    marginTop: 15,
-    borderRadius: 25,
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.3)",
+    borderColor: "rgba(255, 255, 255, 0.45)",
   },
   viewButtonText: {
     color: "#FFF",
     fontSize: 14,
     fontWeight: "600",
+    fontFamily: "jokeyone",
+    textTransform: "uppercase",
   },
 
   loadingCard: {

@@ -130,7 +130,7 @@ export default function ManageEvent({ route, navigation }) {
           keyExtractor={(item) => item.id.toString()}
           scrollEnabled={false}
           ListEmptyComponent={
-            !loading && <Text style={styles.emptyText}>Aucun participant pour le moment.</Text>
+            !loading && <Text style={[styles.emptyText, { color: themeColors.text }]}>Aucun participant pour le moment.</Text>
           }
         />
 
@@ -178,6 +178,7 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: "700",
     fontFamily: "jokeyone",
+    marginBottom: 10,
   },
   headerSubTitle: {
     color: "rgba(255,255,255,0.6)",
@@ -292,7 +293,6 @@ const styles = StyleSheet.create({
     fontFamily: "Insignia",
   },
   emptyText: {
-    color: "rgba(255,255,255,0.4)",
     textAlign: "center",
     marginVertical: 20,
     fontFamily: "Insignia",

@@ -79,12 +79,6 @@ export default function ResetPasswordScreen() {
                 if (token) {
                     await logout();
                 }
-
-                // Réinitialiser la navigation pour aller à Student et vider l'historique
-                navigation.reset({
-                    index: 0,
-                    routes: [{ name: "Student" }],
-                });
             } else {
                 Alert.alert("Erreur", data.message || "Impossible de réinitialiser le mot de passe.");
             }
