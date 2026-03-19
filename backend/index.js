@@ -580,7 +580,7 @@ app.get("/api/organizer/manage/:eventId", async (req, res) => {
     if (eventResult.rowCount === 0) return res.status(404).json({ error: "Événement non trouvé" });
 
     const participantsResult = await pool.query(
-      `SELECT p.id, p.status, p.idetudiant, et.nom, et.email
+      `SELECT p.id, p.status, p.idetudiant, et.nom, et.email, et.photo
        FROM participation p
        JOIN etudiant et ON p.idetudiant = et.id
        WHERE p.idevenement = $1`,
@@ -1058,6 +1058,85 @@ app.delete("/api/events/unregister/:participationId", async (req, res) => {
     });
   } catch (error) {
     console.error("❌ Erreur lors de la désinscription:", error);
+    res.status(500).json({ error: "Erreur serveur" });
+  }
+});
+
+/**
+ * 🆕 POST /api/events/:eventId/feedback
+ * 
+ * Permet à un étudiant de laisser un feedback sur un événement terminé
+ */
+app.post("/api/events/:eventId/feedback", async (req, res) => {
+  try {
+    const { eventId } = req.params;
+    const { studentId, status, description } = req.body;
+
+    if (!studentId || !status) {
+      return res.status(400).json({ message: "studentId et status (reaction) sont requis" });
+    }
+
+    // Vérifier si l'étudiant a déjà laissé un feedback
+    const existingFeedback = await pool.query(
+      "SELECT id FROM feedback WHERE idevenement = $1 AND idetudiant = $2",
+      [eventId, studentId]
+    );
+
+    if (existingFeedback.rowCount > 0) {
+      return res.status(400).json({ message: "Vous avez déjà laissé un feedback pour cet événement" });
+    }
+
+    // Insérer le feedback
+    await pool.query(
+      "INSERT INTO feedback (idevenement, idetudiant, status, description) VALUES ($1, $2, $3, $4)",
+      [eventId, studentId, status, description || ""]
+    );
+
+    res.json({ message: "Merci pour votre feedback ! ✅" });
+  } catch (error) {
+    console.error("❌ Erreur lors de l'envoi du feedback:", error);
+    res.status(500).json({ error: "Erreur serveur" });
+  }
+});
+
+/**
+ * 🆕 GET /api/events/:eventId/feedbacks
+ * 
+ * Récupère tous les feedbacks pour un événement (pour l'organisateur)
+ */
+app.get("/api/events/:eventId/feedbacks", async (req, res) => {
+  try {
+    const { eventId } = req.params;
+    const result = await pool.query(
+      `SELECT f.*, e.nom as etudiant_nom, e.photo as etudiant_photo 
+       FROM feedback f 
+       JOIN etudiant e ON f.idetudiant = e.id 
+       WHERE f.idevenement = $1 
+       ORDER BY f.created_at DESC`,
+      [eventId]
+    );
+    res.json(result.rows);
+  } catch (error) {
+    console.error("❌ Erreur fetch feedbacks:", error);
+    res.status(500).json({ error: "Erreur serveur" });
+  }
+});
+
+/**
+ * 🆕 GET /api/events/:eventId/feedback/check/:studentId
+ * 
+ * Vérifie si l'étudiant a déjà laissé un feedback
+ */
+app.get("/api/events/:eventId/feedback/check/:studentId", async (req, res) => {
+  try {
+    const { eventId, studentId } = req.params;
+    const result = await pool.query(
+      "SELECT status, description FROM feedback WHERE idevenement = $1 AND idetudiant = $2",
+      [eventId, studentId]
+    );
+    res.json({ exists: result.rowCount > 0, feedback: result.rows[0] });
+  } catch (error) {
+    console.error("❌ Erreur check feedback:", error);
     res.status(500).json({ error: "Erreur serveur" });
   }
 });

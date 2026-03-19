@@ -8,6 +8,9 @@ import {
   TouchableOpacity,
   ScrollView,
   Animated,
+  Modal,
+  TextInput,
+  Alert,
 } from "react-native";
 import { BlurView } from "expo-blur";
 import { Ionicons } from "@expo/vector-icons";
@@ -90,19 +93,96 @@ const EventInfo = ({ route, navigation }) => {
 
   const [event, setEvent] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [showFeedbackModal, setShowFeedbackModal] = useState(false);
+  const [hasFeedback, setHasFeedback] = useState(false);
+  const [selectedEmoji, setSelectedEmoji] = useState(null);
+  const [feedbackText, setFeedbackText] = useState("");
+  const [submittingFeedback, setSubmittingFeedback] = useState(false);
+
+  const emojiScale = useRef(new Animated.Value(1)).current;
+  const feedbackInputRef = useRef(null);
+
+  const reactions = [
+    { emoji: "😡", status: "verysad", label: "Très déçu" },
+    { emoji: "☹️", status: "sad", label: "Déçu" },
+    { emoji: "😐", status: "normal", label: "Moyen" },
+    { emoji: "🙂", status: "happy", label: "Bien" },
+    { emoji: "😍", status: "veryhappy", label: "Génial" },
+  ];
+
+  const checkFeedback = async () => {
+    try {
+      const response = await fetch(`${API_URL}/events/${eventId}/feedback/check/${studentId}`);
+      const data = await response.json();
+      setHasFeedback(data.exists);
+    } catch (error) {
+      console.error("Error checking feedback:", error);
+    }
+  };
 
 
   useFocusEffect(
     React.useCallback(() => {
+      setLoading(true);
       fetch(`${API_URL}/events/detail/${eventId}/${studentId}`)
         .then((res) => res.json())
         .then((data) => {
           setEvent(data);
           setLoading(false);
+          checkFeedback();
         })
         .catch(() => setLoading(false));
     }, [eventId, studentId])
   );
+
+  const handleEmojiSelect = (status) => {
+    setSelectedEmoji(status);
+    // Reset and trigger extraordinary animation
+    emojiScale.setValue(0.5);
+    Animated.spring(emojiScale, {
+      toValue: 1.4,
+      friction: 3,
+      tension: 40,
+      useNativeDriver: true,
+    }).start(() => {
+      Animated.spring(emojiScale, {
+        toValue: 1.2,
+        useNativeDriver: true,
+      }).start();
+    });
+  };
+
+  const submitFeedback = async () => {
+    if (!selectedEmoji) {
+      Alert.alert("Attention", "Veuillez choisir une réaction");
+      return;
+    }
+    setSubmittingFeedback(true);
+    try {
+      const response = await fetch(`${API_URL}/events/${eventId}/feedback`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          studentId,
+          status: selectedEmoji,
+          description: feedbackText,
+        }),
+      });
+      const data = await response.json();
+      if (response.ok) {
+        setHasFeedback(true);
+        setShowFeedbackModal(false);
+        Alert.alert("Merci !", "Votre feedback a été enregistré.");
+      } else {
+        Alert.alert("Erreur", data.message);
+      }
+    } catch (error) {
+      console.error("Error submitting feedback:", error);
+      Alert.alert("Erreur", "Impossible d'envoyer le feedback.");
+    } finally {
+      setSubmittingFeedback(false);
+    }
+  };
   const handleUnregister = async () => {
     try {
       const response = await fetch(`${API_URL}/events/unregister/${event.participation_id}`, {
@@ -163,7 +243,20 @@ const EventInfo = ({ route, navigation }) => {
             <Text style={styles.title}>{event.nom_evenement}</Text>
 
             <BlurView intensity={8} tint="light" style={styles.glassWrapper}>
-              {event.participation_status === "INSCRIT" ? (
+              {event.event_status === "Terminé" ? (
+                hasFeedback ? (
+                  <View style={[styles.glassButton, { borderColor: "#00F908" }]}>
+                    <Ionicons name="checkmark-done" size={24} color="#00F908" />
+                  </View>
+                ) : (
+                  <TouchableOpacity
+                    style={[styles.glassButton, { borderColor: "#F2994A", width: 140 }]}
+                    onPress={() => setShowFeedbackModal(true)}
+                  >
+                    <Text style={[styles.glassText, { color: "#F2994A", fontSize: 13 }]}>Feedback</Text>
+                  </TouchableOpacity>
+                )
+              ) : event.participation_status === "INSCRIT" ? (
                 <TouchableOpacity
                   style={[styles.glassButton, { borderColor: "#FF3B30", width: 140 }]}
                   onPress={handleUnregister}
@@ -174,7 +267,7 @@ const EventInfo = ({ route, navigation }) => {
                 <View style={[styles.glassButton, { borderColor: "#00F908" }]}>
                   <Ionicons name="checkmark-circle" size={24} color="#00F908" />
                 </View>
-              ) : event.event_status !== "Terminé" ? (
+              ) : (
                 <TouchableOpacity
                   style={styles.glassButton}
                   onPress={() =>
@@ -188,7 +281,7 @@ const EventInfo = ({ route, navigation }) => {
                 >
                   <Text style={styles.glassText}>S’inscrire</Text>
                 </TouchableOpacity>
-              ) : null}
+              )}
             </BlurView>
           </View>
 
@@ -272,6 +365,110 @@ const EventInfo = ({ route, navigation }) => {
 
       {/* NAVBAR FIXE */}
       < BottomNav id={studentId} nom={nom} />
+
+      {/* MODAL FEEDBACK */}
+      <Modal
+        visible={showFeedbackModal}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowFeedbackModal(false)}
+      >
+        <BlurView
+          intensity={50}
+          tint={isDarkMode ? "dark" : "light"}
+          style={StyleSheet.absoluteFill}
+        >
+          <TouchableOpacity
+            style={{ flex: 1 }}
+            activeOpacity={1}
+            onPress={() => setShowFeedbackModal(false)}
+          />
+        </BlurView>
+
+        <View style={styles.modalOverlay}>
+          <View style={[
+            styles.modalContent,
+            { backgroundColor: isDarkMode ? "#0a1128" : "#FFFFFF" }
+          ]}>
+            <TouchableOpacity
+              style={styles.closeModal}
+              onPress={() => setShowFeedbackModal(false)}
+            >
+              <Ionicons name="close" size={28} color={theme.text} />
+            </TouchableOpacity>
+
+            <Text style={[styles.modalTitle, { color: theme.text }]}>Votre avis compte !</Text>
+            <Text style={[styles.modalSubtitle, { color: theme.textSecondary }]}>
+              Comment avez-vous trouvé "{event.nom_evenement}" ?
+            </Text>
+
+            <View style={styles.emojiContainer}>
+              {reactions.map((item) => (
+                <TouchableOpacity
+                  key={item.status}
+                  style={styles.emojiWrapper}
+                  onPress={() => handleEmojiSelect(item.status)}
+                >
+                  <Animated.Text
+                    style={[
+                      styles.emoji,
+                      {
+                        transform: [
+                          {
+                            scale: selectedEmoji === item.status ? emojiScale : 1,
+                          },
+                        ],
+                        opacity: selectedEmoji && selectedEmoji !== item.status ? 0.5 : 1,
+                      },
+                    ]}
+                  >
+                    {item.emoji}
+                  </Animated.Text>
+                  <Text style={[styles.emojiLabel, { color: theme.textSecondary, opacity: selectedEmoji === item.status ? 1 : 0.7 }]}>
+                    {item.label}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            <TouchableOpacity 
+              activeOpacity={1}
+              onPress={() => feedbackInputRef.current?.focus()}
+              style={[styles.feedbackInputContainer, { backgroundColor: isDarkMode ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.05)" }]}
+            >
+              <TextInput
+                ref={feedbackInputRef}
+                style={[styles.feedbackInput, { color: theme.text }]}
+                placeholder="Observations ou suggestions..."
+                placeholderTextColor={theme.textSecondary}
+                multiline
+                numberOfLines={4}
+                value={feedbackText}
+                onChangeText={setFeedbackText}
+              />
+            </TouchableOpacity>
+
+            <TouchableOpacity 
+              style={[styles.submitFeedbackBtn, { opacity: (submittingFeedback || !selectedEmoji) ? 0.6 : 1 }]} 
+              onPress={submitFeedback}
+              disabled={submittingFeedback || !selectedEmoji}
+            >
+              <LinearGradient
+                colors={THEME_GRADIENTS["Azure"]}
+                style={styles.submitFeedbackGradient}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+              >
+                {submittingFeedback ? (
+                  <ActivityIndicator color="#FFF" />
+                ) : (
+                  <Text style={styles.submitFeedbackText}>Envoyer mon avis</Text>
+                )}
+              </LinearGradient>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </View >
   );
 };
@@ -409,5 +606,85 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.48)",
+    justifyContent: "flex-end",
+  },
+  modalContent: {
+    borderTopLeftRadius: 40,
+    borderTopRightRadius: 40,
+    padding: 30,
+    paddingBottom: 50,
+    minHeight: 500,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.1)",
+  },
+  closeModal: {
+    alignSelf: "flex-end",
+    padding: 5,
+  },
+  modalTitle: {
+    fontSize: 28,
+    fontWeight: "bold",
+    fontFamily: "jokeyone",
+    marginTop: 10,
+    textAlign: "center",
+  },
+  modalSubtitle: {
+    fontSize: 16,
+    fontFamily: "Insignia",
+    textAlign: "center",
+    marginTop: 10,
+    marginBottom: 30,
+  },
+  emojiContainer: {
+    flexDirection: "row",
+    justifyContent: "space-around",
+    marginBottom: 30,
+  },
+  emojiWrapper: {
+    alignItems: "center",
+  },
+  emoji: {
+    fontSize: 40,
+    marginBottom: 8,
+  },
+  emojiLabel: {
+    fontSize: 12,
+    fontFamily: "Insignia",
+  },
+  feedbackInputContainer: {
+    borderRadius: 20,
+    padding: 15,
+    marginBottom: 30,
+    minHeight: 120,
+  },
+  feedbackInput: {
+    flex: 1,
+    fontSize: 16,
+    fontFamily: "Insignia",
+    textAlignVertical: "top",
+    paddingTop: 0,
+  },
+  submitFeedbackBtn: {
+    borderRadius: 20,
+    overflow: "hidden",
+    elevation: 5,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 5,
+  },
+  submitFeedbackGradient: {
+    paddingVertical: 18,
+    alignItems: "center",
+  },
+  submitFeedbackText: {
+    color: "#FFF",
+    fontSize: 18,
+    fontWeight: "bold",
+    fontFamily: "Insignia",
   },
 });
