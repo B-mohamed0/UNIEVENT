@@ -174,13 +174,6 @@ export default function ManageEvent({ route, navigation }) {
             </BlurView>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.actionBtn}>
-            <BlurView intensity={30} tint={themeColors.blurTint} style={[styles.actionBtnInner, { borderColor: themeColors.cardBorder }]}>
-              <Text style={[styles.actionBtnText, { color: themeColors.text }]}>Envoyer rappel</Text>
-              <Ionicons name="chevron-forward" size={18} color={themeColors.text} />
-            </BlurView>
-          </TouchableOpacity>
-
           <TouchableOpacity style={styles.actionBtn} onPress={fetchFeedbacks}>
             <LinearGradient
               colors={["#FF8C00", "#FF4500"]}
@@ -387,6 +380,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     padding: 15,
+    backgroundColor: "rgba(141, 141, 141, 0.21)",
   },
   actionBtnText: {
     color: "#FFF",

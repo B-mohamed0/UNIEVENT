@@ -11,6 +11,10 @@ import {
   Modal,
   TextInput,
   Alert,
+  KeyboardAvoidingView,
+  Platform,
+  TouchableWithoutFeedback,
+  Keyboard,
 } from "react-native";
 import { BlurView } from "expo-blur";
 import { Ionicons } from "@expo/vector-icons";
@@ -385,89 +389,103 @@ const EventInfo = ({ route, navigation }) => {
           />
         </BlurView>
 
-        <View style={styles.modalOverlay}>
-          <View style={[
-            styles.modalContent,
-            { backgroundColor: isDarkMode ? "#0a1128" : "#FFFFFF" }
-          ]}>
-            <TouchableOpacity
-              style={styles.closeModal}
-              onPress={() => setShowFeedbackModal(false)}
-            >
-              <Ionicons name="close" size={28} color={theme.text} />
-            </TouchableOpacity>
-
-            <Text style={[styles.modalTitle, { color: theme.text }]}>Votre avis compte !</Text>
-            <Text style={[styles.modalSubtitle, { color: theme.textSecondary }]}>
-              Comment avez-vous trouvé "{event.nom_evenement}" ?
-            </Text>
-
-            <View style={styles.emojiContainer}>
-              {reactions.map((item) => (
-                <TouchableOpacity
-                  key={item.status}
-                  style={styles.emojiWrapper}
-                  onPress={() => handleEmojiSelect(item.status)}
-                >
-                  <Animated.Text
-                    style={[
-                      styles.emoji,
-                      {
-                        transform: [
-                          {
-                            scale: selectedEmoji === item.status ? emojiScale : 1,
-                          },
-                        ],
-                        opacity: selectedEmoji && selectedEmoji !== item.status ? 0.5 : 1,
-                      },
-                    ]}
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          style={{ flex: 1 }}
+        >
+          <ScrollView
+            contentContainerStyle={{ flexGrow: 1 }}
+            keyboardShouldPersistTaps="handled"
+            bounces={false}
+          >
+            <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+              <View style={styles.modalOverlay}>
+                <View style={[
+                  styles.modalContent,
+                  { backgroundColor: isDarkMode ? "#0a1128" : "#FFFFFF" }
+                ]}>
+                  <TouchableOpacity
+                    style={styles.closeModal}
+                    onPress={() => setShowFeedbackModal(false)}
                   >
-                    {item.emoji}
-                  </Animated.Text>
-                  <Text style={[styles.emojiLabel, { color: theme.textSecondary, opacity: selectedEmoji === item.status ? 1 : 0.7 }]}>
-                    {item.label}
+                    <Ionicons name="close" size={28} color={theme.text} />
+                  </TouchableOpacity>
+
+                  <Text style={[styles.modalTitle, { color: theme.text }]}>Votre avis compte !</Text>
+                  <Text style={[styles.modalSubtitle, { color: theme.textSecondary }]}>
+                    Comment avez-vous trouvé "{event.nom_evenement}" ?
                   </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
 
-            <TouchableOpacity 
-              activeOpacity={1}
-              onPress={() => feedbackInputRef.current?.focus()}
-              style={[styles.feedbackInputContainer, { backgroundColor: isDarkMode ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.05)" }]}
-            >
-              <TextInput
-                ref={feedbackInputRef}
-                style={[styles.feedbackInput, { color: theme.text }]}
-                placeholder="Observations ou suggestions..."
-                placeholderTextColor={theme.textSecondary}
-                multiline
-                numberOfLines={4}
-                value={feedbackText}
-                onChangeText={setFeedbackText}
-              />
-            </TouchableOpacity>
+                  <View style={styles.emojiContainer}>
+                    {reactions.map((item) => (
+                      <TouchableOpacity
+                        key={item.status}
+                        style={styles.emojiWrapper}
+                        onPress={() => handleEmojiSelect(item.status)}
+                      >
+                        <Animated.Text
+                          style={[
+                            styles.emoji,
+                            {
+                              transform: [
+                                {
+                                  scale: selectedEmoji === item.status ? emojiScale : 1,
+                                },
+                              ],
+                              opacity: selectedEmoji && selectedEmoji !== item.status ? 0.5 : 1,
+                            },
+                          ]}
+                        >
+                          {item.emoji}
+                        </Animated.Text>
+                        <Text style={[styles.emojiLabel, { color: theme.textSecondary, opacity: selectedEmoji === item.status ? 1 : 0.7 }]}>
+                          {item.label}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
 
-            <TouchableOpacity 
-              style={[styles.submitFeedbackBtn, { opacity: (submittingFeedback || !selectedEmoji) ? 0.6 : 1 }]} 
-              onPress={submitFeedback}
-              disabled={submittingFeedback || !selectedEmoji}
-            >
-              <LinearGradient
-                colors={THEME_GRADIENTS["Azure"]}
-                style={styles.submitFeedbackGradient}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
-              >
-                {submittingFeedback ? (
-                  <ActivityIndicator color="#FFF" />
-                ) : (
-                  <Text style={styles.submitFeedbackText}>Envoyer mon avis</Text>
-                )}
-              </LinearGradient>
-            </TouchableOpacity>
-          </View>
-        </View>
+                  <TouchableOpacity 
+                    activeOpacity={1}
+                    onPress={() => feedbackInputRef.current?.focus()}
+                    style={[styles.feedbackInputContainer, { backgroundColor: isDarkMode ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.05)" }]}
+                  >
+                    <TextInput
+                      ref={feedbackInputRef}
+                      style={[styles.feedbackInput, { color: theme.text }]}
+                      placeholder="Observations ou suggestions..."
+                      placeholderTextColor={theme.textSecondary}
+                      multiline
+                      numberOfLines={4}
+                      value={feedbackText}
+                      onChangeText={setFeedbackText}
+                      onBlur={() => Keyboard.dismiss()}
+                    />
+                  </TouchableOpacity>
+
+                  <TouchableOpacity 
+                    style={[styles.submitFeedbackBtn, { opacity: (submittingFeedback || !selectedEmoji) ? 0.6 : 1 }]} 
+                    onPress={submitFeedback}
+                    disabled={submittingFeedback || !selectedEmoji}
+                  >
+                    <LinearGradient
+                      colors={THEME_GRADIENTS["Azure"]}
+                      style={styles.submitFeedbackGradient}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 0 }}
+                    >
+                      {submittingFeedback ? (
+                        <ActivityIndicator color="#FFF" />
+                      ) : (
+                        <Text style={styles.submitFeedbackText}>Envoyer mon avis</Text>
+                      )}
+                    </LinearGradient>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </TouchableWithoutFeedback>
+          </ScrollView>
+        </KeyboardAvoidingView>
       </Modal>
     </View >
   );
@@ -616,8 +634,8 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 40,
     borderTopRightRadius: 40,
     padding: 30,
-    paddingBottom: 50,
-    minHeight: 500,
+    paddingBottom: 20,
+    minHeight: 400,
     borderWidth: 1,
     borderColor: "rgba(255,255,255,0.1)",
   },
