@@ -1,4 +1,6 @@
 require('dotenv').config(); // N'oublie pas d'installer : npm install dotenv
+const dns = require('dns');
+dns.setDefaultResultOrder('ipv4first'); // Force l'utilisation d'IPv4 pour éviter l'erreur ENETUNREACH
 const { Pool } = require("pg");
 
 const pool = new Pool({
