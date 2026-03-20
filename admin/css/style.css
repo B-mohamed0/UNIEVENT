@@ -135,6 +135,18 @@ a:hover {
     transform: translateY(-1px);
 }
 
+.btn-outline {
+    background-color: transparent;
+    color: var(--text-muted);
+    border: 1px solid var(--border-glass);
+}
+
+.btn-outline:hover {
+    background-color: var(--bg-hover);
+    color: var(--text-main);
+    border-color: var(--border-color);
+}
+
 .btn-sm {
     padding: 0.4rem 0.8rem;
     font-size: 0.8rem;

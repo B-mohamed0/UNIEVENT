@@ -1091,7 +1091,7 @@
     backdrop-filter: var(--glass-blur);
     border: 1px solid var(--border-glass);
     border-radius: var(--radius-xl);
-    overflow: hidden;
+    overflow-x: auto; /* Changed for responsive table scrolling */
     box-shadow: var(--shadow-card);
 }
 
@@ -1241,22 +1241,74 @@
 }
 
 @media (max-width: 768px) {
+    /* Mobile Menu Toggle */
+    .mobile-show {
+        display: flex !important;
+    }
+    .search-box {
+        display: none; /* Hide large search box on small screens */
+    }
+
+    /* Sidebar Off-canvas */
     .sidebar {
         position: fixed;
         left: -250px;
         top: 0;
         height: 100vh;
-        transition: left 0.3s ease;
+        width: 250px;
+        transition: left 0.3s cubic-bezier(0.25, 0.1, 0.25, 1);
         z-index: 1000;
+        box-shadow: 10px 0 30px rgba(0,0,0,0.5);
     }
     .sidebar.open {
         left: 0;
     }
+
+    /* Navbar Overflow */
     .topbar {
         padding: 0 1rem;
     }
+    .topbar-nav {
+        overflow-x: auto;
+        white-space: nowrap;
+        padding-bottom: 5px; /* Prevent scrollbar clipping */
+        scrollbar-width: none; /* Firefox */
+    }
+    .topbar-nav::-webkit-scrollbar {
+        display: none; /* Chrome/Safari */
+    }
+    .tab-item {
+        padding: 0.5rem 0.8rem;
+        font-size: 0.8rem;
+    }
+
+    /* Layout adjustments */
     .content-area {
         padding: 1rem;
+    }
+    .section-header {
+        flex-direction: column;
+        align-items: flex-start !important;
+        gap: 1rem;
+    }
+    .events-controls {
+        width: 100%;
+        flex-direction: column;
+        align-items: stretch !important;
+    }
+    .status-legend {
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+    .events-filter-bar {
+        flex-direction: column;
+        width: 100%;
+    }
+    .events-filter-bar > div {
+        width: 100%;
+    }
+    .events-filter-bar select {
+        width: 100%;
     }
     .gauge-row {
         grid-template-columns: 1fr 1fr;
@@ -1266,6 +1318,12 @@
     }
     .hero-stat-value {
         font-size: 1.4rem;
+    }
+
+    /* Modals smaller padding */
+    .modal-content {
+        padding: 1.5rem;
+        margin: 1rem;
     }
 }
 
