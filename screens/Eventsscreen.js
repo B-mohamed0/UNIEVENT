@@ -176,7 +176,7 @@ export default function EventsScreen({ route, navigation }) {
 
   return (
     <ImageBackground
-      source={isDarkMode ? require("../assets/project/organizer_bg.png") : require("../assets/project/organizer_bg_light.png")}
+      source={isDarkMode ? require("../assets/project/organizer_bg.jpg") : require("../assets/project/organizer_bg_light.png")}
       style={{ flex: 1, backgroundColor: theme.background }}
       resizeMode="cover"
     >
