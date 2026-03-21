@@ -5,12 +5,20 @@ const cors = require("cors");
 const helmet = require("helmet");
 const nodemailer = require("nodemailer");
 const jwt = require("jsonwebtoken");
+<<<<<<< HEAD
 const { Expo } = require("expo-server-sdk");
 require("dotenv").config();
 
 // --- EXPO PUSH CLIENT ---
 const expo = new Expo();
 
+=======
+const cron = require("node-cron");
+const { Expo } = require("expo-server-sdk");
+require("dotenv").config();
+
+const expo = new Expo();
+>>>>>>> 262ef80dc8417b017c154e7d44c890a4938d758a
 const JWT_SECRET = process.env.JWT_SECRET || "fallback_secret";
 
 const app = express();
@@ -101,13 +109,55 @@ const getDbStatus = (date, startTime, endTime) => {
   return 'BIENTOT';
 };
 
-// --- CONFIGURATION DE NODEMAILER ---
-const transporter = nodemailer.createTransport({
-  service: "gmail",
-  auth: {
-    user: "aminezakhir8@gmail.com",
-    pass: "kudv hsmq mtfw tfpt",
-  },
+// --- HELPER : ENVOYER DES NOTIFICATIONS PUSH ---
+const sendPushNotifications = async (tokens, title, body, data = {}) => {
+  const messages = [];
+  for (let pushToken of tokens) {
+    if (!Expo.isExpoPushToken(pushToken)) {
+      console.error(`Push token ${pushToken} is not a valid Expo push token`);
+      continue;
+    }
+    messages.push({
+      to: pushToken,
+      sound: 'default',
+      title: title,
+      body: body,
+      data: data,
+    });
+  }
+
+  const chunks = expo.chunkPushNotifications(messages);
+  const tickets = [];
+  for (let chunk of chunks) {
+    try {
+      const ticketChunk = await expo.sendPushNotificationsAsync(chunk);
+      tickets.push(...ticketChunk);
+    } catch (error) {
+      console.error("Error sending push notifications:", error);
+    }
+  }
+};
+
+/**
+ * 🆕 POST /api/students/push-token
+ * Enregistre le push token d'un étudiant
+ */
+app.post("/api/students/push-token", async (req, res) => {
+  const { studentId, token } = req.body;
+  if (!studentId || !token) {
+    return res.status(400).json({ error: "studentId et token sont requis" });
+  }
+
+  try {
+    await pool.query(
+      "UPDATE etudiant SET push_token = $1 WHERE id = $2",
+      [token, studentId]
+    );
+    res.json({ message: "Push token enregistré avec succès ✅" });
+  } catch (error) {
+    console.error("Error saving push token:", error);
+    res.status(500).json({ error: "Erreur serveur" });
+  }
 });
 
 // ==========================================
@@ -1308,6 +1358,7 @@ app.post("/api/events", async (req, res) => {
       [nom_evenement, nom_animateur, description, lieu, date, date_fin, heure_debut, heure_fin, categorie, capacite_max, idorganisateur, status, theme_color || 'Dusk']
     );
 
+<<<<<<< HEAD
     const newEvent = result.rows[0];
     res.status(201).json(newEvent);
 
@@ -1356,6 +1407,25 @@ app.post("/api/events", async (req, res) => {
         console.error("❌ Erreur lors de l'envoi des notifications:", notifErr.message);
       }
     });
+=======
+    res.status(201).json(result.rows[0]);
+
+    // --- ENVOYER NOTIFICATION NOUVEL ÉVÉNEMENT ---
+    try {
+      const tokensResult = await pool.query("SELECT push_token FROM etudiant WHERE push_token IS NOT NULL");
+      const tokens = tokensResult.rows.map(r => r.push_token);
+      if (tokens.length > 0) {
+        await sendPushNotifications(
+          tokens,
+          "Nouvel Événement ! ✨",
+          `L'événement "${nom_evenement}" vient d'être publié. Ne le ratez pas !`,
+          { eventId: result.rows[0].id, type: 'NEW_EVENT' }
+        );
+      }
+    } catch (notifyError) {
+      console.error("Error sending new event notification:", notifyError);
+    }
+>>>>>>> 262ef80dc8417b017c154e7d44c890a4938d758a
   } catch (error) {
     console.error("Error creating event:", error);
     res.status(500).json({ error: "Erreur serveur" });
@@ -1647,8 +1717,10 @@ app.post("/api/scan", async (req, res) => {
 
   try {
     const result = await pool.query(
-      `SELECT * FROM participation 
-       WHERE idetudiant = $1 AND idevenement = $2`,
+      `SELECT p.*, e.nom, e.email, e.photo 
+       FROM participation p
+       JOIN etudiant e ON p.idetudiant = e.id
+       WHERE p.idetudiant = $1 AND p.idevenement = $2`,
       [cne, eventId]
     );
 
@@ -1660,9 +1732,15 @@ app.post("/api/scan", async (req, res) => {
 
     const participant = result.rows[0];
 
+    // On renvoie 200 même si déjà présent pour afficher les infos
     if (participant.status === "PRESENT") {
-      return res.status(400).json({
+      return res.status(200).json({
         message: "Déjà marqué présent ⚠️",
+        student: {
+          nom: participant.nom,
+          email: participant.email,
+          photo: participant.photo
+        }
       });
     }
 
@@ -1673,7 +1751,14 @@ app.post("/api/scan", async (req, res) => {
       [cne, eventId]
     );
 
-    res.json({ message: "Présence validée ✅" });
+    res.json({ 
+      message: "Présence validée ✅",
+      student: {
+        nom: participant.nom,
+        email: participant.email,
+        photo: participant.photo
+      }
+    });
 
   } catch (err) {
     console.error(err);

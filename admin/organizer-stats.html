@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Statistiques de l'Organisateur - UNIEVENT Admin</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/dashboard.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <style>
+        .stats-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        .stats-header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+        
+        .stat-card {
+            background: white;
+            border-radius: 16px;
+            padding: 2rem;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .stat-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+        
+        .stat-value {
+            font-size: 3rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+        }
+        
+        .stat-label {
+            color: #666;
+            font-size: 1.1rem;
+        }
+        
+        .best-rate-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            grid-column: 1 / -1;
+        }
+        
+        .events-list {
+            background: white;
+            border-radius: 16px;
+            padding: 2rem;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        
+        .event-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        
+        .event-item:last-child {
+            border-bottom: none;
+        }
+        
+        .back-btn {
+            position: fixed;
+            top: 2rem;
+            left: 2rem;
+            background: #007AFF;
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            z-index: 1000;
+        }
+        
+        .back-btn:hover {
+            background: #0056b3;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 3rem;
+            font-size: 1.2rem;
+            color: #666;
+        }
+        
+        .error {
+            text-align: center;
+            padding: 3rem;
+            color: #ff3b30;
+            font-size: 1.2rem;
+        }
+    </style>
+</head>
+<body class="dashboard-body">
+    <a href="dashboard.html" class="back-btn">
+        <i class="ph ph-arrow-left"></i>
+        Retour au Dashboard
+    </a>
+
+    <div class="stats-container">
+        <div class="stats-header">
+            <h1 id="organizer-name" style="font-size: 2.5rem; margin-bottom: 1rem;">Chargement...</h1>
+            <p style="color: #666; font-size: 1.2rem;">Statistiques complètes de l'organisateur</p>
+        </div>
+
+        <div id="loading" class="loading">
+            <i class="ph ph-spinner" style="font-size: 2rem; animation: spin 1s linear infinite;"></i>
+            <p>Chargement des statistiques...</p>
+        </div>
+
+        <div id="error" class="error" style="display: none;">
+            <i class="ph ph-warning-circle" style="font-size: 2rem;"></i>
+            <p>Erreur lors du chargement des statistiques</p>
+        </div>
+
+        <div id="stats-content" style="display: none;">
+            <div class="stats-grid">
+                <div class="stat-card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+                    <div class="stat-icon">📅</div>
+                    <div class="stat-value" id="total-events">0</div>
+                    <div class="stat-label">Événements créés</div>
+                </div>
+                
+                <div class="stat-card" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white;">
+                    <div class="stat-icon">👥</div>
+                    <div class="stat-value" id="total-inscriptions">0</div>
+                    <div class="stat-label">Inscriptions totales</div>
+                </div>
+                
+                <div class="stat-card" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white;">
+                    <div class="stat-icon">✅</div>
+                    <div class="stat-value" id="total-presences">0</div>
+                    <div class="stat-label">Présences confirmées</div>
+                </div>
+                
+                <div class="stat-card" style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); color: white;">
+                    <div class="stat-icon">❌</div>
+                    <div class="stat-value" id="total-absences">0</div>
+                    <div class="stat-label">Absences</div>
+                </div>
+            </div>
+
+            <div class="best-rate-card stat-card">
+                <div class="stat-icon">🏆</div>
+                <div class="stat-value" id="best-rate">0%</div>
+                <div class="stat-label">Meilleur taux de présence</div>
+                <div id="best-event" style="font-size: 1.2rem; margin-top: 0.5rem;">-</div>
+            </div>
+
+            <div class="events-list">
+                <h3 style="margin-bottom: 1.5rem;">📋 Liste des événements</h3>
+                <div id="events-list">
+                    <!-- Les événements seront chargés ici -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Animation de rotation
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes spin {
+                from { transform: rotate(0deg); }
+                to { transform: rotate(360deg); }
+            }
+        `;
+        document.head.appendChild(style);
+
+        // Récupérer l'ID de l'organisateur depuis l'URL
+        function getOrganizerId() {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get('id');
+        }
+
+        // Charger les données
+        async function loadOrganizerStats() {
+            const orgId = getOrganizerId();
+            
+            if (!orgId) {
+                showError('ID d\'organisateur non spécifié');
+                return;
+            }
+
+            try {
+                // Charger les données (simulées pour l'instant)
+                const mockOrganizers = [
+                    { id: '1', nom: 'Mohammed Ali', email: 'mohammed@estc.edu', telephone: '0612345678' },
+                    { id: '2', nom: 'Fatima Zahra', email: 'fatima@estc.edu', telephone: '0623456789' },
+                    { id: '3', nom: 'Youssef Amrani', email: 'youssef@estc.edu', telephone: '0634567890' }
+                ];
+                
+                const mockEvents = [
+                    { id: '1', nom_evenement: 'Conférence IA', idorganisateur: '1', date: '2024-03-15', lieu: 'Amphi A' },
+                    { id: '2', nom_evenement: 'Workshop React', idorganisateur: '1', date: '2024-03-20', lieu: 'Salle B12' },
+                    { id: '3', nom_evenement: 'Hackathon 2024', idorganisateur: '2', date: '2024-03-25', lieu: 'Lab Tech' },
+                    { id: '4', nom_evenement: 'Séminaire Cloud', idorganisateur: '3', date: '2024-03-30', lieu: 'Amphi C' }
+                ];
+                
+                const mockParticipations = [
+                    { idevenement: '1', status: 'present' },
+                    { idevenement: '1', status: 'present' },
+                    { idevenement: '1', status: 'absent' },
+                    { idevenement: '2', status: 'present' },
+                    { idevenement: '2', status: 'present' },
+                    { idevenement: '2', status: 'present' },
+                    { idevenement: '3', status: 'present' },
+                    { idevenement: '3', status: 'absent' },
+                    { idevenement: '4', status: 'present' }
+                ];
+
+                const org = mockOrganizers.find(o => o.id === orgId);
+                if (!org) {
+                    showError('Organisateur non trouvé');
+                    return;
+                }
+
+                // Calculer les statistiques
+                const orgEvents = mockEvents.filter(e => e.idorganisateur === orgId);
+                const totalEvents = orgEvents.length;
+                
+                let totalInscriptions = 0;
+                let totalPresences = 0;
+                let totalAbsences = 0;
+                let bestEventName = "Aucun événement";
+                let bestRate = 0;
+
+                orgEvents.forEach(event => {
+                    const eventParts = mockParticipations.filter(p => p.idevenement === event.id);
+                    const inscriptions = eventParts.length;
+                    
+                    const presences = eventParts.filter(p => {
+                        if(!p.status) return false;
+                        const s = p.status.toLowerCase();
+                        return s.includes('present') || s.includes('présent') || s.includes('confirm') || s.includes('confirmed');
+                    }).length;
+
+                    totalInscriptions += inscriptions;
+                    totalPresences += presences;
+
+                    if (inscriptions > 0) {
+                        const rate = (presences / inscriptions) * 100;
+                        if (rate > bestRate) {
+                            bestRate = rate;
+                            bestEventName = event.nom_evenement || event.nom || "Événement";
+                        }
+                    }
+                });
+
+                totalAbsences = Math.max(0, totalInscriptions - totalPresences);
+
+                // Afficher les données
+                document.getElementById('organizer-name').textContent = `📊 Statistiques de ${org.nom}`;
+                document.getElementById('total-events').textContent = totalEvents;
+                document.getElementById('total-inscriptions').textContent = totalInscriptions;
+                document.getElementById('total-presences').textContent = totalPresences;
+                document.getElementById('total-absences').textContent = totalAbsences;
+                document.getElementById('best-rate').textContent = `${Math.round(bestRate)}%`;
+                document.getElementById('best-event').textContent = totalInscriptions > 0 ? bestEventName : 'Aucune inscription';
+
+                // Afficher la liste des événements
+                const eventsList = document.getElementById('events-list');
+                eventsList.innerHTML = orgEvents.map(event => `
+                    <div class="event-item">
+                        <div>
+                            <strong>${event.nom_evenement || event.nom}</strong>
+                            <br>
+                            <small style="color: #666;">${event.date} • ${event.lieu}</small>
+                        </div>
+                        <div>
+                            <span style="background: #007AFF; color: white; padding: 0.25rem 0.75rem; border-radius: 12px; font-size: 0.9rem;">
+                                ${mockParticipations.filter(p => p.idevenement === event.id).length} inscrits
+                            </span>
+                        </div>
+                    </div>
+                `).join('');
+
+                // Cacher le loading et afficher le contenu
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('stats-content').style.display = 'block';
+
+            } catch (error) {
+                console.error('Erreur:', error);
+                showError('Erreur lors du chargement des données');
+            }
+        }
+
+        function showError(message) {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('error').style.display = 'block';
+            document.getElementById('error').querySelector('p').textContent = message;
+        }
+
+        // Charger au démarrage
+        document.addEventListener('DOMContentLoaded', loadOrganizerStats);
+    </script>
+</body>
+</html>
