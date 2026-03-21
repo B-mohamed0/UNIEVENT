@@ -507,7 +507,7 @@ export default function HomeScreen({ route, navigation }) {
           <View style={styles.actionButtonsContainer}>
             <View style={styles.actionButtonWrapper}>
               <LiquidGlassButton
-                title="Voir Évènements"
+                title="Voir Événements"
                 onPress={() => navigation.navigate("Eventsscreen", { id, nom })}
                 isDarkMode={isDarkMode}
               />
@@ -515,6 +515,7 @@ export default function HomeScreen({ route, navigation }) {
 
             <View style={styles.actionButtonWrapper}>
               <LiquidGlassButton
+              title="Statistiques"
                 onPress={() => navigation.navigate("StudentStats", { id, nom })}
                 isDarkMode={isDarkMode}
               />
