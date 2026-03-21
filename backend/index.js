@@ -5,7 +5,11 @@ const cors = require("cors");
 const helmet = require("helmet");
 const nodemailer = require("nodemailer");
 const jwt = require("jsonwebtoken");
+const { Expo } = require("expo-server-sdk");
 require("dotenv").config();
+
+// --- EXPO PUSH CLIENT ---
+const expo = new Expo();
 
 const JWT_SECRET = process.env.JWT_SECRET || "fallback_secret";
 
@@ -19,6 +23,45 @@ app.use(express.urlencoded({ limit: "50mb", extended: true }));
 
 // --- STOCKAGE TEMPORAIRE DES CODES OTP ---
 const otpStore = new Map();
+
+// --- INITIALISATION DES TABLES NOTIFICATIONS ---
+const initNotificationTables = async () => {
+  try {
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS push_tokens (
+        id SERIAL PRIMARY KEY,
+        student_id VARCHAR(50) NOT NULL,
+        token TEXT NOT NULL,
+        created_at TIMESTAMP DEFAULT NOW(),
+        UNIQUE(student_id, token)
+      )
+    `);
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS notifications (
+        id SERIAL PRIMARY KEY,
+        student_id VARCHAR(50),
+        title TEXT NOT NULL,
+        body TEXT NOT NULL,
+        event_id INTEGER,
+        is_read BOOLEAN DEFAULT FALSE,
+        created_at TIMESTAMP DEFAULT NOW()
+      )
+    `);
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS notification_reads (
+        id SERIAL PRIMARY KEY,
+        notification_id INTEGER NOT NULL,
+        student_id VARCHAR(50) NOT NULL,
+        read_at TIMESTAMP DEFAULT NOW(),
+        UNIQUE(notification_id, student_id)
+      )
+    `);
+    console.log("✅ Tables notifications initialisées");
+  } catch (err) {
+    console.error("❌ Erreur initialisation tables notifications:", err.message);
+  }
+};
+initNotificationTables();
 
 // --- HELPER : FORMATTER LE STATUT DE L'ÉVÉNEMENT ---
 const formatEventStatus = (dbStatus, date, startTime, endTime) => {
@@ -1265,10 +1308,170 @@ app.post("/api/events", async (req, res) => {
       [nom_evenement, nom_animateur, description, lieu, date, date_fin, heure_debut, heure_fin, categorie, capacite_max, idorganisateur, status, theme_color || 'Dusk']
     );
 
-    res.status(201).json(result.rows[0]);
+    const newEvent = result.rows[0];
+    res.status(201).json(newEvent);
+
+    // --- ENVOI NOTIFICATIONS EN ARRIÈRE-PLAN ---
+    setImmediate(async () => {
+      try {
+        const notifTitle = `🎉 Nouvel Événement`;
+        const notifBody = `${nom_evenement} - ${lieu} le ${date}`;
+
+        // 1. Créer une notification in-app globale (student_id=NULL = pour tous)
+        await pool.query(
+          `INSERT INTO notifications (student_id, title, body, event_id) VALUES (NULL, $1, $2, $3)`,
+          [notifTitle, notifBody, newEvent.id]
+        );
+        console.log(`✅ Notification in-app créée pour l'événement ${newEvent.id}`);
+
+        // 2. Envoyer push notifications à tous les étudiants avec token
+        const tokensResult = await pool.query(`SELECT DISTINCT token FROM push_tokens`);
+        if (tokensResult.rowCount === 0) {
+          console.log("ℹ️ Aucun push token enregistré");
+          return;
+        }
+
+        const messages = [];
+        for (const row of tokensResult.rows) {
+          if (!Expo.isExpoPushToken(row.token)) continue;
+          messages.push({
+            to: row.token,
+            sound: "default",
+            title: notifTitle,
+            body: notifBody,
+            data: { eventId: newEvent.id },
+          });
+        }
+
+        const chunks = expo.chunkPushNotifications(messages);
+        for (const chunk of chunks) {
+          try {
+            await expo.sendPushNotificationsAsync(chunk);
+          } catch (err) {
+            console.error("Erreur envoi push chunk:", err);
+          }
+        }
+        console.log(`✅ Push notifications envoyées à ${messages.length} étudiant(s)`);
+      } catch (notifErr) {
+        console.error("❌ Erreur lors de l'envoi des notifications:", notifErr.message);
+      }
+    });
   } catch (error) {
     console.error("Error creating event:", error);
     res.status(500).json({ error: "Erreur serveur" });
+  }
+});
+
+// ==========================================
+// 🔔 ROUTES NOTIFICATIONS
+// ==========================================
+
+/**
+ * POST /api/notifications/save-token
+ * Enregistrer le push token Expo d'un étudiant
+ */
+app.post("/api/notifications/save-token", async (req, res) => {
+  const { studentId, token } = req.body;
+  if (!studentId || !token) {
+    return res.status(400).json({ message: "studentId et token requis" });
+  }
+  try {
+    await pool.query(
+      `INSERT INTO push_tokens (student_id, token)
+       VALUES ($1, $2)
+       ON CONFLICT (student_id, token) DO NOTHING`,
+      [studentId, token]
+    );
+    console.log(`✅ Token enregistré pour étudiant ${studentId}`);
+    res.json({ message: "Token enregistré" });
+  } catch (err) {
+    console.error("Erreur save-token:", err);
+    res.status(500).json({ message: "Erreur serveur" });
+  }
+});
+
+/**
+ * GET /api/notifications/:studentId
+ * Récupérer les notifications d'un étudiant (globales + personnelles), non lues en premier
+ */
+app.get("/api/notifications/:studentId", async (req, res) => {
+  const { studentId } = req.params;
+  try {
+    const result = await pool.query(
+      `SELECT * FROM notifications
+       WHERE student_id = $1 OR student_id IS NULL
+       ORDER BY created_at DESC
+       LIMIT 50`,
+      [studentId]
+    );
+    // Compter les non lues (utilise un état local par étudiant via read_by)
+    const unreadResult = await pool.query(
+      `SELECT COUNT(*) FROM notifications
+       WHERE (student_id = $1 OR student_id IS NULL)
+         AND id NOT IN (
+           SELECT notification_id FROM notification_reads WHERE student_id = $1
+         )`,
+      [studentId]
+    );
+    res.json({
+      notifications: result.rows,
+      unreadCount: parseInt(unreadResult.rows[0].count)
+    });
+  } catch (err) {
+    console.error("Erreur GET notifications:", err);
+    res.status(500).json({ message: "Erreur serveur" });
+  }
+});
+
+/**
+ * POST /api/notifications/:id/read
+ * Marquer une notification comme lue pour un étudiant spécifique
+ */
+app.post("/api/notifications/:id/read", async (req, res) => {
+  const { id } = req.params;
+  const { studentId } = req.body;
+  if (!studentId) {
+    return res.status(400).json({ message: "studentId requis" });
+  }
+  try {
+    await pool.query(
+      `INSERT INTO notification_reads (notification_id, student_id)
+       VALUES ($1, $2)
+       ON CONFLICT DO NOTHING`,
+      [id, studentId]
+    );
+    res.json({ message: "Notification marquée comme lue" });
+  } catch (err) {
+    console.error("Erreur mark-read:", err);
+    res.status(500).json({ message: "Erreur serveur" });
+  }
+});
+
+/**
+ * POST /api/notifications/mark-all-read
+ * Marquer toutes les notifications comme lues pour un étudiant
+ */
+app.post("/api/notifications/mark-all-read", async (req, res) => {
+  const { studentId } = req.body;
+  if (!studentId) {
+    return res.status(400).json({ message: "studentId requis" });
+  }
+  try {
+    // Insérer une lecture pour toutes les notifs non lues
+    await pool.query(
+      `INSERT INTO notification_reads (notification_id, student_id)
+       SELECT id, $1 FROM notifications
+       WHERE (student_id = $1 OR student_id IS NULL)
+         AND id NOT IN (
+           SELECT notification_id FROM notification_reads WHERE student_id = $1
+         )
+       ON CONFLICT DO NOTHING`,
+      [studentId]
+    );
+    res.json({ message: "Toutes les notifications marquées comme lues" });
+  } catch (err) {
+    console.error("Erreur mark-all-read:", err);
+    res.status(500).json({ message: "Erreur serveur" });
   }
 });
 
