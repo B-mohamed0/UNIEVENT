@@ -1,15 +1,11 @@
 require('dotenv').config(); // N'oublie pas d'installer : npm install dotenv
+const dns = require('dns');
+dns.setDefaultResultOrder('ipv4first'); // Force l'utilisation d'IPv4 pour éviter l'erreur ENETUNREACH
 const { Pool } = require("pg");
 
 const pool = new Pool({
-  host: process.env.DB_HOST,
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
-  database: process.env.DB_NAME,
-  port: process.env.DB_PORT,
-  ssl: {
-    rejectUnauthorized: false // Obligatoire pour se connecter à Supabase depuis l'extérieur
-  }
+  connectionString: process.env.DATABASE_URL,
+  ssl: { rejectUnauthorized: false } // Obligatoire pour Supabase en ligne
 });
 
 pool.connect((err) => {

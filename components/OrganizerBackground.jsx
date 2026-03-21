@@ -28,7 +28,7 @@ const OrganizerBackground = ({ children }) => {
             {/* Dark Background (Fades in over the light one) */}
             <Animated.View style={[StyleSheet.absoluteFill, { opacity: fadeAnim }]}>
                 <ImageBackground
-                    source={require("../assets/project/organizer_bg.png")}
+                    source={require("../assets/project/organizer_bg.jpg")}
                     style={StyleSheet.absoluteFill}
                     resizeMode="cover"
                 />

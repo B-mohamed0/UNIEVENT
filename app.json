@@ -26,7 +26,7 @@
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "usesCleartextTraffic": true
+      "package": "com.aminezh2.firstreactnativeapp"
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -35,6 +35,11 @@
       "expo-font",
       "@react-native-community/datetimepicker",
       "expo-secure-store"
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "4ec36584-cd4f-4e62-bde3-1f0c6325f657"
+      }
+    }
   }
 }

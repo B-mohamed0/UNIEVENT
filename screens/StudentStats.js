@@ -17,7 +17,7 @@ import BottomNav from "../components/navbar";
 import { API_URL } from "../config";
 import { useThemeContext } from "../context/ThemeContext";
 import estwh from "../assets/project/organizer_bg_light.png";
-import estblack from "../assets/project/organizer_bg.png";
+import estblack from "../assets/project/organizer_bg.jpg";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 

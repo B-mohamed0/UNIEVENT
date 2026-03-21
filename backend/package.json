@@ -4,6 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "start": "node index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
@@ -14,6 +15,8 @@
     "bcrypt": "^6.0.0",
     "cors": "^2.8.6",
     "dotenv": "^17.2.4",
+    "expo-device": "~55.0.10",
+    "expo-notifications": "~55.0.13",
     "expo-server-sdk": "^6.1.0",
     "express": "^5.2.1",
     "helmet": "^8.1.0",

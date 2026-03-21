@@ -1493,50 +1493,9 @@ app.post("/api/events/:eventId/inscription", async (req, res) => {
 
 
 
-// --- TÂCHE CRON : RAPPEL 5 MINUTES AVANT L'ÉVÉNEMENT ---
-cron.schedule("* * * * *", async () => {
-  try {
-    const targetDate = new Date();
-    targetDate.setMinutes(targetDate.getMinutes() + 5);
-
-    const dateStr = targetDate.toISOString().split('T')[0];
-    const timeStr = targetDate.toTimeString().split(' ')[0].substring(0, 5);
-
-    // Trouver les événements qui commencent dans exactement 5 minutes
-    const upcomingEvents = await pool.query(
-      `SELECT e.id, e.nom_evenement, e.heure_debut 
-       FROM evenement e 
-       WHERE e.date = $1 AND e.heure_debut = $2`,
-      [dateStr, timeStr]
-    );
-
-    for (const event of upcomingEvents.rows) {
-      // Trouver les étudiants inscrits à cet événement avec un push_token
-      const students = await pool.query(
-        `SELECT et.push_token 
-         FROM participation p
-         JOIN etudiant et ON p.idetudiant = et.id
-         WHERE p.idevenement = $1 AND et.push_token IS NOT NULL`,
-        [event.id]
-      );
-
-      const tokens = students.rows.map(s => s.push_token);
-      if (tokens.length > 0) {
-        await sendPushNotifications(
-          tokens,
-          "Rappel Événement ! ⏰",
-          `L'événement "${event.nom_evenement}" commence dans 5 minutes. Préparez-vous !`,
-          { eventId: event.id, type: 'REMINDER' }
-        );
-      }
-    }
-  } catch (error) {
-    console.error("Error in reminder cron job:", error);
-  }
-});
-
-app.listen(3000, () => {
-  console.log("✅ Serveur lancé sur le port 3000");
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, "0.0.0.0", () => {
+  console.log(`Serveur démarré sur le port ${PORT}`);
 });
 
 
