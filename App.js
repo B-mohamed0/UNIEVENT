@@ -27,14 +27,26 @@ import EditProfile from "./screens/EditProfile";
 import { NavbarProvider } from "./context/NavbarContext";
 import { ThemeProvider } from "./context/ThemeContext";
 import { AuthProvider, useAuth } from "./context/AuthContext";
+import { NotificationProvider } from "./context/NotificationContext";
 import inscription from "./screens/inscription";
 import Scanner from "./screens/Scanner";
+import NotificationsScreen from "./screens/NotificationsScreen";
 
 import ForgotPasswordScreen from "./screens/ForgotPasswordScreen";
 import ResetPasswordScreen from "./screens/ResetPasswordScreen";
 import ChangePasswordScreen from "./screens/ChangePasswordScreen";
 
 const Stack = createNativeStackNavigator();
+
+function StudentNotificationWrapper({ children }) {
+  const { user } = useAuth();
+  const studentId = user?.role === "STUDENT" ? user.id : null;
+  return (
+    <NotificationProvider studentId={studentId}>
+      {children}
+    </NotificationProvider>
+  );
+}
 
 function RootNavigator() {
   const { user, token, isLoading } = useAuth();
@@ -96,6 +108,7 @@ function RootNavigator() {
               <Stack.Screen name="EditProfile" component={EditProfile} />
               <Stack.Screen name="Scanner" component={Scanner} />
               <Stack.Screen name="inscription" component={inscription} />
+              <Stack.Screen name="Notifications" component={NotificationsScreen} />
             </>
           )}
           <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
@@ -128,7 +141,9 @@ export default function App() {
       <AuthProvider>
         <NavbarProvider>
           <NavigationContainer>
-            <RootNavigator />
+            <StudentNotificationWrapper>
+              <RootNavigator />
+            </StudentNotificationWrapper>
           </NavigationContainer>
         </NavbarProvider>
       </AuthProvider>

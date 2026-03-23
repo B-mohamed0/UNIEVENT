@@ -60,7 +60,10 @@ export default function SplashScreen({ navigation }) {
     const timer = setTimeout(() => { navigation.replace("QuiSuisJe"); }, 3000);
     loopAnimation.start();
 
-    return () => loopAnimation.stop();
+    return () => {
+      loopAnimation.stop();
+      clearTimeout(timer);
+    };
 
   }, []);
 
