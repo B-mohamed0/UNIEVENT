@@ -11,10 +11,14 @@ import {
   FlatList,
   Modal,
   Image,
+  Alert,
+  Share,
 } from "react-native";
 import { BlurView } from "expo-blur";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
+import * as FileSystem from "expo-file-system";
+
 import OrganizerBackground from "../components/OrganizerBackground";
 import { API_URL } from "../config";
 import { useThemeContext } from "../context/ThemeContext";
@@ -100,6 +104,47 @@ export default function ManageEvent({ route, navigation }) {
     }
   };
 
+  const exportToCSV = async () => {
+    try {
+      if (!data || !data.participants || data.participants.length === 0) {
+        Alert.alert("Info", "Aucun participant à exporter.");
+        return;
+      }
+
+      // Construire le CSV
+      let csvString = "Nom,Email,Status\n";
+      data.participants.forEach((p) => {
+        if (!p) return;
+        csvString += `"${p.nom || ''}","${p.email || ''}","${p.status || ''}"\n`;
+      });
+
+      // Essayer d'abord avec FileSystem + Sharing
+      if (FileSystem?.cacheDirectory) {
+        const fileUri = FileSystem.cacheDirectory + `participants_${event?.id || 'export'}.csv`;
+        await FileSystem.writeAsStringAsync(fileUri, "\ufeff" + csvString, {
+          encoding: FileSystem.EncodingType.UTF8
+        });
+        if (Sharing && await Sharing.isAvailableAsync()) {
+          await Sharing.shareAsync(fileUri, {
+            mimeType: 'text/csv',
+            dialogTitle: `Participants - ${event?.nom_evenement || 'Événement'}`,
+            UTI: 'public.comma-separated-values-text'
+          });
+          return;
+        }
+      }
+
+      // Fallback : partager via l'API Share native
+      await Share.share({
+        title: `Participants - ${event?.nom_evenement || 'Événement'}`,
+        message: csvString,
+      });
+    } catch (error) {
+      console.error("Erreur d'exportation CSV:", error);
+      Alert.alert("Erreur d'exportation", error.message);
+    }
+  };
+
   const rendersStatCard = (label, value, subLabel) => (
     <BlurView intensity={30} tint={themeColors.blurTint} style={[styles.statCard, { borderColor: themeColors.cardBorder }]}>
       <Text style={[styles.statLabel, { color: themeColors.subText }]}>{label}</Text>
@@ -167,7 +212,7 @@ export default function ManageEvent({ route, navigation }) {
         />
 
         <View style={styles.actionButtons}>
-          <TouchableOpacity style={styles.actionBtn}>
+          <TouchableOpacity style={styles.actionBtn} onPress={exportToCSV}>
             <BlurView intensity={30} tint={themeColors.blurTint} style={[styles.actionBtnInner, { borderColor: themeColors.cardBorder }]}>
               <Text style={[styles.actionBtnText, { color: themeColors.text }]}>Exporter liste CSV</Text>
               <Ionicons name="chevron-forward" size={18} color={themeColors.text} />

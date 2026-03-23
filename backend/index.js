@@ -649,6 +649,63 @@ app.get("/api/organizer/manage/:eventId", async (req, res) => {
 });
 
 /**
+ * GET /api/organizer/manage/:eventId/export-csv
+ * Exporte la liste des participants d'un événement en CSV (Excel-compatible)
+ */
+app.get("/api/organizer/manage/:eventId/export-csv", async (req, res) => {
+  try {
+    const { eventId } = req.params;
+
+    // Récupérer l'événement
+    const eventResult = await pool.query("SELECT nom_evenement, date, lieu FROM evenement WHERE id = $1", [eventId]);
+    if (eventResult.rowCount === 0) return res.status(404).json({ error: "Événement non trouvé" });
+    const event = eventResult.rows[0];
+
+    // Récupérer les participants
+    const participantsResult = await pool.query(
+      `SELECT et.nom, et.email, et.id as etudiant_id, p.status
+       FROM participation p
+       JOIN etudiant et ON p.idetudiant = et.id
+       WHERE p.idevenement = $1
+       ORDER BY et.nom ASC`,
+      [eventId]
+    );
+
+    const eventDate = new Date(event.date).toLocaleDateString("fr-FR");
+    const participants = participantsResult.rows;
+
+    // Construire le contenu CSV avec BOM pour Excel (UTF-8)
+    const BOM = "\uFEFF";
+    let csv = BOM;
+    csv += `Événement;${event.nom_evenement}\n`;
+    csv += `Date;${eventDate}\n`;
+    csv += `Lieu;${event.lieu || ""}\n`;
+    csv += `Total participants;${participants.length}\n`;
+    csv += `Présents;${participants.filter(p => p.status === "PRESENT").length}\n`;
+    csv += `Absents;${participants.filter(p => p.status === "ABSENT").length}\n`;
+    csv += `Inscrits;${participants.filter(p => p.status === "INSCRIT").length}\n`;
+    csv += "\n";
+    csv += "Nom;Email;ID Étudiant;Statut\n";
+
+    participants.forEach((p) => {
+      const statusLabel = p.status === "PRESENT" ? "Présent" : p.status === "ABSENT" ? "Absent" : "Inscrit";
+      csv += `${p.nom};${p.email};${p.etudiant_id};${statusLabel}\n`;
+    });
+
+    const safeName = event.nom_evenement.replace(/[^a-zA-Z0-9]/g, "_");
+    const fileName = `Participants_${safeName}_${eventDate.replace(/\//g, "-")}.csv`;
+
+    res.setHeader("Content-Type", "text/csv; charset=utf-8");
+    res.setHeader("Content-Disposition", `attachment; filename="${fileName}"`);
+    res.send(csv);
+
+  } catch (error) {
+    console.error("Erreur export CSV:", error);
+    res.status(500).json({ error: "Erreur lors de la génération du CSV" });
+  }
+});
+
+/**
  * GET /api/organizer/profile/:id
  * Récupère le profil de l'organisateur
  */
