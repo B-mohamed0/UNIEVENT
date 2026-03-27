@@ -20,6 +20,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import * as FileSystem from "expo-file-system";
 
 import OrganizerBackground from "../components/OrganizerBackground";
+import OrganizerNavbar from "../components/OrganizerNavbar";
 import { API_URL } from "../config";
 import { useThemeContext } from "../context/ThemeContext";
 import ThemeToggle from "../components/ThemeToggle";
@@ -286,6 +287,7 @@ export default function ManageEvent({ route, navigation }) {
           </BlurView>
         </View>
       </Modal>
+      <OrganizerNavbar id={organizerId} nom={nom} />
     </OrganizerBackground>
   );
 }

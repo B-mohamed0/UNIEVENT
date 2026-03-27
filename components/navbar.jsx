@@ -45,6 +45,8 @@ const BottomNav = ({ id, nom }) => {
     if (route.name === "Eventinfo") return 1;
     if (route.name === "StudentStats") return 2;
     if (route.name === "StudentProfile") return 3;
+    if (route.name === "EditProfile") return 3;
+    if (route.name === "Notifications") return 0;
     return -1;
   };
 

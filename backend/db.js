@@ -8,16 +8,14 @@ const pool = new Pool({
   ssl: { rejectUnauthorized: false } // Obligatoire pour Supabase en ligne
 });
 
-pool.connect((err) => {
-  if (err) {
-    console.error("Erreur de connexion à Supabase :", err.stack);
-  } else {
-    console.log("Succès ! Toute l'équipe est connectée à la même base de données.");
-  }
+// Logs pour confirmer la connexion lors du premier usage
+pool.on('connect', () => {
+  console.log("✅ Connecté à Supabase !");
 });
 
 pool.on('error', (err, client) => {
-  console.error('Erreur inattendue sur un client PostgreSQL (idle) :', err);
+  console.error('❌ Erreur inattendue sur un client PostgreSQL (idle) :', err.message);
+  // Ne pas faire crash le processus si une connexion est réinitialisée par Supabase
 });
 
 module.exports = pool;

@@ -24,6 +24,16 @@ import OrganizerProfile from "./screens/OrganizerProfile";
 import StudentStats from "./screens/StudentStats";
 import StudentProfile from "./screens/StudentProfile";
 import EditProfile from "./screens/EditProfile";
+
+import ProfHomeScreen from "./screens/ProfHomeScreen";
+import ProfEventinfo from "./screens/ProfEventinfo";
+import ProfEventsscreen from "./screens/ProfEventsscreen";
+import ProfStats from "./screens/ProfStats";
+import ProfProfile from "./screens/ProfProfile";
+import ProfEditProfile from "./screens/ProfEditProfile";
+import ProfScanner from "./screens/ProfScanner";
+import ProfInscription from "./screens/ProfInscription";
+import ProfNotificationsScreen from "./screens/ProfNotificationsScreen";
 import { NavbarProvider } from "./context/NavbarContext";
 import { ThemeProvider } from "./context/ThemeContext";
 import { AuthProvider, useAuth } from "./context/AuthContext";
@@ -38,11 +48,12 @@ import ChangePasswordScreen from "./screens/ChangePasswordScreen";
 
 const Stack = createNativeStackNavigator();
 
-function StudentNotificationWrapper({ children }) {
+function UserNotificationWrapper({ children }) {
   const { user } = useAuth();
   const studentId = user?.role === "STUDENT" ? user.id : null;
+  const profId = user?.role === "PROFESSOR" ? user.id : null;
   return (
-    <NotificationProvider studentId={studentId}>
+    <NotificationProvider studentId={studentId} profId={profId}>
       {children}
     </NotificationProvider>
   );
@@ -94,6 +105,22 @@ function RootNavigator() {
               <Stack.Screen name="OrganizerStats" component={OrganizerStats} />
               <Stack.Screen name="OrganizerProfile" component={OrganizerProfile} />
             </>
+          ) : user?.role === "PROFESSOR" ? (
+            <>
+              <Stack.Screen
+                name="ProfHome"
+                component={ProfHomeScreen}
+                initialParams={{ id: user.id, nom: user.nom }}
+              />
+              <Stack.Screen name="ProfEventinfo" component={ProfEventinfo} />
+              <Stack.Screen name="ProfEventsscreen" component={ProfEventsscreen} />
+              <Stack.Screen name="ProfStats" component={ProfStats} />
+              <Stack.Screen name="ProfProfile" component={ProfProfile} />
+              <Stack.Screen name="ProfEditProfile" component={ProfEditProfile} />
+              <Stack.Screen name="ProfScanner" component={ProfScanner} />
+              <Stack.Screen name="ProfInscription" component={ProfInscription} />
+              <Stack.Screen name="ProfNotifications" component={ProfNotificationsScreen} />
+            </>
           ) : (
             <>
               <Stack.Screen
@@ -141,9 +168,9 @@ export default function App() {
       <AuthProvider>
         <NavbarProvider>
           <NavigationContainer>
-            <StudentNotificationWrapper>
+            <UserNotificationWrapper>
               <RootNavigator />
-            </StudentNotificationWrapper>
+            </UserNotificationWrapper>
           </NavigationContainer>
         </NavbarProvider>
       </AuthProvider>

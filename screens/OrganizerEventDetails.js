@@ -17,6 +17,7 @@ import conference from "../assets/project/conference.png";
 import estwhite from "../assets/project/estwhite.png";
 import OrganizerBackground from "../components/OrganizerBackground";
 import { useThemeContext } from "../context/ThemeContext";
+import OrganizerNavbar from "../components/OrganizerNavbar";
 
 const OrganizerEventDetails = ({ route, navigation }) => {
     const { event, organizerId, nom } = route.params;
@@ -140,6 +141,7 @@ const OrganizerEventDetails = ({ route, navigation }) => {
                     <View style={{ height: 100 }} />
                 </ScrollView>
             </ImageBackground>
+            <OrganizerNavbar id={organizerId} nom={nom} />
         </View>
     );
 };

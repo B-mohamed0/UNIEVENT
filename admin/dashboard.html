@@ -396,6 +396,7 @@
                                     <th>Date</th>
                                     <th>Heure</th>
                                     <th>Statut</th>
+                                    <th>Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -500,6 +501,24 @@
             <div style="display: flex; gap: 1rem; justify-content: center;">
                 <button class="btn btn-secondary" onclick="closeModal('deleteConfirmModal')">Annuler</button>
                 <button class="btn btn-danger" id="confirm-delete-btn">Supprimer</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Event Report Modal -->
+    <div id="eventReportModal" class="modal">
+        <div class="modal-content" style="max-width: 600px;">
+            <span class="close-modal" onclick="closeModal('eventReportModal')">×</span>
+            <h2 id="report-event-title">Rapport de l'Événement</h2>
+            <div id="report-content" class="report-body" style="margin-top: 1.5rem;">
+                <!-- Dynamically populated -->
+                <div style="text-align: center; padding: 2rem;">
+                    <i class="ph ph-spinner animate-spin" style="font-size: 2rem;"></i>
+                    <p>Chargement du rapport...</p>
+                </div>
+            </div>
+            <div style="margin-top: 2rem; display: flex; justify-content: flex-end;">
+                <button class="btn btn-secondary" onclick="closeModal('eventReportModal')">Fermer</button>
             </div>
         </div>
     </div>

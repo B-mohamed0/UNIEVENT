@@ -13,6 +13,7 @@ import { BlurView } from "expo-blur";
 import { LinearGradient } from "expo-linear-gradient";
 import { useThemeContext } from "../context/ThemeContext";
 import { useNotifications } from "../context/NotificationContext";
+import BottomNav from "../components/navbar";
 
 export default function NotificationsScreen({ route, navigation }) {
   const { id, nom } = route.params;
@@ -167,6 +168,7 @@ export default function NotificationsScreen({ route, navigation }) {
           </View>
         }
       />
+      <BottomNav id={id} nom={nom} />
     </View>
   );
 }

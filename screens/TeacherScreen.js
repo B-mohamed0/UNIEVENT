@@ -7,16 +7,59 @@ import {
   TextInput,
   TouchableOpacity,
   Dimensions,
+  Alert,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { BlurView } from "expo-blur";
 import { useNavigation } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
+import { useState } from "react";
+import { useAuth } from "../context/AuthContext";
+import { API_URL } from "../config";
 
 const { width, height } = Dimensions.get("window");
+const API_BASE = `${API_URL}/prof`;
 
 export default function TeacherScreen() {
+  console.log("TeacherScreen Rendered ✅");
   const navigation = useNavigation();
+  const { login } = useAuth();
+  
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+
+  const handleLogin = async () => {
+    console.log("LOGIN CLICKED - EMAIL:", email);
+    if (!email || !password) {
+      Alert.alert("Erreur", "Tous les champs sont obligatoires");
+      return;
+    }
+
+    try {
+      console.log("FETCHING:", `${API_BASE}/login`);
+      const response = await fetch(`${API_BASE}/login`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email, password }),
+      });
+
+      console.log("RESPONSE STATUS:", response.status);
+      const data = await response.json();
+      console.log("RESPONSE DATA:", data);
+
+      if (response.ok) {
+        console.log("PROF:", data.user);
+        await login(data.user, data.token);
+      } else {
+        Alert.alert("Erreur", data.message);
+      }
+    } catch (error) {
+      console.error(error);
+      Alert.alert("Erreur", "Connexion impossible au serveur");
+    }
+  };
 
   return (
     <View style={styles.container}>
@@ -48,30 +91,37 @@ export default function TeacherScreen() {
         />
 
         <BlurView intensity={25} tint="light" style={styles.glassCard}>
-          <Text style={styles.label}>USERNAME</Text>
+          <Text style={styles.label}>EMAIL</Text>
           <View style={styles.inputWrapper}>
             <TextInput
-              placeholder="username"
+              placeholder="entrez votre email"
               placeholderTextColor="#999"
+              value={email}
+              onChangeText={setEmail}
+              keyboardType="email-address"
+              autoCapitalize="none"
               style={styles.input}
             />
           </View>
 
-          <Text style={styles.label}>USERNAME</Text>
+          <Text style={styles.label}>MOT DE PASSE</Text>
           <View style={styles.inputWrapper}>
             <TextInput
-              placeholder="user name"
+              placeholder="mot de passe"
               placeholderTextColor="#999"
+              secureTextEntry
+              value={password}
+              onChangeText={setPassword}
               style={styles.input}
             />
           </View>
 
-          <TouchableOpacity style={styles.loginButton}>
+          <TouchableOpacity style={styles.loginButton} onPress={handleLogin}>
             <LinearGradient
               colors={["#183282", "rgba(74, 94, 175, 0.82)"]}
               style={styles.loginGradient}
             >
-              <Text style={styles.loginText}>se connecter</Text>
+              <Text style={styles.loginText}>SE CONNECTER (PROF)</Text>
             </LinearGradient>
           </TouchableOpacity>
 

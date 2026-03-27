@@ -29,7 +29,7 @@ const TABS = [
     { screen: "OrganizerDashboard", icon: "grid", iconOutline: "grid-outline" },
     { screen: "OrganizerEvents", icon: "list", iconOutline: "list-outline" },
     { screen: "CreateEvent", icon: "add-circle", iconOutline: "add-circle-outline" },
-    { screen: "OrganizerStats", icon: "stats-chart", iconOutline: "stats-chart-outline" },
+    { screen: "OrganizerProfile", icon: "person", iconOutline: "person-outline" },
 ];
 
 const OrganizerNavbar = ({ id, nom }) => {
@@ -42,6 +42,11 @@ const OrganizerNavbar = ({ id, nom }) => {
         for (let i = 0; i < TABS.length; i++) {
             if (route.name === TABS[i].screen) return i;
         }
+        
+        // Fallbacks
+        if (route.name === "ManageEvent") return 1;
+        if (route.name === "OrganizerEventDetails") return 1;
+        if (route.name === "OrganizerStats") return 0; // Or add a stats tab?
         return -1;
     };
 

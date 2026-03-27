@@ -19,6 +19,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import * as ImagePicker from "expo-image-picker";
 import { API_URL } from "../config";
 import { useThemeContext } from "../context/ThemeContext";
+import BottomNav from "../components/navbar";
 import estwh from "../assets/project/estwh.png";
 import estblack from "../assets/project/estblack.png";
 
@@ -174,6 +175,7 @@ export default function EditProfile({ route, navigation }) {
                     </TouchableOpacity>
                 </View>
             </ScrollView>
+            <BottomNav id={id} nom={nom} />
         </View>
     );
 }

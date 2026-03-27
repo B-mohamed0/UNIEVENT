@@ -925,9 +925,102 @@ function renderEventsTable(eventsToRender = mockEvents) {
             <td>${dateStr}</td>
             <td>${timeStr}</td>
             <td>${statusBadge}</td>
+            <td class="action-buttons">
+                <button class="btn btn-sm btn-primary" onclick="viewEventReport('${item.id}')" style="cursor: pointer; background: var(--accent-blue); color: white; border: none; padding: 0.4rem 0.8rem; border-radius: 4px;">
+                    <i class="ph ph-file-text"></i> Rapport
+                </button>
+            </td>
         `;
         tbody.appendChild(tr);
     });
+}
+
+// ==========================================
+// EVENT REPORT
+// ==========================================
+async function viewEventReport(eventId) {
+    console.log("📊 Génération du rapport pour l'événement:", eventId);
+    openModal('eventReportModal');
+    const content = document.getElementById('report-content');
+    content.innerHTML = `
+        <div style="text-align: center; padding: 2rem;">
+            <i class="ph ph-spinner animate-spin" style="font-size: 2rem; color: var(--accent-blue);"></i>
+            <p style="margin-top: 1rem; color: var(--text-muted);">Chargement des données Supabase...</p>
+        </div>
+    `;
+
+    try {
+        // SNIPPET UTILISATEUR (Adapté au client local et à la table 'evenement')
+        // eventId ne peut pas contenir du SQ
+        const { data, error } = await supabaseClient
+            .from('evenement')
+            .select('*')
+            .eq('id', eventId); 
+
+        if (error) throw error;
+        const event = data[0];
+        
+        if (!event) {
+            content.innerHTML = '<div style="color: var(--danger); text-align: center; padding: 2rem;">Événement non trouvé dans la base de données.</div>';
+            return;
+        }
+
+        // Fetch additional stats for the report
+        const { count: participantsCount } = await supabaseClient
+            .from('participation')
+            .select('*', { count: 'exact', head: true })
+            .eq('idevenement', eventId);
+
+        // Fetch organizer info if not in mock
+        let orgName = 'Inconnu';
+        const org = mockOrganizers.find(o => o.id === event.idorganisateur);
+        if (org) {
+            orgName = org.nom;
+        } else if (event.idorganisateur) {
+            const { data: orgData } = await supabaseClient.from('organisateur').select('nom').eq('id', event.idorganisateur).single();
+            if (orgData) orgName = orgData.nom;
+        }
+
+        document.getElementById('report-event-title').textContent = "Rapport: " + (event.nom_evenement || event.nom || "Sans titre");
+
+        content.innerHTML = `
+            <div style="background: var(--bg-active); border: 1px solid var(--border-color); padding: 1.25rem; border-radius: 12px; margin-bottom: 1.5rem;">
+                <h4 style="margin-top: 0; margin-bottom: 0.75rem; color: var(--accent-blue); font-size: 1rem;">Informations Générales</h4>
+                <div style="display: grid; grid-template-columns: 100px 1fr; gap: 0.5rem; font-size: 0.9rem;">
+                    <span style="color: var(--text-muted);">Organisateur:</span> <strong>${orgName}</strong>
+                    <span style="color: var(--text-muted);">Lieu:</span> <strong>${event.lieu || 'N/A'}</strong>
+                    <span style="color: var(--text-muted);">Date:</span> <strong>${event.date ? new Date(event.date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }) : 'N/A'}</strong>
+                    <span style="color: var(--text-muted);">Heure:</span> <strong>${event.heure_debut || '--'} à ${event.heure_fin || '--'}</strong>
+                    <span style="color: var(--text-muted);">Statut:</span> <strong>${event.status || 'N/A'}</strong>
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                <div style="background: var(--bg-card); border: 1px solid var(--border-color); padding: 1.25rem; border-radius: 12px; text-align: center; box-shadow: var(--shadow-sm);">
+                    <div style="font-size: 2.25rem; font-weight: 800; color: var(--accent-blue);">${participantsCount || 0}</div>
+                    <div style="font-size: 0.8rem; color: var(--text-muted); font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em;">Inscriptions</div>
+                </div>
+                <div style="background: var(--bg-card); border: 1px solid var(--border-color); padding: 1.25rem; border-radius: 12px; text-align: center; box-shadow: var(--shadow-sm);">
+                    <div style="font-size: 2.25rem; font-weight: 800; color: #10b981;">100%</div>
+                    <div style="font-size: 0.8rem; color: var(--text-muted); font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em;">Disponibilité</div>
+                </div>
+            </div>
+
+            <div style="margin-top: 1.5rem; padding: 1rem; border-left: 4px solid var(--accent-blue); background: var(--bg-active); border-radius: 4px;">
+                <p style="margin: 0; font-size: 0.85rem; font-style: italic; color: var(--text-muted);">"Ce rapport a été généré dynamiquement à partir des données temps réel de Supabase."</p>
+            </div>
+        `;
+
+    } catch (err) {
+        console.error("❌ Erreur lors de la génération du rapport :", err);
+        content.innerHTML = `
+            <div style="text-align: center; padding: 2rem; color: #ef4444;">
+                <i class="ph ph-x-circle" style="font-size: 3rem; margin-bottom: 1rem;"></i>
+                <p><strong>Erreur de chargement</strong></p>
+                <p style="font-size: 0.85rem;">${err.message}</p>
+            </div>
+        `;
+    }
 }
 
 function renderOrganizerStats() {

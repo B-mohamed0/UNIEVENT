@@ -16,6 +16,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import * as ImagePicker from "expo-image-picker";
 import OrganizerBackground from "../components/OrganizerBackground";
+import OrganizerNavbar from "../components/OrganizerNavbar";
 import { API_URL } from "../config";
 import { useAuth } from "../context/AuthContext";
 import { useThemeContext } from "../context/ThemeContext";
@@ -216,6 +217,7 @@ export default function OrganizerProfile({ route, navigation }) {
                     </TouchableOpacity>
                 </BlurView>
             </ScrollView>
+            <OrganizerNavbar id={id} nom={profile.nom} />
         </OrganizerBackground>
     );
 }

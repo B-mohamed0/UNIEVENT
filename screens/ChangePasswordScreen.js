@@ -105,7 +105,7 @@ export default function ChangePasswordScreen() {
                 style={{ flex: 1 }}
             >
                     <View style={styles.header}>
-                        <TouchableOpacity onPress={() => navigation.navigate("StudentProfile")} style={[styles.backButton, { backgroundColor: isDarkMode ? "rgba(255, 255, 255, 0.1)" : "rgba(255, 255, 255, 0.8)" }]}>
+                        <TouchableOpacity onPress={() => navigation.goBack()} style={[styles.backButton, { backgroundColor: isDarkMode ? "rgba(255, 255, 254, 0.1)" : "rgba(255, 255, 255, 0.8)" }]}>
                             <BlurView intensity={20} tint={isDarkMode ? "dark" : "light"} style={styles.iconBlur}>
                                 <Ionicons name="chevron-back" size={24} color={theme.text} />
                             </BlurView>

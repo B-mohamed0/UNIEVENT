@@ -1,24 +1,36 @@
 const express = require("express");
+const os = require("os");
 const pool = require("./db");
 const bcrypt = require("bcrypt");
 const cors = require("cors");
 const helmet = require("helmet");
 const nodemailer = require("nodemailer");
 const jwt = require("jsonwebtoken");
-<<<<<<< HEAD
-const { Expo } = require("expo-server-sdk");
-require("dotenv").config();
-
-// --- EXPO PUSH CLIENT ---
-const expo = new Expo();
-
-=======
 const cron = require("node-cron");
 const { Expo } = require("expo-server-sdk");
 require("dotenv").config();
 
+// --- GESTION DES ERREURS GLOBALES (Empêche le serveur de s'éteindre sans log) ---
+process.on('uncaughtException', (err) => {
+  console.error('🔥 UNCAUGHT EXCEPTION:', err);
+});
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('🌪️ UNHANDLED REJECTION:', reason);
+});
+
+
+// --- EXPO PUSH CLIENT ---
 const expo = new Expo();
->>>>>>> 262ef80dc8417b017c154e7d44c890a4938d758a
+
+// --- CONFIGURATION NODEMAILER (Pour l'envoi de mails/OTP) ---
+const transporter = nodemailer.createTransport({
+  service: "gmail",
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS,
+  },
+});
+
 const JWT_SECRET = process.env.JWT_SECRET || "fallback_secret";
 
 const app = express();
@@ -35,36 +47,65 @@ const otpStore = new Map();
 // --- INITIALISATION DES TABLES NOTIFICATIONS ---
 const initNotificationTables = async () => {
   try {
+    // 1. Table des push tokens (Expo)
     await pool.query(`
       CREATE TABLE IF NOT EXISTS push_tokens (
         id SERIAL PRIMARY KEY,
-        student_id VARCHAR(50) NOT NULL,
+        student_id VARCHAR(50),
+        prof_id INTEGER,
         token TEXT NOT NULL,
         created_at TIMESTAMP DEFAULT NOW(),
-        UNIQUE(student_id, token)
+        UNIQUE(student_id, token),
+        UNIQUE(prof_id, token)
       )
     `);
+
+    // 2. Table des notifications (in-app)
     await pool.query(`
       CREATE TABLE IF NOT EXISTS notifications (
         id SERIAL PRIMARY KEY,
         student_id VARCHAR(50),
+        prof_id INTEGER,
         title TEXT NOT NULL,
         body TEXT NOT NULL,
-        event_id INTEGER,
+        event_id INTEGER REFERENCES evenement(id) ON DELETE CASCADE,
         is_read BOOLEAN DEFAULT FALSE,
         created_at TIMESTAMP DEFAULT NOW()
       )
     `);
+
+    // 3. Table des lectures (pour gérer le "lu" par utilisateur pour les notifs globales)
     await pool.query(`
       CREATE TABLE IF NOT EXISTS notification_reads (
         id SERIAL PRIMARY KEY,
-        notification_id INTEGER NOT NULL,
-        student_id VARCHAR(50) NOT NULL,
+        notification_id INTEGER REFERENCES notifications(id) ON DELETE CASCADE,
+        student_id VARCHAR(50),
+        prof_id INTEGER,
         read_at TIMESTAMP DEFAULT NOW(),
-        UNIQUE(notification_id, student_id)
+        UNIQUE(notification_id, student_id),
+        UNIQUE(notification_id, prof_id)
       )
     `);
-    console.log("✅ Tables notifications initialisées");
+
+    // 4. Table des feedbacks
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS feedback (
+        id SERIAL PRIMARY KEY,
+        idevenement INTEGER REFERENCES evenement(id) ON DELETE CASCADE,
+        idetudiant VARCHAR(50) REFERENCES etudiant(id),
+        idprof INTEGER REFERENCES professeur(id),
+        status VARCHAR(20) NOT NULL,
+        description TEXT,
+        created_at TIMESTAMP DEFAULT NOW()
+      )
+    `);
+    // 5. Mise à jour des tables existantes (pour les colonnes manquantes)
+    await pool.query("ALTER TABLE push_tokens ADD COLUMN IF NOT EXISTS prof_id INTEGER");
+    await pool.query("ALTER TABLE notifications ADD COLUMN IF NOT EXISTS prof_id INTEGER");
+    await pool.query("ALTER TABLE notification_reads ADD COLUMN IF NOT EXISTS prof_id INTEGER");
+    await pool.query("ALTER TABLE feedback ADD COLUMN IF NOT EXISTS idprof INTEGER");
+    
+    console.log("✅ Tables et colonnes de notification initialisées");
   } catch (err) {
     console.error("❌ Erreur initialisation tables notifications:", err.message);
   }
@@ -72,19 +113,38 @@ const initNotificationTables = async () => {
 initNotificationTables();
 
 // --- HELPER : FORMATTER LE STATUT DE L'ÉVÉNEMENT ---
+// Utilise la date/heure LOCALE du serveur (et pas UTC) pour éviter
+// qu'un événement du jour soit marqué "Terminé" à cause du décalage horaire.
 const formatEventStatus = (dbStatus, date, startTime, endTime) => {
   const now = new Date();
-  const today = now.toISOString().split("T")[0];
-  const currentTime = now.toTimeString().split(" ")[0].substring(0, 5);
 
-  // Nettoyage de la date (YYYY-MM-DD)
-  const eventDate = new Date(date).toISOString().split("T")[0];
+  const formatLocalDate = (d) => {
+    const nd = new Date(d);
+    const y = nd.getFullYear();
+    const m = String(nd.getMonth() + 1).padStart(2, "0");
+    const day = String(nd.getDate()).padStart(2, "0");
+    return `${y}-${m}-${day}`;
+  };
 
-  if (dbStatus === "EXPIRE" || (eventDate < today) || (eventDate === today && endTime && currentTime > endTime)) {
+  const today = formatLocalDate(now);
+  const eventDate = formatLocalDate(date);
+  const currentTime = now.toTimeString().split(" ")[0].substring(0, 5); // HH:MM
+
+  if (
+    dbStatus === "EXPIRE" ||
+    eventDate < today ||
+    (eventDate === today && endTime && currentTime > endTime)
+  ) {
     return "Terminé";
   }
 
-  if (dbStatus === "MAINTENANT" || (eventDate === today && startTime && currentTime >= startTime && (!endTime || currentTime <= endTime))) {
+  if (
+    dbStatus === "MAINTENANT" ||
+    (eventDate === today &&
+      startTime &&
+      currentTime >= startTime &&
+      (!endTime || currentTime <= endTime))
+  ) {
     return "En cours";
   }
 
@@ -93,21 +153,141 @@ const formatEventStatus = (dbStatus, date, startTime, endTime) => {
 
 /**
  * 🆕 HELPER : DÉTERMINER LE STATUT POUR LA BASE DE DONNÉES
+ * Même logique que ci-dessus, en se basant sur la date locale.
  */
 const getDbStatus = (date, startTime, endTime) => {
   const now = new Date();
-  const today = now.toISOString().split("T")[0];
-  const currentTime = now.toTimeString().split(" ")[0].substring(0, 5);
-  const eventDate = new Date(date).toISOString().split("T")[0];
+
+  const formatLocalDate = (d) => {
+    const nd = new Date(d);
+    const y = nd.getFullYear();
+    const m = String(nd.getMonth() + 1).padStart(2, "0");
+    const day = String(nd.getDate()).padStart(2, "0");
+    return `${y}-${m}-${day}`;
+  };
+
+  const today = formatLocalDate(now);
+  const eventDate = formatLocalDate(date);
+  const currentTime = now.toTimeString().split(" ")[0].substring(0, 5); // HH:MM
 
   if (eventDate < today || (eventDate === today && endTime && currentTime > endTime)) {
-    return 'EXPIRE';
+    return "EXPIRE";
   }
   if (eventDate === today && startTime && currentTime >= startTime && (!endTime || currentTime <= endTime)) {
-    return 'MAINTENANT';
+    return "MAINTENANT";
   }
-  return 'BIENTOT';
+  return "BIENTOT";
 };
+
+// ============================
+// ROUTES PROF : DÉTAIL + INSCRIPTION
+// (Utilise la table `participation` via `idprof`, déjà présente en base)
+// ============================
+
+// Détails événement pour un professeur
+app.get("/api/prof/events/detail/:eventId/:profId", async (req, res) => {
+  try {
+    const { eventId, profId } = req.params;
+
+    const result = await pool.query(
+      `SELECT 
+        e.id,
+        e.nom_evenement,
+        e.nom_animateur,
+        e.status,
+        e.description,
+        e.lieu,
+        e.date,
+        e.heure_debut,
+        e.heure_fin,
+        e.categorie,
+        e.idorganisateur,
+        e.theme_color,
+        o.nom as organisateur_nom,
+        p.status as participation_status,
+        p.id as participation_id
+      FROM evenement e
+      LEFT JOIN organisateur o ON e.idorganisateur = o.id
+      LEFT JOIN participation p ON e.id = p.idevenement AND p.idprof = $2
+      WHERE e.id = $1`,
+      [eventId, profId]
+    );
+
+    if (result.rowCount === 0) {
+      return res.status(404).json({ error: "Événement non trouvé" });
+    }
+
+    const event = result.rows[0];
+    event.event_status = formatEventStatus(event.status, event.date, event.heure_debut, event.heure_fin);
+    res.json(event);
+  } catch (error) {
+    console.error("❌ Erreur API /prof/events/detail:", error);
+    res.status(500).json({ error: "Erreur serveur" });
+  }
+});
+
+// Inscription professeur à un événement
+app.post("/api/prof/events/:eventId/inscription", async (req, res) => {
+  try {
+    const { eventId } = req.params;
+    const { profId, nom, filiere, annee } = req.body;
+
+    if (!profId || !eventId) {
+      return res.status(400).json({ message: "profId et eventId sont requis" });
+    }
+
+    const profExists = await pool.query("SELECT id FROM professeur WHERE id = $1", [profId]);
+    if (profExists.rowCount === 0) {
+      return res.status(400).json({ message: "Professeur introuvable" });
+    }
+
+    const eventExists = await pool.query("SELECT id FROM evenement WHERE id = $1", [eventId]);
+    if (eventExists.rowCount === 0) {
+      return res.status(404).json({ message: "Événement introuvable" });
+    }
+
+    const existing = await pool.query(
+      "SELECT id FROM participation WHERE idprof = $1 AND idevenement = $2",
+      [profId, eventId]
+    );
+    if (existing.rowCount > 0) {
+      return res.status(400).json({ message: "Vous êtes déjà inscrit à cet événement" });
+    }
+
+    const insert = await pool.query(
+      `INSERT INTO participation (idprof, idevenement, nom, filiere, annee, status)
+       VALUES ($1, $2, $3, $4, $5, 'INSCRIT')
+       RETURNING id, idevenement, status`,
+      [profId, eventId, nom || null, filiere || null, annee || null]
+    );
+
+    res.status(201).json({ message: "Inscription réussie", participation: insert.rows[0] });
+  } catch (err) {
+    console.error("❌ ERROR DURING PROF INSCRIPTION:", err);
+    if (err && err.code === "23505") {
+      return res.status(400).json({ message: "Vous êtes déjà inscrit à cet événement" });
+    }
+    res.status(500).json({ message: "Erreur serveur", error: err.message });
+  }
+});
+
+// Désinscription professeur
+app.delete("/api/prof/events/unregister/:participationId", async (req, res) => {
+  try {
+    const { participationId } = req.params;
+    const result = await pool.query(
+      "DELETE FROM participation WHERE id = $1 RETURNING id",
+      [participationId]
+    );
+    if (result.rowCount === 0) {
+      return res.status(404).json({ message: "Inscription non trouvée" });
+    }
+    res.json({ message: "Désinscription réussie ✅" });
+  } catch (err) {
+    console.error("❌ Erreur unregister prof:", err);
+    res.status(500).json({ message: "Erreur serveur" });
+  }
+});
 
 // --- HELPER : ENVOYER DES NOTIFICATIONS PUSH ---
 const sendPushNotifications = async (tokens, title, body, data = {}) => {
@@ -251,8 +431,120 @@ app.post("/api/auth/inscription", async (req, res) => {
   }
 });
 
+// --- ROUTES PROFESSEUR ---
+app.get("/api/prof/ping", (req, res) => {
+  res.json({ message: "Pong! L'API Professeur est active ✅" });
+});
+
+/**
+ * GET /api/prof/profile/:id
+ * Récupère le profil du professeur
+ */
+app.get("/api/prof/profile/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const result = await pool.query(
+      "SELECT id, nom, email, photo FROM professeur WHERE id = $1",
+      [id]
+    );
+
+    if (result.rowCount === 0) {
+      return res.status(404).json({ error: "Professeur non trouvé" });
+    }
+
+    res.json(result.rows[0]);
+  } catch (error) {
+    console.error("Error fetching prof profile:", error);
+    res.status(500).json({ error: "Erreur serveur" });
+  }
+});
+
+/**
+ * PUT /api/prof/profile/:id
+ * Met à jour le profil du professeur
+ */
+app.put("/api/prof/profile/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { nom, photo } = req.body;
+
+    const result = await pool.query(
+      "UPDATE professeur SET nom = $1, photo = $2 WHERE id = $3 RETURNING id, nom, email, photo",
+      [nom, photo, id]
+    );
+
+    if (result.rowCount === 0) {
+      return res.status(404).json({ error: "Professeur non trouvé" });
+    }
+
+    res.json({
+      message: "Profil mis à jour avec succès ✅",
+      user: result.rows[0],
+    });
+  } catch (error) {
+    console.error("Error updating prof profile:", error);
+    res.status(500).json({ error: "Erreur serveur" });
+  }
+});
+
 // ==========================================
-// 4. ROUTE : CONNEXION (LOGIN)
+// ROUTE : CONNEXION PROFESSEUR (LOGIN)
+// ==========================================
+app.post("/api/prof/login", async (req, res) => {
+  console.log("PROF LOGIN ATTEMPT:", req.body);
+  try {
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+      return res.status(400).json({
+        message: "Tous les champs sont obligatoires",
+      });
+    }
+
+    // Recherche dans la table professeur (au lieu de etudiant)
+    const result = await pool.query(
+      "SELECT * FROM professeur WHERE email = $1",
+      [email]
+    );
+
+    if (result.rowCount === 0) {
+      return res.status(401).json({
+        message: "Email inexistant ou compte non professeur",
+      });
+    }
+
+    const user = result.rows[0];
+
+    const validPassword = await bcrypt.compare(password, user.password);
+
+    if (!validPassword) {
+      return res.status(401).json({
+        message: "Mot de passe incorrect",
+      });
+    }
+
+    // On force le rôle "PROFESSOR" manuellement pour l'application
+    const token = jwt.sign(
+      { id: user.id, role: "PROFESSOR", nom: user.nom },
+      JWT_SECRET,
+      { expiresIn: "30d" }
+    );
+
+    res.json({
+      message: "Connexion réussie ✅",
+      user: { nom: user.nom, id: user.id, role: "PROFESSOR", photo: user.photo },
+      token
+    });
+  } catch (error) {
+    console.error("BACKEND PROF ERROR:", error);
+    res.status(500).json({
+      message: "Erreur serveur",
+    });
+  }
+});
+
+// ==========================================
+// 4. ROUTE : CONNEXION (LOGIN) ETUDIANT / ORGANISATEUR
 // ==========================================
 app.post("/api/auth/login", async (req, res) => {
   console.log("LOGIN ATTEMPT:", req.body);
@@ -401,6 +693,14 @@ app.post("/api/auth/reset-password", async (req, res) => {
       );
     }
 
+    // Si pas trouvé non plus, tenter dans professeur
+    if (result.rowCount === 0) {
+      result = await pool.query(
+        "UPDATE professeur SET password = $1 WHERE email = $2 RETURNING id",
+        [passwordhasher, email]
+      );
+    }
+
     if (result.rowCount === 0) {
       return res.status(404).json({ message: "Utilisateur non trouvé" });
     }
@@ -424,7 +724,14 @@ app.post("/api/auth/change-password", async (req, res) => {
   }
 
   try {
-    const table = role === "ORGANIZER" ? "organisateur" : "etudiant";
+    let table;
+    if (role === "ORGANIZER") {
+      table = "organisateur";
+    } else if (role === "PROFESSOR") {
+      table = "professeur";
+    } else {
+      table = "etudiant";
+    }
 
     // 1. Récupérer l'utilisateur
     const userRes = await pool.query(`SELECT password FROM ${table} WHERE id = $1`, [userId]);
@@ -673,9 +980,15 @@ app.get("/api/organizer/manage/:eventId", async (req, res) => {
     if (eventResult.rowCount === 0) return res.status(404).json({ error: "Événement non trouvé" });
 
     const participantsResult = await pool.query(
-      `SELECT p.id, p.status, p.idetudiant, et.nom, et.email, et.photo
+      `SELECT p.id, p.status, 
+              COALESCE(p.idetudiant, CAST(p.idprof AS VARCHAR)) as user_id,
+              COALESCE(et.nom, pr.nom) as nom, 
+              COALESCE(et.email, pr.email) as email, 
+              COALESCE(et.photo, pr.photo) as photo,
+              CASE WHEN p.idetudiant IS NOT NULL THEN 'STUDENT' ELSE 'PROFESSOR' END as role
        FROM participation p
-       JOIN etudiant et ON p.idetudiant = et.id
+       LEFT JOIN etudiant et ON p.idetudiant = et.id
+       LEFT JOIN professeur pr ON p.idprof = pr.id
        WHERE p.idevenement = $1`,
       [eventId]
     );
@@ -711,11 +1024,16 @@ app.get("/api/organizer/manage/:eventId/export-csv", async (req, res) => {
 
     // Récupérer les participants
     const participantsResult = await pool.query(
-      `SELECT et.nom, et.email, et.id as etudiant_id, p.status
+      `SELECT COALESCE(et.nom, pr.nom) as nom, 
+              COALESCE(et.email, pr.email) as email, 
+              COALESCE(p.idetudiant, CAST(p.idprof AS VARCHAR)) as user_id, 
+              p.status,
+              CASE WHEN p.idetudiant IS NOT NULL THEN 'Étudiant' ELSE 'Professeur' END as role
        FROM participation p
-       JOIN etudiant et ON p.idetudiant = et.id
+       LEFT JOIN etudiant et ON p.idetudiant = et.id
+       LEFT JOIN professeur pr ON p.idprof = pr.id
        WHERE p.idevenement = $1
-       ORDER BY et.nom ASC`,
+       ORDER BY nom ASC`,
       [eventId]
     );
 
@@ -733,11 +1051,11 @@ app.get("/api/organizer/manage/:eventId/export-csv", async (req, res) => {
     csv += `Absents;${participants.filter(p => p.status === "ABSENT").length}\n`;
     csv += `Inscrits;${participants.filter(p => p.status === "INSCRIT").length}\n`;
     csv += "\n";
-    csv += "Nom;Email;ID Étudiant;Statut\n";
+    csv += "Nom;Email;ID;Rôle;Statut\n";
 
     participants.forEach((p) => {
       const statusLabel = p.status === "PRESENT" ? "Présent" : p.status === "ABSENT" ? "Absent" : "Inscrit";
-      csv += `${p.nom};${p.email};${p.etudiant_id};${statusLabel}\n`;
+      csv += `${p.nom};${p.email};${p.user_id};${p.role};${statusLabel}\n`;
     });
 
     const safeName = event.nom_evenement.replace(/[^a-zA-Z0-9]/g, "_");
@@ -805,9 +1123,10 @@ app.put("/api/organizer/profile/:id", async (req, res) => {
 });
 app.get("/api/events/:id", async (req, res) => {
   try {
-    const studentId = req.params.id;
+    const userId = req.params.id;
+    const { role } = req.query; // ?role=STUDENT ou ?role=PROFESSOR
     const status = 'BIENTOT';
-    const today = new Date().toISOString().split("T")[0]; // format YYYY-MM-DD
+    const today = new Date().toISOString().split("T")[0];
 
     // 1️⃣ Événements à venir (tous)
     const resultUpcoming = await pool.query(
@@ -821,19 +1140,18 @@ app.get("/api/events/:id", async (req, res) => {
       [today]
     );
 
-    // 3️⃣ Événements complétés par cet étudiant
+    // 3️⃣ Événements complétés par cet utilisateur
+    const userField = role === "PROFESSOR" ? "idprof" : "idetudiant";
     const resultCompleted = await pool.query(
-      "SELECT COUNT(*) AS count FROM participation WHERE status = 'PRESENT' AND idetudiant = $1",
-      [studentId]
+      `SELECT COUNT(*) AS count FROM participation WHERE status = 'PRESENT' AND ${userField} = $1`,
+      [userId]
     );
 
-    // Renvoi JSON pour le front
     res.json({
       upcomingEvents: parseInt(resultUpcoming.rows[0].count, 10),
       todayEvents: parseInt(resultToday.rows[0].count, 10),
       completedEvents: parseInt(resultCompleted.rows[0].count, 10),
     });
-
   } catch (error) {
     console.error("Erreur API /events/:id:", error);
     res.status(500).json({ error: "Erreur serveur" });
@@ -851,14 +1169,21 @@ app.get("/api/events/:id", async (req, res) => {
  * Retourne TOUS les événements non expirés avec leurs statuts individuels
  * Utilisé pour le carrousel d'événements
  */
-app.get("/api/events/upcoming/:studentId", async (req, res) => {
+app.get("/api/events/upcoming/:userId", async (req, res) => {
   try {
-    const { studentId } = req.params;
+    const { userId } = req.params;
+    const { role } = req.query; // S'attendre à ?role=STUDENT ou ?role=PROFESSOR
     const now = new Date();
     const today = now.toISOString().split("T")[0];
     const currentTime = now.toTimeString().split(" ")[0].substring(0, 5);
 
-    console.log(`🔍 Recherche tous les événements non expirés pour étudiant ${studentId}`);
+    console.log(`🔍 Recherche tous les événements non expirés pour ${role || 'utilisateur'} ${userId}`);
+
+    // Déterminer la jointure de participation selon le rôle
+    let participationJoin = "LEFT JOIN participation p ON e.id = p.idevenement AND p.idetudiant = $1";
+    if (role === "PROFESSOR") {
+      participationJoin = "LEFT JOIN participation p ON e.id = p.idevenement AND p.idprof = $1";
+    }
 
     // Récupérer TOUS les événements non expirés
     const result = await pool.query(
@@ -877,7 +1202,7 @@ app.get("/api/events/upcoming/:studentId", async (req, res) => {
         e.theme_color,
         p.status as participation_status
       FROM evenement e
-      LEFT JOIN participation p ON e.id = p.idevenement AND p.idetudiant = $1
+      ${participationJoin}
       WHERE e.status != 'EXPIRE'
         AND (
           e.date > $2
@@ -885,7 +1210,7 @@ app.get("/api/events/upcoming/:studentId", async (req, res) => {
           (e.date = $2 AND e.heure_fin >= $3)
         )
       ORDER BY e.date ASC, e.heure_debut ASC`,
-      [studentId, today, currentTime]
+      [userId, today, currentTime]
     );
 
     console.log(`📊 Résultat de la requête : ${result.rowCount} événements trouvés`);
@@ -947,17 +1272,18 @@ app.get("/api/events/upcoming/:studentId", async (req, res) => {
  * 
  * Retourne aussi le statut de participation de l'étudiant
  */
-app.get("/api/events/active/:studentId", async (req, res) => {
+app.get("/api/events/active/:userId", async (req, res) => {
   try {
-    const { studentId } = req.params;
+    const { userId } = req.params;
+    const { role } = req.query; // ?role=STUDENT ou ?role=PROFESSOR
     const now = new Date();
-    const today = now.toISOString().split("T")[0]; // Format YYYY-MM-DD
-    const currentTime = now.toTimeString().split(" ")[0].substring(0, 5); // Format HH:MM
+    const today = now.toISOString().split("T")[0];
+    const currentTime = now.toTimeString().split(" ")[0].substring(0, 5);
 
-    console.log(`🔍 Recherche prochain événement pour étudiant ${studentId}`);
-    console.log(`📅 Date: ${today}, ⏰ Heure: ${currentTime}`);
+    console.log(`🔍 Recherche prochain événement pour ${role || 'utilisateur'} ${userId}`);
 
-    // Requête pour trouver le prochain événement qui n'est pas expiré
+    const userField = role === "PROFESSOR" ? "idprof" : "idetudiant";
+
     const result = await pool.query(
       `SELECT 
         e.id,
@@ -974,56 +1300,31 @@ app.get("/api/events/active/:studentId", async (req, res) => {
         e.theme_color,
         p.status as participation_status
       FROM evenement e
-      LEFT JOIN participation p ON e.id = p.idevenement AND p.idetudiant = $1
+      LEFT JOIN participation p ON e.id = p.idevenement AND p.${userField} = $1
       WHERE e.status != 'EXPIRE'
         AND (
-          -- Événements futurs (date future)
           e.date > $2
           OR 
-          -- Événements d'aujourd'hui qui ne sont pas encore terminés
           (e.date = $2 AND e.heure_fin >= $3)
         )
       ORDER BY e.date ASC, e.heure_debut ASC
       LIMIT 1`,
-      [studentId, today, currentTime]
+      [userId, today, currentTime]
     );
 
     if (result.rowCount === 0) {
-      console.log("❌ Aucun événement à venir");
-      return res.json({
-        event: null,
-        message: "Aucun événement à venir",
-      });
+      return res.json({ event: null, message: "Aucun événement à venir" });
     }
 
     const event = result.rows[0];
-
-    // Déterminer la couleur selon la catégorie
-    const categoryColors = {
-      "Conférence": "#4A6FA5",
-      "Atelier": "#6B8E23",
-      "Séminaire": "#8B4789",
-      "Formation": "#C17817",
-      "Réunion": "#2E8B57",
-      "default": "#5B7FBD"
-    };
-
-    const eventData = {
-      ...event,
-      color: categoryColors[event.categorie] || categoryColors.default,
-      event_status: formatEventStatus(event.status, event.date, event.heure_debut, event.heure_fin),
-    };
-
-    console.log(`✅ Événement trouvé: ${event.nom_evenement} (${eventStatus})`);
-    console.log(`📝 Statut événement: ${event.status}`);
-    console.log(`👤 Statut participation: ${event.participation_status || 'Non inscrit'}`);
+    const eventStatus = formatEventStatus(event.status, event.date, event.heure_debut, event.heure_fin);
 
     res.json({
-      event: eventData,
+      event: { ...event, event_status: eventStatus },
       message: `Événement ${eventStatus.toLowerCase()} trouvé`,
     });
   } catch (error) {
-    console.error("❌ Erreur API /events/active/:studentId:", error);
+    console.error("❌ Erreur API /events/active/:userId:", error);
     res.status(500).json({ error: "Erreur serveur" });
   }
 });
@@ -1092,9 +1393,12 @@ app.get("/api/events", async (req, res) => {
  * Retourne les détails complets d'un événement spécifique
  * avec le statut de participation de l'étudiant
  */
-app.get("/api/events/detail/:eventId/:studentId", async (req, res) => {
+app.get("/api/events/detail/:eventId/:userId", async (req, res) => {
   try {
-    const { eventId, studentId } = req.params;
+    const { eventId, userId } = req.params;
+    const { role } = req.query; // ?role=STUDENT ou ?role=PROFESSOR
+
+    const userField = role === "PROFESSOR" ? "idprof" : "idetudiant";
 
     const result = await pool.query(
       `SELECT 
@@ -1115,9 +1419,9 @@ app.get("/api/events/detail/:eventId/:studentId", async (req, res) => {
         p.id as participation_id
       FROM evenement e
       LEFT JOIN organisateur o ON e.idorganisateur = o.id
-      LEFT JOIN participation p ON e.id = p.idevenement AND p.idetudiant = $2
+      LEFT JOIN participation p ON e.id = p.idevenement AND p.${userField} = $2
       WHERE e.id = $1`,
-      [eventId, studentId]
+      [eventId, userId]
     );
 
     if (result.rowCount === 0) {
@@ -1127,7 +1431,6 @@ app.get("/api/events/detail/:eventId/:studentId", async (req, res) => {
     const event = result.rows[0];
     event.event_status = formatEventStatus(event.status, event.date, event.heure_debut, event.heure_fin);
 
-    console.log(`✅ Détails événement ${eventId} récupérés`);
     res.json(event);
   } catch (error) {
     console.error("❌ Erreur API /events/detail:", error);
@@ -1220,16 +1523,19 @@ app.delete("/api/events/unregister/:participationId", async (req, res) => {
 app.post("/api/events/:eventId/feedback", async (req, res) => {
   try {
     const { eventId } = req.params;
-    const { studentId, status, description } = req.body;
+    const { studentId, profId, status, description } = req.body;
 
-    if (!studentId || !status) {
-      return res.status(400).json({ message: "studentId et status (reaction) sont requis" });
+    if ((!studentId && !profId) || !status) {
+      return res.status(400).json({ message: "ID utilisateur et status sont requis" });
     }
 
-    // Vérifier si l'étudiant a déjà laissé un feedback
+    const userField = studentId ? "idetudiant" : "idprof";
+    const userId = studentId || profId;
+
+    // Vérifier si l'utilisateur a déjà laissé un feedback
     const existingFeedback = await pool.query(
-      "SELECT id FROM feedback WHERE idevenement = $1 AND idetudiant = $2",
-      [eventId, studentId]
+      `SELECT id FROM feedback WHERE idevenement = $1 AND ${userField} = $2`,
+      [eventId, userId]
     );
 
     if (existingFeedback.rowCount > 0) {
@@ -1238,8 +1544,8 @@ app.post("/api/events/:eventId/feedback", async (req, res) => {
 
     // Insérer le feedback
     await pool.query(
-      "INSERT INTO feedback (idevenement, idetudiant, status, description) VALUES ($1, $2, $3, $4)",
-      [eventId, studentId, status, description || ""]
+      `INSERT INTO feedback (idevenement, ${userField}, status, description) VALUES ($1, $2, $3, $4)`,
+      [eventId, userId, status, description || ""]
     );
 
     res.json({ message: "Merci pour votre feedback ! ✅" });
@@ -1258,9 +1564,13 @@ app.get("/api/events/:eventId/feedbacks", async (req, res) => {
   try {
     const { eventId } = req.params;
     const result = await pool.query(
-      `SELECT f.*, e.nom as etudiant_nom, e.photo as etudiant_photo 
+      `SELECT f.*, 
+              COALESCE(e.nom, pr.nom) as user_nom, 
+              COALESCE(e.photo, pr.photo) as user_photo,
+              CASE WHEN f.idetudiant IS NOT NULL THEN 'STUDENT' ELSE 'PROFESSOR' END as user_role
        FROM feedback f 
-       JOIN etudiant e ON f.idetudiant = e.id 
+       LEFT JOIN etudiant e ON f.idetudiant = e.id 
+       LEFT JOIN professeur pr ON f.idprof = pr.id
        WHERE f.idevenement = $1 
        ORDER BY f.created_at DESC`,
       [eventId]
@@ -1277,12 +1587,15 @@ app.get("/api/events/:eventId/feedbacks", async (req, res) => {
  * 
  * Vérifie si l'étudiant a déjà laissé un feedback
  */
-app.get("/api/events/:eventId/feedback/check/:studentId", async (req, res) => {
+app.get("/api/events/:eventId/feedback/check/:userId", async (req, res) => {
   try {
-    const { eventId, studentId } = req.params;
+    const { eventId, userId } = req.params;
+    const { role } = req.query; // ?role=STUDENT ou ?role=PROFESSOR
+    const userField = role === "PROFESSOR" ? "idprof" : "idetudiant";
+
     const result = await pool.query(
-      "SELECT status, description FROM feedback WHERE idevenement = $1 AND idetudiant = $2",
-      [eventId, studentId]
+      `SELECT status, description FROM feedback WHERE idevenement = $1 AND ${userField} = $2`,
+      [eventId, userId]
     );
     res.json({ exists: result.rowCount > 0, feedback: result.rows[0] });
   } catch (error) {
@@ -1338,7 +1651,58 @@ app.get("/api/student/stats/:id", async (req, res) => {
       enrolledEvents: eventsQuery.rows
     });
   } catch (error) {
-    console.error("❌ Erreur API /student/stats/:id:", error);
+    res.status(500).json({ error: "Erreur serveur" });
+  }
+});
+
+/**
+ * 🆕 GET /api/prof/stats/:id
+ * 
+ * Récupère les statistiques de participation pour un professeur
+ */
+app.get("/api/prof/stats/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // 1️⃣ Total des événements auxquels le professeur est inscrit
+    const enrolledQuery = await pool.query(
+      "SELECT COUNT(*) FROM participation WHERE idprof = $1",
+      [id]
+    );
+    const totalEnrolled = parseInt(enrolledQuery.rows[0].count);
+
+    // 2️⃣ Total des événements où le professeur a été marqué PRESENT
+    const attendedQuery = await pool.query(
+      "SELECT COUNT(*) FROM participation WHERE idprof = $1 AND status = 'PRESENT'",
+      [id]
+    );
+    const totalAttended = parseInt(attendedQuery.rows[0].count);
+
+    // 3️⃣ Calcul du pourcentage
+    const attendancePercentage = totalEnrolled > 0
+      ? Math.round((totalAttended / totalEnrolled) * 100)
+      : 0;
+
+    // 4️⃣ Liste détaillée des événements avec statut de participation
+    const eventsQuery = await pool.query(
+      `SELECT e.id, e.nom_evenement as title, e.nom_animateur as animator, 
+              e.date, e.heure_debut, e.theme_color, e.categorie,
+              p.status as participation_status
+       FROM evenement e
+       JOIN participation p ON e.id = p.idevenement
+       WHERE p.idprof = $1
+       ORDER BY e.date DESC`,
+      [id]
+    );
+
+    res.json({
+      totalEnrolled,
+      totalAttended,
+      attendancePercentage,
+      enrolledEvents: eventsQuery.rows
+    });
+  } catch (error) {
+    console.error("❌ Erreur API /prof/stats/:id:", error);
     res.status(500).json({ error: "Erreur serveur" });
   }
 });
@@ -1415,7 +1779,6 @@ app.post("/api/events", async (req, res) => {
       [nom_evenement, nom_animateur, description, lieu, date, date_fin, heure_debut, heure_fin, categorie, capacite_max, idorganisateur, status, theme_color || 'Dusk']
     );
 
-<<<<<<< HEAD
     const newEvent = result.rows[0];
     res.status(201).json(newEvent);
 
@@ -1432,7 +1795,7 @@ app.post("/api/events", async (req, res) => {
         );
         console.log(`✅ Notification in-app créée pour l'événement ${newEvent.id}`);
 
-        // 2. Envoyer push notifications à tous les étudiants avec token
+        // 2. Envoyer push notifications à tous les utilisateurs avec token
         const tokensResult = await pool.query(`SELECT DISTINCT token FROM push_tokens`);
         if (tokensResult.rowCount === 0) {
           console.log("ℹ️ Aucun push token enregistré");
@@ -1464,25 +1827,6 @@ app.post("/api/events", async (req, res) => {
         console.error("❌ Erreur lors de l'envoi des notifications:", notifErr.message);
       }
     });
-=======
-    res.status(201).json(result.rows[0]);
-
-    // --- ENVOYER NOTIFICATION NOUVEL ÉVÉNEMENT ---
-    try {
-      const tokensResult = await pool.query("SELECT push_token FROM etudiant WHERE push_token IS NOT NULL");
-      const tokens = tokensResult.rows.map(r => r.push_token);
-      if (tokens.length > 0) {
-        await sendPushNotifications(
-          tokens,
-          "Nouvel Événement ! ✨",
-          `L'événement "${nom_evenement}" vient d'être publié. Ne le ratez pas !`,
-          { eventId: result.rows[0].id, type: 'NEW_EVENT' }
-        );
-      }
-    } catch (notifyError) {
-      console.error("Error sending new event notification:", notifyError);
-    }
->>>>>>> 262ef80dc8417b017c154e7d44c890a4938d758a
   } catch (error) {
     console.error("Error creating event:", error);
     res.status(500).json({ error: "Erreur serveur" });
@@ -1498,18 +1842,19 @@ app.post("/api/events", async (req, res) => {
  * Enregistrer le push token Expo d'un étudiant
  */
 app.post("/api/notifications/save-token", async (req, res) => {
-  const { studentId, token } = req.body;
-  if (!studentId || !token) {
-    return res.status(400).json({ message: "studentId et token requis" });
+  const { studentId, profId, token } = req.body;
+  if ((!studentId && !profId) || !token) {
+    return res.status(400).json({ message: "ID utilisateur et token requis" });
   }
   try {
     await pool.query(
-      `INSERT INTO push_tokens (student_id, token)
-       VALUES ($1, $2)
-       ON CONFLICT (student_id, token) DO NOTHING`,
-      [studentId, token]
+      `INSERT INTO push_tokens (student_id, prof_id, token)
+       VALUES ($1, $2, $3)
+       ON CONFLICT (student_id, token) DO NOTHING
+       ON CONFLICT (prof_id, token) DO NOTHING`,
+      [studentId || null, profId || null, token]
     );
-    console.log(`✅ Token enregistré pour étudiant ${studentId}`);
+    console.log(`✅ Token enregistré pour ${studentId ? 'étudiant ' + studentId : 'professeur ' + profId}`);
     res.json({ message: "Token enregistré" });
   } catch (err) {
     console.error("Erreur save-token:", err);
@@ -1521,24 +1866,28 @@ app.post("/api/notifications/save-token", async (req, res) => {
  * GET /api/notifications/:studentId
  * Récupérer les notifications d'un étudiant (globales + personnelles), non lues en premier
  */
-app.get("/api/notifications/:studentId", async (req, res) => {
-  const { studentId } = req.params;
+app.get("/api/notifications/:userId", async (req, res) => {
+  const { userId } = req.params;
+  const { role } = req.query; // ?role=STUDENT ou ?role=PROFESSOR
   try {
+    const userField = role === "PROFESSOR" ? "prof_id" : "student_id";
+    
     const result = await pool.query(
       `SELECT * FROM notifications
-       WHERE student_id = $1 OR student_id IS NULL
+       WHERE ${userField} = $1 OR (student_id IS NULL AND prof_id IS NULL)
        ORDER BY created_at DESC
        LIMIT 50`,
-      [studentId]
+      [userId]
     );
-    // Compter les non lues (utilise un état local par étudiant via read_by)
+
+    // Compter les non lues
     const unreadResult = await pool.query(
       `SELECT COUNT(*) FROM notifications
-       WHERE (student_id = $1 OR student_id IS NULL)
+       WHERE (${userField} = $1 OR (student_id IS NULL AND prof_id IS NULL))
          AND id NOT IN (
-           SELECT notification_id FROM notification_reads WHERE student_id = $1
+           SELECT notification_id FROM notification_reads WHERE ${userField} = $1
          )`,
-      [studentId]
+      [userId]
     );
     res.json({
       notifications: result.rows,
@@ -1556,16 +1905,16 @@ app.get("/api/notifications/:studentId", async (req, res) => {
  */
 app.post("/api/notifications/:id/read", async (req, res) => {
   const { id } = req.params;
-  const { studentId } = req.body;
-  if (!studentId) {
-    return res.status(400).json({ message: "studentId requis" });
+  const { studentId, profId } = req.body;
+  if (!studentId && !profId) {
+    return res.status(400).json({ message: "ID utilisateur requis" });
   }
   try {
     await pool.query(
-      `INSERT INTO notification_reads (notification_id, student_id)
-       VALUES ($1, $2)
+      `INSERT INTO notification_reads (notification_id, student_id, prof_id)
+       VALUES ($1, $2, $3)
        ON CONFLICT DO NOTHING`,
-      [id, studentId]
+      [id, studentId || null, profId || null]
     );
     res.json({ message: "Notification marquée comme lue" });
   } catch (err) {
@@ -1579,21 +1928,24 @@ app.post("/api/notifications/:id/read", async (req, res) => {
  * Marquer toutes les notifications comme lues pour un étudiant
  */
 app.post("/api/notifications/mark-all-read", async (req, res) => {
-  const { studentId } = req.body;
-  if (!studentId) {
-    return res.status(400).json({ message: "studentId requis" });
+  const { studentId, profId } = req.body;
+  if (!studentId && !profId) {
+    return res.status(400).json({ message: "ID utilisateur requis" });
   }
   try {
+    const userField = studentId ? "student_id" : "prof_id";
+    const userId = studentId || profId;
+
     // Insérer une lecture pour toutes les notifs non lues
     await pool.query(
-      `INSERT INTO notification_reads (notification_id, student_id)
+      `INSERT INTO notification_reads (notification_id, ${userField})
        SELECT id, $1 FROM notifications
-       WHERE (student_id = $1 OR student_id IS NULL)
+       WHERE (${userField} = $1 OR (student_id IS NULL AND prof_id IS NULL))
          AND id NOT IN (
-           SELECT notification_id FROM notification_reads WHERE student_id = $1
+           SELECT notification_id FROM notification_reads WHERE ${userField} = $1
          )
        ON CONFLICT DO NOTHING`,
-      [studentId]
+      [userId]
     );
     res.json({ message: "Toutes les notifications marquées comme lues" });
   } catch (err) {
@@ -1721,6 +2073,17 @@ app.post("/api/events/:eventId/inscription", async (req, res) => {
     if (!filieres.includes(filiere)) return res.status(400).json({ message: "Filière invalide" });
     if (!annees.includes(annee)) return res.status(400).json({ message: "Année invalide" });
 
+    // Vérifier que l'étudiant existe (évite l'erreur FK et retourne un message clair)
+    const studentExists = await pool.query(
+      "SELECT id FROM etudiant WHERE id = $1",
+      [studentId]
+    );
+    if (studentExists.rowCount === 0) {
+      return res.status(400).json({
+        message: "Étudiant introuvable. Vérifiez que vous êtes connecté avec un compte étudiant valide.",
+      });
+    }
+
     // Vérifier si déjà inscrit
     const existing = await pool.query(
       "SELECT id FROM participation WHERE idetudiant = $1 AND idevenement = $2",
@@ -1745,6 +2108,12 @@ app.post("/api/events/:eventId/inscription", async (req, res) => {
     });
   } catch (err) {
     console.error("❌ ERROR DURING INSCRIPTION:", err);
+    // Message plus explicite si contrainte FK (étudiant/événement inexistant)
+    if (err && err.code === "23503") {
+      return res.status(400).json({
+        message: "Inscription impossible (référence invalide). Vérifiez votre compte et l'événement.",
+      });
+    }
     res.status(500).json({ message: "Erreur serveur", error: err.message });
   }
 });
@@ -1762,10 +2131,8 @@ app.post("/api/events/:eventId/inscription", async (req, res) => {
 
 
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, "0.0.0.0", () => {
-  console.log(`Serveur démarré sur le port ${PORT}`);
-});
+
+
 
 
 ///////////////////scan qr cde 
@@ -1773,21 +2140,46 @@ app.post("/api/scan", async (req, res) => {
   const { cne, eventId } = req.body;
 
   try {
-    const result = await pool.query(
-      `SELECT p.*, e.nom, e.email, e.photo 
+    // Le QR peut contenir soit l'ID étudiant (CNE, varchar) soit l'ID professeur (integer).
+    // On essaie d'abord côté étudiant, puis côté professeur.
+    const studentRes = await pool.query(
+      `SELECT p.*, e.nom, e.email, e.photo
        FROM participation p
        JOIN etudiant e ON p.idetudiant = e.id
        WHERE p.idetudiant = $1 AND p.idevenement = $2`,
       [cne, eventId]
     );
 
-    if (result.rows.length === 0) {
-      return res.status(400).json({
-        message: "Étudiant non inscrit ❌",
-      });
+    let participant = studentRes.rows[0];
+    let participantType = "STUDENT";
+    let whereClause = "idetudiant = $1 AND idevenement = $2";
+    let whereParams = [cne, eventId];
+
+    if (!participant) {
+      // Si le QR est numérique, tenter côté professeur
+      const profId = Number.parseInt(String(cne), 10);
+      if (Number.isFinite(profId)) {
+        const profRes = await pool.query(
+          `SELECT p.*, pr.nom, pr.email, pr.photo
+           FROM participation p
+           JOIN professeur pr ON p.idprof = pr.id
+           WHERE p.idprof = $1 AND p.idevenement = $2`,
+          [profId, eventId]
+        );
+        if (profRes.rows[0]) {
+          participant = profRes.rows[0];
+          participantType = "PROFESSOR";
+          whereClause = "idprof = $1 AND idevenement = $2";
+          whereParams = [profId, eventId];
+        }
+      }
     }
 
-    const participant = result.rows[0];
+    if (!participant) {
+      return res.status(400).json({
+        message: "Participant non inscrit ❌",
+      });
+    }
 
     // On renvoie 200 même si déjà présent pour afficher les infos
     if (participant.status === "PRESENT") {
@@ -1796,16 +2188,17 @@ app.post("/api/scan", async (req, res) => {
         student: {
           nom: participant.nom,
           email: participant.email,
-          photo: participant.photo
-        }
+          photo: participant.photo,
+          type: participantType,
+        },
       });
     }
 
     await pool.query(
       `UPDATE participation
        SET status = 'PRESENT'
-       WHERE idetudiant = $1 AND idevenement = $2`,
-      [cne, eventId]
+       WHERE ${whereClause}`,
+      whereParams
     );
 
     res.json({ 
@@ -1813,7 +2206,8 @@ app.post("/api/scan", async (req, res) => {
       student: {
         nom: participant.nom,
         email: participant.email,
-        photo: participant.photo
+        photo: participant.photo,
+        type: participantType,
       }
     });
 
@@ -1821,4 +2215,49 @@ app.post("/api/scan", async (req, res) => {
     console.error(err);
     res.status(500).json({ message: "Erreur serveur" });
   }
+});
+
+// ==========================================
+// DÉMARRAGE DU SERVEUR
+// ==========================================
+const PORT = process.env.PORT || 3000;
+
+// Fonction pour obtenir l'IP locale (Priorité Wi-Fi/Ethernet)
+function getLocalIp() {
+  const interfaces = os.networkInterfaces();
+  const results = [];
+
+  for (const name of Object.keys(interfaces)) {
+    for (const iface of interfaces[name]) {
+      if (iface.family === "IPv4" && !iface.internal) {
+        results.push({ name, address: iface.address });
+      }
+    }
+  }
+
+  // 1. Chercher Wi-Fi ou WLAN
+  const wifi = results.find(r => 
+    r.name.toLowerCase().includes("wi-fi") || 
+    r.name.toLowerCase().includes("wlan")
+  );
+  if (wifi) return wifi.address;
+
+  // 2. Chercher Ethernet physique (non virtuel)
+  const ethernet = results.find(r => 
+    r.name.toLowerCase().includes("ethernet") && 
+    !r.name.toLowerCase().includes("virtual") && 
+    !r.name.toLowerCase().includes("vbox") && 
+    !r.name.toLowerCase().includes("vmware")
+  );
+  if (ethernet) return ethernet.address;
+
+  // 3. Premier choix par défaut
+  return results.length > 0 ? results[0].address : "localhost";
+}
+
+const localIp = getLocalIp();
+
+app.listen(PORT, "0.0.0.0", () => {
+  console.log(`🚀 Serveur démarré sur le port ${PORT}`);
+  console.log(`🌐 Accessible sur le réseau à : http://${localIp}:${PORT}`);
 });

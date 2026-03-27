@@ -22,16 +22,19 @@ const NotificationContext = createContext({
 
 export const useNotifications = () => useContext(NotificationContext);
 
-export function NotificationProvider({ studentId, children }) {
+export function NotificationProvider({ studentId, profId, children }) {
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [readIds, setReadIds] = useState(new Set());
   const notificationListener = useRef();
   const responseListener = useRef();
 
+  const userId = studentId || profId;
+  const role = profId ? "PROFESSOR" : "STUDENT";
+
   // Demander les permissions et enregistrer le token push
   useEffect(() => {
-    if (!studentId) return;
+    if (!userId) return;
 
     const registerPushToken = async () => {
       try {
@@ -60,7 +63,7 @@ export function NotificationProvider({ studentId, children }) {
         await fetch(`${API_URL}/notifications/save-token`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ studentId, token }),
+          body: JSON.stringify({ studentId, profId, token }),
         });
 
         // Android : créer un canal de notification
@@ -102,12 +105,12 @@ export function NotificationProvider({ studentId, children }) {
         responseListener.current.remove();
       }
     };
-  }, [studentId]);
+  }, [userId]);
 
   const fetchNotifications = async () => {
-    if (!studentId) return;
+    if (!userId) return;
     try {
-      const res = await fetch(`${API_URL}/notifications/${studentId}`);
+      const res = await fetch(`${API_URL}/notifications/${userId}?role=${role}`);
       if (!res.ok) {
         console.warn(`⚠️ Erreur fetch notifications (${res.status}): possible HTML response`);
         return;
@@ -133,7 +136,7 @@ export function NotificationProvider({ studentId, children }) {
       await fetch(`${API_URL}/notifications/${notifId}/read`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ studentId }),
+        body: JSON.stringify({ studentId, profId }),
       });
       setReadIds((prev) => new Set([...prev, notifId]));
       setUnreadCount((prev) => Math.max(0, prev - 1));
@@ -147,7 +150,7 @@ export function NotificationProvider({ studentId, children }) {
       await fetch(`${API_URL}/notifications/mark-all-read`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ studentId }),
+        body: JSON.stringify({ studentId, profId }),
       });
       setUnreadCount(0);
       // Rafraîchir la liste
