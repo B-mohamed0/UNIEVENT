@@ -5,20 +5,12 @@ const cors = require("cors");
 const helmet = require("helmet");
 const nodemailer = require("nodemailer");
 const jwt = require("jsonwebtoken");
-<<<<<<< HEAD
+const cron = require("node-cron");
 const { Expo } = require("expo-server-sdk");
 require("dotenv").config();
 
 // --- EXPO PUSH CLIENT ---
 const expo = new Expo();
-
-=======
-const cron = require("node-cron");
-const { Expo } = require("expo-server-sdk");
-require("dotenv").config();
-
-const expo = new Expo();
->>>>>>> 262ef80dc8417b017c154e7d44c890a4938d758a
 const JWT_SECRET = process.env.JWT_SECRET || "fallback_secret";
 
 const app = express();
@@ -1415,7 +1407,6 @@ app.post("/api/events", async (req, res) => {
       [nom_evenement, nom_animateur, description, lieu, date, date_fin, heure_debut, heure_fin, categorie, capacite_max, idorganisateur, status, theme_color || 'Dusk']
     );
 
-<<<<<<< HEAD
     const newEvent = result.rows[0];
     res.status(201).json(newEvent);
 
@@ -1464,25 +1455,6 @@ app.post("/api/events", async (req, res) => {
         console.error("❌ Erreur lors de l'envoi des notifications:", notifErr.message);
       }
     });
-=======
-    res.status(201).json(result.rows[0]);
-
-    // --- ENVOYER NOTIFICATION NOUVEL ÉVÉNEMENT ---
-    try {
-      const tokensResult = await pool.query("SELECT push_token FROM etudiant WHERE push_token IS NOT NULL");
-      const tokens = tokensResult.rows.map(r => r.push_token);
-      if (tokens.length > 0) {
-        await sendPushNotifications(
-          tokens,
-          "Nouvel Événement ! ✨",
-          `L'événement "${nom_evenement}" vient d'être publié. Ne le ratez pas !`,
-          { eventId: result.rows[0].id, type: 'NEW_EVENT' }
-        );
-      }
-    } catch (notifyError) {
-      console.error("Error sending new event notification:", notifyError);
-    }
->>>>>>> 262ef80dc8417b017c154e7d44c890a4938d758a
   } catch (error) {
     console.error("Error creating event:", error);
     res.status(500).json({ error: "Erreur serveur" });
