@@ -7,31 +7,26 @@ import {
   TouchableOpacity,
   StatusBar,
   RefreshControl,
-  Dimensions,
   Platform,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { BlurView } from "expo-blur";
-import { LinearGradient } from "expo-linear-gradient";
-import { MotiView } from "moti";
 import { useThemeContext } from "../context/ThemeContext";
 import { useNotifications } from "../context/NotificationContext";
 
-const { width } = Dimensions.get("window");
-
 export default function NotificationsScreen({ route, navigation }) {
-  const { id, nom } = route.params;
+  const { id = null, nom = "" } = route.params || {};
   const { isDarkMode } = useThemeContext();
-  const { notifications, unreadCount, fetchNotifications, markAsRead, markAllAsRead, readIds } = useNotifications();
+  const { notifications = [], unreadCount = 0, fetchNotifications, markAsRead, markAllAsRead, readIds = new Set() } = useNotifications() || {};
   const [refreshing, setRefreshing] = useState(false);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    await fetchNotifications();
+    if (fetchNotifications) await fetchNotifications();
     setRefreshing(false);
   }, [fetchNotifications]);
 
   const formatDate = (dateStr) => {
+    if (!dateStr) return "";
     const date = new Date(dateStr);
     const now = new Date();
     const diffMs = now - date;
@@ -46,65 +41,51 @@ export default function NotificationsScreen({ route, navigation }) {
     return date.toLocaleDateString("fr-FR", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
   };
 
-  const isRead = (notif) => readIds.has(notif.id) || notif.is_read;
+  const isRead = (notif) => (readIds && readIds.has(notif.id)) || notif.is_read;
 
   const handleNotifPress = (notif) => {
-    markAsRead(notif.id);
+    if (markAsRead) markAsRead(notif.id);
     if (notif.event_id) {
       navigation.navigate("Eventinfo", { eventId: notif.event_id, studentId: id, nom });
     }
   };
 
-  // Modern Color Palette
+  // Modern Color Palette (No Blur, 100% safe React Native views)
   const theme = {
-    bg: isDarkMode ? "#09090b" : "#f4f4f5", // Zinc 950 / Zinc 100
-    card: isDarkMode ? "rgba(24, 24, 27, 0.7)" : "rgba(255, 255, 255, 0.8)",
-    cardBorder: isDarkMode ? "rgba(255, 255, 255, 0.08)" : "rgba(0, 0, 0, 0.05)",
+    bg: isDarkMode ? "#09090b" : "#f4f4f5", 
+    card: isDarkMode ? "#18181b" : "#ffffff",
+    cardUnread: isDarkMode ? "#1e293b" : "#eff6ff", // Zinc/Blueish tint for unread
+    cardBorder: isDarkMode ? "#27272a" : "#e4e4e7",
+    cardBorderUnread: isDarkMode ? "#3b82f6" : "#bfdbfe",
     text: isDarkMode ? "#fafafa" : "#18181b",
     subtext: isDarkMode ? "#a1a1aa" : "#71717a",
-    primary: "#2563eb", // Blue 600
-    primaryGlow: "rgba(37, 99, 235, 0.2)",
-    iconBgRead: isDarkMode ? "#27272a" : "#e4e4e7",
-    iconColorRead: isDarkMode ? "#a1a1aa" : "#52525b",
+    primary: "#2563eb",
+    iconBgRead: isDarkMode ? "#27272a" : "#f4f4f5",
+    iconColorRead: isDarkMode ? "#a1a1aa" : "#a1a1aa",
+    iconBgUnread: "#2563eb",
   };
 
-  const renderItem = ({ item, index }) => {
+  const renderItem = ({ item }) => {
     const read = isRead(item);
 
     return (
-      <MotiView
-        from={{ opacity: 0, translateY: 20, scale: 0.95 }}
-        animate={{ opacity: 1, translateY: 0, scale: 1 }}
-        transition={{
-          type: "spring",
-          delay: index * 100,
-          damping: 20,
-          stiffness: 200,
-        }}
-      >
+      <View style={{ marginBottom: 12 }}>
         <TouchableOpacity activeOpacity={0.7} onPress={() => handleNotifPress(item)}>
-          <BlurView
-            intensity={Platform.OS === "ios" ? 40 : 100}
-            tint={isDarkMode ? "dark" : "light"}
+          <View
             style={[
               styles.notifCard,
               {
-                backgroundColor: read ? theme.card : isDarkMode ? "rgba(37, 99, 235, 0.15)" : "rgba(37, 99, 235, 0.08)",
-                borderColor: read ? theme.cardBorder : "rgba(37, 99, 235, 0.3)",
+                backgroundColor: read ? theme.card : theme.cardUnread,
+                borderColor: read ? theme.cardBorder : theme.cardBorderUnread,
               },
             ]}
           >
             {/* Indicateur de statut moderne */}
             <View style={styles.iconContainer}>
               {!read ? (
-                <LinearGradient
-                  colors={["#3b82f6", "#2563eb"]}
-                  style={styles.iconCircle}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 1 }}
-                >
+                <View style={[styles.iconCircle, { backgroundColor: theme.iconBgUnread }]}>
                   <Ionicons name="notifications" size={20} color="#fff" />
-                </LinearGradient>
+                </View>
               ) : (
                 <View style={[styles.iconCircle, { backgroundColor: theme.iconBgRead }]}>
                   <Ionicons name="notifications-outline" size={20} color={theme.iconColorRead} />
@@ -130,9 +111,9 @@ export default function NotificationsScreen({ route, navigation }) {
                 <Text style={[styles.notifTime, { color: theme.subtext }]}>{formatDate(item.created_at)}</Text>
               </View>
             </View>
-          </BlurView>
+          </View>
         </TouchableOpacity>
-      </MotiView>
+      </View>
     );
   };
 
@@ -140,12 +121,8 @@ export default function NotificationsScreen({ route, navigation }) {
     <View style={[styles.container, { backgroundColor: theme.bg }]}>
       <StatusBar barStyle={isDarkMode ? "light-content" : "dark-content"} backgroundColor="transparent" translucent />
 
-      {/* HEADER MODERNE (Minimaliste) */}
-      <BlurView
-        intensity={80}
-        tint={isDarkMode ? "dark" : "light"}
-        style={[styles.headerBlur, { borderBottomColor: theme.cardBorder }]}
-      >
+      {/* HEADER MODERNE (Minimaliste et Safe) */}
+      <View style={[styles.headerSafe, { backgroundColor: isDarkMode ? "#09090b" : "#f4f4f5", borderBottomColor: theme.cardBorder }]}>
         <View style={styles.headerContent}>
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
             <Ionicons name="arrow-back" size={24} color={theme.text} />
@@ -165,10 +142,10 @@ export default function NotificationsScreen({ route, navigation }) {
               <Ionicons name="checkmark-done" size={24} color={theme.primary} />
             </TouchableOpacity>
           ) : (
-            <View style={{ width: 40 }} /> // Placeholder pour équilibrer
+            <View style={{ width: 40 }} />
           )}
         </View>
-      </BlurView>
+      </View>
 
       {/* LISTE */}
       <FlatList
@@ -186,20 +163,15 @@ export default function NotificationsScreen({ route, navigation }) {
           />
         }
         ListEmptyComponent={
-          <MotiView
-            from={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ type: "timing", duration: 800 }}
-            style={styles.emptyContainer}
-          >
-            <View style={[styles.emptyIconWrapper, { backgroundColor: isDarkMode ? "#18181b" : "#e4e4e7" }]}>
+          <View style={styles.emptyContainer}>
+            <View style={[styles.emptyIconWrapper, { backgroundColor: theme.cardBorder }]}>
               <Ionicons name="notifications-off-outline" size={48} color={theme.subtext} />
             </View>
             <Text style={[styles.emptyTitle, { color: theme.text }]}>Tout est calme par ici</Text>
             <Text style={[styles.emptyText, { color: theme.subtext }]}>
-              Lorsque vous recevrez des annonces ou des alertes importantes, elles apparaîtront sur cette page.
+              Lorsque vous recevrez des annonces ou des alertes importantes, elles apparaîtront ici.
             </Text>
-          </MotiView>
+          </View>
         }
       />
     </View>
@@ -210,18 +182,23 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  headerBlur: {
-    paddingTop: Platform.OS === "ios" ? 50 : 30, // Ajustement pour Notch/StatusBar
+  headerSafe: {
+    paddingTop: Platform.OS === "ios" ? 50 : 40,
     paddingBottom: 15,
     borderBottomWidth: 1,
     zIndex: 10,
+    // Ombre légère pour détacher le header
+    elevation: 3,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
   },
   headerContent: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: 20,
-    marginTop: 10,
   },
   backBtn: {
     width: 40,
@@ -266,9 +243,9 @@ const styles = StyleSheet.create({
   notifCard: {
     flexDirection: "row",
     padding: 18,
-    borderRadius: 24,
+    borderRadius: 20,
     borderWidth: 1,
-    marginBottom: 12,
+    marginBottom: 0, // marginBottom géré par le View parent
     overflow: "hidden",
   },
   iconContainer: {
@@ -276,9 +253,9 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   iconCircle: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     justifyContent: "center",
     alignItems: "center",
   },
@@ -327,9 +304,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 30,
   },
   emptyIconWrapper: {
-    width: 90,
-    height: 90,
-    borderRadius: 45,
+    width: 80,
+    height: 80,
+    borderRadius: 40,
     justifyContent: "center",
     alignItems: "center",
     marginBottom: 24,
