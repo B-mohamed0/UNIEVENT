@@ -1780,6 +1780,43 @@ app.post("/api/scan", async (req, res) => {
       [cne, eventId]
     );
 
+    // --- ENVOI NOTIFICATION PUSH ET IN-APP ---
+    setImmediate(async () => {
+      try {
+        const notifTitle = "Présence Validée ✅";
+        const eventRes = await pool.query("SELECT nom_evenement FROM evenement WHERE id = $1", [eventId]);
+        const eventName = eventRes.rowCount > 0 ? eventRes.rows[0].nom_evenement : "l'événement";
+        const notifBody = `Votre présence a été validée pour ${eventName}.`;
+
+        await pool.query(
+          `INSERT INTO notifications (student_id, title, body, event_id) VALUES ($1, $2, $3, $4)`,
+          [cne, notifTitle, notifBody, eventId]
+        );
+
+        const tokensResult = await pool.query(`SELECT token FROM push_tokens WHERE student_id = $1`, [cne]);
+        const tokens = tokensResult.rows.map(r => r.token);
+        if (tokens.length > 0) {
+          const messages = [];
+          for (let pushToken of tokens) {
+            if (!Expo.isExpoPushToken(pushToken)) continue;
+            messages.push({
+              to: pushToken,
+              sound: 'default',
+              title: notifTitle,
+              body: notifBody,
+              data: { eventId },
+            });
+          }
+          const chunks = expo.chunkPushNotifications(messages);
+          for (let chunk of chunks) {
+            await expo.sendPushNotificationsAsync(chunk);
+          }
+        }
+      } catch (err) {
+        console.error("Erreur envoi notif présence:", err);
+      }
+    });
+
     res.json({ 
       message: "Présence validée ✅",
       student: {

@@ -388,7 +388,7 @@ export default function HomeScreen({ route, navigation }) {
       <View style={styles.header}>
         <TouchableOpacity
           style={[styles.iconButtonGlass, { backgroundColor: theme.iconBg, borderColor: theme.iconBorder }]}
-          onPress={() => console.log("Notifs")}
+          onPress={() => navigation.navigate("Notifications", { id, nom: userData.name })}
         >
           <BlurView intensity={20} tint={isDarkMode ? "dark" : "light"} style={styles.iconBlur}>
             <Ionicons name="notifications" size={20} color={isDarkMode ? "#FFF" : "#ffffffff"} />
