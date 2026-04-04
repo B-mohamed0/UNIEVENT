@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "404407056553",
+    "project_id": "uni-event-1aa42",
+    "storage_bucket": "uni-event-1aa42.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:404407056553:android:a8ab1ab2f539c8bfa2d1b8",
+        "android_client_info": {
+          "package_name": "com.aminezh2.firstreactnativeapp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyArE8gJrwKD8N53MFTDhGdjlbJfhF_SO1Y"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
